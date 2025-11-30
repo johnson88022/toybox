@@ -8,7 +8,7 @@ import UserProfile from './components/UserProfile';
 import ProductDetail from './components/ProductDetail';
 import MyOrders from './components/MyOrders';
 import { Product, CartItem, User, Order, ShippingInfo, PaymentInfo } from './types';
-import { MOCK_PRODUCTS } from './constants';
+// 不再使用預設商品
 import { Trash2, CreditCard, ShoppingBag, X, LogIn, Apple, Smartphone, Loader2, LogOut, Settings, AlertTriangle, Copy, ChevronDown, ChevronUp } from 'lucide-react';
 import { auth, googleProvider, appleProvider, isFirebaseConfigured } from './firebaseConfig';
 import { signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
@@ -87,8 +87,7 @@ const App: React.FC = () => {
 
   // Firestore 雲端同步監聽
   useEffect(() => {
-    // 初始化商品資料（如果 Firestore 是空的）
-    initializeProducts(MOCK_PRODUCTS).catch(console.error);
+    // 不再自動初始化商品資料，讓賣家自行新增
     
     // 監聽所有 Firestore 集合
     const unsubProducts = listenProducts((products) => {
@@ -561,22 +560,24 @@ const App: React.FC = () => {
 
     return (
       <main className="pt-28 pb-12">
-        {/* 廣告跑馬燈 - 全寬顯示 */}
+        {/* 廣告跑馬燈 - 全寬顯示，無限循環 */}
         {marqueeMessages.length > 0 && marqueeMessages.some(msg => msg.trim() !== '') && (
           <div className="mb-8 w-full overflow-hidden bg-gradient-to-r from-cute-primary to-cute-secondary shadow-lg">
             <div 
-              className="py-4 whitespace-nowrap w-full"
+              className="py-4 whitespace-nowrap"
               style={{
-                animation: `scroll ${marqueeSpeed}s linear infinite`
+                animation: `scroll ${marqueeSpeed}s linear infinite`,
+                display: 'inline-block',
+                width: 'max-content'
               }}
             >
               <div className="inline-flex items-center gap-8 text-white font-bold text-lg md:text-xl">
-                {marqueeMessages.filter(msg => msg.trim() !== '').map((msg, i) => (
-                  <span key={i} className="inline-block whitespace-nowrap">{msg}</span>
-                ))}
-                {marqueeMessages.filter(msg => msg.trim() !== '').map((msg, i) => (
-                  <span key={`dup-${i}`} className="inline-block whitespace-nowrap">{msg}</span>
-                ))}
+                {/* 重複多次以確保無縫循環 */}
+                {[...Array(3)].map((_, repeatIndex) => 
+                  marqueeMessages.filter(msg => msg.trim() !== '').map((msg, i) => (
+                    <span key={`${repeatIndex}-${i}`} className="inline-block whitespace-nowrap px-4">{msg}</span>
+                  ))
+                )}
               </div>
             </div>
           </div>

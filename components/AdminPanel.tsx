@@ -39,6 +39,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
 
   // Debug: 確保wishes更新時重新渲染
   React.useEffect(() => {
@@ -1595,10 +1596,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                     const currentImages = (editingProduct as any)._editedImages !== undefined
                       ? (editingProduct as any)._editedImages
                       : (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : [editingProduct.image]);
-                    const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
                     
                     const handleDragStart = (e: React.DragEvent, index: number) => {
-                      setDraggedIndex(index);
+                      setDraggedImageIndex(index);
                       e.dataTransfer.effectAllowed = 'move';
                     };
                     
@@ -1609,17 +1609,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                     
                     const handleDrop = (e: React.DragEvent, dropIndex: number) => {
                       e.preventDefault();
-                      if (draggedIndex === null || draggedIndex === dropIndex) {
-                        setDraggedIndex(null);
+                      if (draggedImageIndex === null || draggedImageIndex === dropIndex) {
+                        setDraggedImageIndex(null);
                         return;
                       }
                       
                       const newImages = [...currentImages];
-                      const [removed] = newImages.splice(draggedIndex, 1);
+                      const [removed] = newImages.splice(draggedImageIndex, 1);
                       newImages.splice(dropIndex, 0, removed);
                       
                       setEditingProduct({...editingProduct, _editedImages: newImages});
-                      setDraggedIndex(null);
+                      setDraggedImageIndex(null);
                     };
                     
                     return currentImages.map((img: string, index: number) => (
@@ -1634,7 +1634,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                         <img 
                           src={img} 
                           alt={`Preview ${index + 1}`} 
-                          className={`w-20 h-20 rounded-xl ${editingProduct.imageFit === 'cover' ? 'object-cover' : 'object-contain'} border border-gray-200 bg-gray-50 ${draggedIndex === index ? 'opacity-50' : ''}`}
+                          className={`w-20 h-20 rounded-xl ${editingProduct.imageFit === 'cover' ? 'object-cover' : 'object-contain'} border border-gray-200 bg-gray-50 ${draggedImageIndex === index ? 'opacity-50' : ''}`}
                           draggable={false}
                         />
                         <div className="absolute top-1 left-1 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded">
