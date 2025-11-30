@@ -176,10 +176,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
       console.log('Image compressed successfully');
       
       if (isNewProduct) {
-        setNewProductImageFile(file);
-        setNewProductImagePreview(compressedBase64);
-        setNewProduct(prev => prev ? { ...prev, image: compressedBase64 } : null);
-        console.log('Preview set for new product');
+        // 新增商品：支援多張圖片
+        setNewProductImages(prev => {
+          const updatedImages = [...prev, compressedBase64];
+          if (prev.length === 0) {
+            // 第一張圖片作為主圖預覽
+            setNewProductImageFile(file);
+            setNewProductImagePreview(compressedBase64);
+            setNewProduct(prevProduct => prevProduct ? { ...prevProduct, image: compressedBase64 } : null);
+          } else {
+            // 更新主圖為第一張
+            setNewProduct(prevProduct => prevProduct ? { ...prevProduct, image: updatedImages[0] } : null);
+          }
+          console.log('Image added to new product, total:', updatedImages.length);
+          return updatedImages;
+        });
       } else if (editingProduct) {
         setEditingProduct({ 
           ...editingProduct, 
@@ -202,6 +213,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const [newProduct, setNewProduct] = useState<Partial<Product> | null>(null);
   const [newProductImageFile, setNewProductImageFile] = useState<File|null>(null);
   const [newProductImagePreview, setNewProductImagePreview] = useState<string>('');
+  const [newProductImages, setNewProductImages] = useState<string[]>([]); // 支援多張圖片
+  const [customCategories, setCustomCategories] = useState<string[]>(['Sci-Fi', 'Fantasy', 'Anime', 'Custom']); // 自定義類別
 
   const handleAddProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,12 +227,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
         imageUrl = newProductImagePreview;
       }
       
-      const productToAdd: Product = {
+      // 處理多張圖片
+      const imagesArray = newProductImages.length > 0 ? newProductImages : (imageUrl ? [imageUrl] : []);
+      
+      const productToAdd: any = {
         id: `product-${Date.now()}`,
         name: newProduct.name.trim(),
         price: Number(newProduct.price),
         description: (newProduct.description || '').trim(),
-        category: (newProduct.category || 'Custom') as Product['category'],
+        category: (newProduct.category || 'Custom'),
         image: imageUrl,
         stock: Number(newProduct.stock),
         rating: 5.0,
@@ -227,12 +243,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
         imageFit: newProduct.imageFit || 'contain' // 預設完整顯示
       };
       
+      // 如果有多張圖片，設置 images 欄位
+      if (imagesArray.length > 1) {
+        productToAdd.images = imagesArray;
+      }
+      
       try {
         console.log('Adding product to Firestore:', productToAdd);
         await onAddProduct(productToAdd);
         setNewProduct(null);
         setNewProductImageFile(null);
         setNewProductImagePreview('');
+        setNewProductImages([]);
         setIsAddingProduct(false);
         console.log('Product added successfully');
       } catch (error: any) {
@@ -254,6 +276,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
         stock: 0,
         imageFit: 'contain' // 預設完整顯示
       });
+      setNewProductImages([]);
     }
   }, [isAddingProduct]);
 
@@ -950,19 +973,40 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
         {activeTab === 'products' && (
           <>
-            <div className="mb-6 flex justify-between items-center">
+            <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-2xl font-black text-gray-800">商品管理</h2>
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsAddingProduct(true);
-                }}
-                className="bg-cute-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-pink-400 transition-colors shadow-lg active:scale-95"
-              >
-            <Plus size={18} /> 新增商品
-          </button>
-        </div>
+              <div className="flex gap-3">
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const newCategory = prompt('請輸入新類別名稱：');
+                    if (newCategory && newCategory.trim()) {
+                      const categoryValue = newCategory.trim();
+                      if (!customCategories.includes(categoryValue)) {
+                        setCustomCategories([...customCategories, categoryValue]);
+                        alert(`類別「${categoryValue}」已新增！`);
+                      } else {
+                        alert('此類別已存在！');
+                      }
+                    }
+                  }}
+                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors shadow-sm"
+                >
+                  <Plus size={16} /> 新增類別
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsAddingProduct(true);
+                  }}
+                  className="bg-cute-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-pink-400 transition-colors shadow-lg active:scale-95"
+                >
+                  <Plus size={18} /> 新增商品
+                </button>
+              </div>
+            </div>
 
             {/* Product List Table */}
             <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-hidden mb-8">
@@ -1011,6 +1055,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                   ...product,
                                   _editedImages: currentImages
                                 });
+                                // 更新自定義類別列表（如果商品類別不在列表中）
+                                if (product.category && !customCategories.includes(product.category)) {
+                                  setCustomCategories(prev => [...prev, product.category]);
+                                }
                               }}
                               className="text-cute-secondary hover:text-cute-primary p-2 hover:bg-pink-50 rounded-lg transition-colors"
                               aria-label="編輯商品"
@@ -1087,6 +1135,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                               ...product,
                               _editedImages: currentImages
                             });
+                            // 更新自定義類別列表（如果商品類別不在列表中）
+                            if (product.category && !customCategories.includes(product.category)) {
+                              setCustomCategories(prev => [...prev, product.category]);
+                            }
                           }}
                           className="text-cute-secondary hover:text-cute-primary p-2 hover:bg-pink-50 rounded-lg transition-colors"
                           aria-label="編輯商品"
@@ -1429,53 +1481,65 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
             </div>
             
             <form onSubmit={handleAddProductSubmit} className="space-y-4">
-              {/* Image Upload/Preview */}
-              <div className="flex items-center gap-4 mb-2">
-                 <img src={newProductImagePreview || newProduct?.image || 'https://via.placeholder.com/400'} alt="Preview" className={`w-20 h-20 rounded-xl ${newProduct?.imageFit === 'cover' ? 'object-cover' : 'object-contain'} border border-gray-200 bg-gray-50`} />
-                 <div className="flex-1">
-                    <label className="block text-sm font-bold text-gray-600 mb-1">商品圖片</label>
-                    <label className="flex items-center justify-center w-full px-4 py-2 bg-gray-50 border border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors active:bg-gray-200">
-                      <span className="text-sm text-gray-500 flex items-center gap-2"><Upload size={16}/> 上傳圖片</span>
-                      <input 
-                        type="file" 
-                        id="new-product-image-input"
-                        className="hidden" 
-                        accept="image/*"
-                        onChange={(e) => handleImageChange(e, true)}
-                      />
-                    </label>
-                    <p className="text-xs text-gray-400 mt-1">支援相機拍照或從相簿選擇</p>
+              {/* Image Upload/Preview - 支援多張圖片 */}
+              <div className="mb-4">
+                <label className="block text-sm font-bold text-gray-600 mb-2">商品圖片</label>
+                {/* 顯示已上傳的圖片 */}
+                {newProductImages.length > 0 && (
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {newProductImages.map((img, index) => (
+                      <div key={index} className="relative">
+                        <img src={img} alt={`Preview ${index + 1}`} className="w-20 h-20 rounded-xl object-cover border border-gray-200 bg-gray-50" />
+                        <div className="absolute top-1 left-1 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded">
+                          {index + 1}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newImages = newProductImages.filter((_, i) => i !== index);
+                            setNewProductImages(newImages);
+                            if (newImages.length > 0) {
+                              setNewProductImagePreview(newImages[0]);
+                              setNewProduct(prev => prev ? { ...prev, image: newImages[0] } : null);
+                            } else {
+                              setNewProductImagePreview('');
+                              setNewProduct(prev => prev ? { ...prev, image: 'https://via.placeholder.com/400' } : null);
+                            }
+                          }}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg z-10"
+                          aria-label="刪除圖片"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* 上傳新圖片 */}
+                <label className="flex items-center justify-center w-full px-4 py-2 bg-gray-50 border border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors active:bg-gray-200">
+                  <span className="text-sm text-gray-500 flex items-center gap-2"><Upload size={16}/> 上傳圖片</span>
+                  <input 
+                    type="file" 
+                    id="new-product-image-input"
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={(e) => handleImageChange(e, true)}
+                  />
+                </label>
+                <p className="text-xs text-gray-400 mt-1">支援相機拍照或從相簿選擇，可上傳多張圖片</p>
                     <div className="mt-2">
                       <label htmlFor="new-product-image-fit-select" className="block text-xs font-bold text-gray-600 mb-1">圖片顯示方式</label>
                       <select
                         id="new-product-image-fit-select"
                         value={newProduct?.imageFit || 'contain'}
                         onChange={(e) => setNewProduct(prev => ({ ...prev, imageFit: e.target.value as 'cover' | 'contain' }))}
-                        className="w-full bg-gray-50 border border-pink-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary mb-2"
+                        className="w-full bg-gray-50 border border-pink-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
                       >
                         <option value="contain">完整顯示（不裁切）</option>
-                        <option value="cover">填滿（可能裁切）</option>
+                        <option value="cover">填滿（可能裁切，可拖拉調整位置）</option>
                       </select>
                       {newProduct?.imageFit === 'cover' && (
-                        <>
-                          <label htmlFor="new-product-image-position-select" className="block text-xs font-bold text-gray-600 mb-1 mt-2">圖片位置調整</label>
-                          <select
-                            id="new-product-image-position-select"
-                            value={(newProduct as any)?.imagePosition || 'center'}
-                            onChange={(e) => setNewProduct(prev => ({ ...prev, imagePosition: e.target.value as string }))}
-                            className="w-full bg-gray-50 border border-pink-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                          >
-                            <option value="center">居中</option>
-                            <option value="top">上方</option>
-                            <option value="bottom">下方</option>
-                            <option value="left">左側</option>
-                            <option value="right">右側</option>
-                            <option value="top left">左上</option>
-                            <option value="top right">右上</option>
-                            <option value="bottom left">左下</option>
-                            <option value="bottom right">右下</option>
-                          </select>
-                        </>
+                        <p className="text-xs text-gray-500 mt-1">提示：使用 cover 模式時，可在商品詳情頁面拖拉圖片調整顯示位置</p>
                       )}
                     </div>
                  </div>
@@ -1496,15 +1560,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                 <label htmlFor="product-category" className="block text-sm font-bold text-gray-600 mb-1">類別 *</label>
                 <select
                   id="product-category"
-                  value={newProduct?.category || 'Custom'}
-                  onChange={(e) => setNewProduct(prev => ({ ...prev, category: e.target.value as Product['category'] }))}
+                  value={newProduct?.category || customCategories[0] || 'Custom'}
+                  onChange={(e) => setNewProduct(prev => ({ ...prev, category: e.target.value as any }))}
                   className="w-full bg-gray-50 border border-pink-100 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
                   required
                 >
-                  <option value="Sci-Fi">科幻</option>
-                  <option value="Fantasy">奇幻</option>
-                  <option value="Anime">動漫</option>
-                  <option value="Custom">客製化</option>
+                  {customCategories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat === 'Sci-Fi' ? '科幻' : 
+                       cat === 'Fantasy' ? '奇幻' : 
+                       cat === 'Anime' ? '動漫' : 
+                       cat === 'Custom' ? '客製化' : cat}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -1702,25 +1770,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                     <option value="cover">填滿（可能裁切）</option>
                   </select>
                   {editingProduct.imageFit === 'cover' && (
-                    <>
-                      <label htmlFor="edit-product-image-position-select" className="block text-xs font-bold text-gray-600 mb-1 mt-2">圖片位置調整</label>
-                      <select
-                        id="edit-product-image-position-select"
-                        value={(editingProduct as any).imagePosition || 'center'}
-                        onChange={(e) => setEditingProduct({...editingProduct, imagePosition: e.target.value as string})}
-                        className="w-full bg-gray-50 border border-pink-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                      >
-                        <option value="center">居中</option>
-                        <option value="top">上方</option>
-                        <option value="bottom">下方</option>
-                        <option value="left">左側</option>
-                        <option value="right">右側</option>
-                        <option value="top left">左上</option>
-                        <option value="top right">右上</option>
-                        <option value="bottom left">左下</option>
-                        <option value="bottom right">右下</option>
-                      </select>
-                    </>
+                    <p className="text-xs text-gray-500 mt-1">提示：使用 cover 模式時，可在商品詳情頁面拖拉圖片調整顯示位置</p>
                   )}
                  </div>
               </div>
@@ -1734,6 +1784,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                   onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
                   className="w-full bg-gray-50 border border-pink-100 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
                 />
+              </div>
+              <div>
+                <label htmlFor="edit-product-category" className="block text-sm font-bold text-gray-600 mb-1">類別</label>
+                <select
+                  id="edit-product-category"
+                  value={editingProduct.category || customCategories[0] || 'Custom'}
+                  onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}
+                  className="w-full bg-gray-50 border border-pink-100 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                >
+                  {customCategories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat === 'Sci-Fi' ? '科幻' : 
+                       cat === 'Fantasy' ? '奇幻' : 
+                       cat === 'Anime' ? '動漫' : 
+                       cat === 'Custom' ? '客製化' : cat}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

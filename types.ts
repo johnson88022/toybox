@@ -3,7 +3,7 @@ export interface Product {
   name: string;
   price: number;
   description: string;
-  category: 'Sci-Fi' | 'Fantasy' | 'Anime' | 'Custom';
+  category: string; // 支援自定義類別
   image: string;
   images?: string[]; // 多張商品圖片
   stock: number;
