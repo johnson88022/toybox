@@ -101,7 +101,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
       
       try {
         await onUpdateProduct(updatedProduct);
-        setEditingProduct(null);
+      setEditingProduct(null);
         console.log('Product updated successfully:', updatedProduct.name);
       } catch (error: any) {
         console.error('Failed to update product:', error);
@@ -291,8 +291,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-black text-gray-800 mb-2">賣家儀表板</h1>
-          <p className="text-gray-500">歡迎回來，老闆！ 🍪</p>
-        </div>
+            <p className="text-gray-500">歡迎回來，老闆！ 🍪</p>
+          </div>
 
         {/* 標籤頁導航 */}
         <div className="bg-white rounded-3xl border border-pink-50 shadow-sm mb-6 overflow-x-auto">
@@ -331,185 +331,433 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
         {activeTab === 'orders' && (
           <>
             {/* 待處理訂單列表 */}
-          <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !isResetting && setShowResetConfirm(false)} />
-            <div className="relative w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">確認重置資料</h3>
-              <p className="text-gray-600 mb-6">這將刪除所有商品、訂單和許願資料，並恢復為預設商品。此操作無法復原！</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowResetConfirm(false)}
-                  disabled={isResetting}
-                  className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={async () => {
-                    setIsResetting(true);
-                    try {
-                      if (onResetData) await onResetData();
-                      setShowResetConfirm(false);
-                      alert('資料已重置！');
-                    } catch (error) {
-                      alert('重置失敗，請重試');
-                      console.error(error);
-                    } finally {
-                      setIsResetting(false);
-                    }
-                  }}
-                  disabled={isResetting}
-                  className="flex-1 bg-red-500 text-white font-bold py-3 rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50"
-                >
-                  {isResetting ? '重置中...' : '確認重置'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-            {/* Product List Table */}
-            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-hidden">
-              <div className="p-4 sm:p-8 border-b border-pink-50">
-                <h3 className="text-xl font-bold text-gray-800">商品列表</h3>
-              </div>
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-pink-50 text-gray-500 text-xs uppercase font-bold tracking-wider">
-                <tr>
-                  <th className="px-4 lg:px-8 py-5">商品</th>
-                  <th className="px-4 lg:px-8 py-5">類別</th>
-                  <th className="px-4 lg:px-8 py-5">價格</th>
-                  <th className="px-4 lg:px-8 py-5">庫存</th>
-                  <th className="px-4 lg:px-8 py-5">狀態</th>
-                  <th className="px-4 lg:px-8 py-5">操作</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-pink-50 text-sm">
-                {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-pink-50/30 transition-colors">
-                    <td className="px-4 lg:px-8 py-5 flex items-center gap-4">
-                      <img src={product.image} alt="" className={`w-12 h-12 rounded-xl ${product.imageFit === 'cover' ? 'object-cover' : 'object-contain'} bg-gray-100`} />
-                      <span className="text-gray-800 font-bold">{product.name}</span>
-                    </td>
-                    <td className="px-4 lg:px-8 py-5 text-gray-500 font-medium">{product.category}</td>
-                    <td className="px-4 lg:px-8 py-5 text-gray-800 font-bold">${product.price.toFixed(2)}</td>
-                    <td className="px-4 lg:px-8 py-5 text-gray-500 whitespace-nowrap">{product.stock} 件</td>
-                    <td className="px-4 lg:px-8 py-5">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
-                        product.stock > 10 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'
-                      }`}>
-                        {product.stock > 10 ? '庫存充足' : '低庫存'}
-                      </span>
-                    </td>
-                    <td className="px-4 lg:px-8 py-5">
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => setEditingProduct(product)}
-                          className="text-cute-secondary hover:text-cute-primary p-2 hover:bg-pink-50 rounded-lg transition-colors"
-                          aria-label="編輯商品"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        {onDeleteProduct && (
-                          <button 
-                            onClick={() => {
-                              if (window.confirm(`確定要刪除「${product.name}」嗎？此操作無法復原！`)) {
-                                setDeletingProductId(product.id);
-                                onDeleteProduct(product.id).then(() => {
-                                  setDeletingProductId(null);
-                                }).catch((error) => {
-                                  console.error('Delete failed:', error);
-                                  alert('刪除失敗，請重試');
-                                  setDeletingProductId(null);
-                                });
-                              }
-                            }}
-                            disabled={deletingProductId === product.id}
-                            className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            aria-label="刪除商品"
-                          >
-                            {deletingProductId === product.id ? (
-                              <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                              <Trash2 size={18} />
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {/* Mobile Card View */}
-          <div className="md:hidden p-4 space-y-4">
-            {products.map((product) => (
-              <div key={product.id} className="bg-gray-50 rounded-2xl p-4 border border-pink-100">
-                <div className="flex items-start gap-4 mb-3">
-                  <img src={product.image} alt="" className={`w-16 h-16 rounded-xl flex-shrink-0 ${product.imageFit === 'cover' ? 'object-cover' : 'object-contain'} bg-gray-100`} />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-gray-800 font-bold text-base mb-1 truncate">{product.name}</h4>
-                    <p className="text-gray-500 text-sm">{product.category}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div>
-                    <span className="text-xs text-gray-500">價格</span>
-                    <p className="text-lg font-bold text-cute-primary">${product.price.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-500">庫存</span>
-                    <p className="text-lg font-bold text-gray-800">{product.stock} 件</p>
-                  </div>
-                </div>
+            <div className="bg-white rounded-3xl border-2 border-blue-200 shadow-lg overflow-hidden mb-8">
+              <button
+                onClick={() => setIsPendingOrdersCollapsed(!isPendingOrdersCollapsed)}
+                className="w-full p-6 border-b-2 border-blue-200 bg-gradient-to-r from-blue-100 to-blue-50 hover:from-blue-200 hover:to-blue-100 transition-colors"
+              >
                 <div className="flex items-center justify-between">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
-                    product.stock > 10 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'
-                  }`}>
-                    {product.stock > 10 ? '庫存充足' : '低庫存'}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setEditingProduct(product)}
-                      className="text-cute-secondary hover:text-cute-primary p-2 hover:bg-pink-50 rounded-lg transition-colors"
-                      aria-label="編輯商品"
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                    {onDeleteProduct && (
-                      <button 
-                        onClick={() => {
-                          if (window.confirm(`確定要刪除「${product.name}」嗎？此操作無法復原！`)) {
-                            setDeletingProductId(product.id);
-                            onDeleteProduct(product.id).then(() => {
-                              setDeletingProductId(null);
-                            }).catch((error) => {
-                              console.error('Delete failed:', error);
-                              alert('刪除失敗，請重試');
-                              setDeletingProductId(null);
-                            });
-                          }
-                        }}
-                        disabled={deletingProductId === product.id}
-                        className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        aria-label="刪除商品"
-                      >
-                        {deletingProductId === product.id ? (
-                          <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          <Trash2 size={18} />
-                        )}
-                      </button>
-                    )}
-                  </div>
+                  <h3 className="text-xl font-bold text-blue-700 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-blue-600" />
+                    待處理訂單
+                    <span className="px-3 py-1 bg-blue-500 text-white rounded-full text-sm font-bold">
+                      {orders.filter(o => o.status === 'pending').length}
+                    </span>
+                  </h3>
+                  {isPendingOrdersCollapsed ? (
+                    <ChevronDown className="w-5 h-5 text-blue-600" />
+                  ) : (
+                    <ChevronUp className="w-5 h-5 text-blue-600" />
+                  )}
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
+              </button>
+              {!isPendingOrdersCollapsed && (
+                <div className="p-6">
+                  {orders.filter(o => o.status === 'pending').length > 0 ? (
+                    <div className="space-y-4">
+                      {orders.filter(o => o.status === 'pending').map((order: any) => (
+                        <div key={order.id} className="p-6 bg-gradient-to-br from-blue-50 to-white rounded-2xl border-2 border-blue-200 shadow-lg hover:shadow-xl transition-shadow">
+                          <div className="flex justify-between items-start mb-5 pb-4 border-b-2 border-blue-200">
+                            <div>
+                              <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
+                              <div className="text-sm text-gray-600 font-medium">
+                                📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
+                              </div>
+                            </div>
+                            <span className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-xl text-sm font-black shadow-sm">待處理</span>
+                          </div>
+                          
+                          {/* 商品列表 */}
+                          <div className="mb-5">
+                            <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
+                              <Package size={18} className="text-blue-600" />
+                              商品內容
+                            </div>
+                            <div className="space-y-3">
+                              {order.items?.map((item: any, i: number) => (
+                                <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
+                                  <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-blue-100" />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
+                                    <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
+                                  </div>
+                                  <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* 收貨資訊 */}
+                          {order.shippingInfo && (
+                            <div className="mb-5 p-4 bg-blue-50/80 rounded-xl border-2 border-blue-100">
+                              <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">收貨人</span>
+                                  <span className="text-gray-900 font-medium">{order.shippingInfo.name}</span>
+                                </div>
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">電話</span>
+                                  <span className="text-gray-900 font-medium">{order.shippingInfo.phone}</span>
+                                </div>
+                                <div className="bg-white p-3 rounded-lg md:col-span-2">
+                                  <span className="font-bold text-gray-600 block mb-1">地址</span>
+                                  <span className="text-gray-900 font-medium">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
+                                  <div className="text-gray-900 font-medium mt-1">{order.shippingInfo.address}</div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 付款資訊 */}
+                          {order.paymentInfo && (
+                            <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
+                              <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">持卡人</span>
+                                  <span className="text-gray-900 font-medium">{order.paymentInfo.cardholderName}</span>
+                                </div>
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">卡號</span>
+                                  <span className="text-gray-900 font-medium">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 總金額 */}
+                          <div className="flex justify-between items-center pt-4 border-t-2 border-blue-200 mb-4 bg-white/50 p-4 rounded-xl">
+                            <span className="text-gray-700 font-black text-lg">總金額</span>
+                            <span className="text-3xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
+                          </div>
+
+                          {/* 操作按鈕 */}
+                          {onUpdateOrderStatus && (
+                            <div className="flex justify-end gap-3">
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm('確定要將此訂單標記為「已出貨」嗎？')) {
+                                    setShippingOrderId(order.id);
+                                    try {
+                                      await onUpdateOrderStatus(order.id, 'shipped');
+                                      setShippingOrderId(null);
+                                    } catch (error) {
+                                      console.error('Failed to update order status:', error);
+                                      alert('更新訂單狀態失敗，請重試');
+                                      setShippingOrderId(null);
+                                    }
+                                  }
+                                }}
+                                disabled={shippingOrderId === order.id || completingOrderId === order.id}
+                                className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                              >
+                                {shippingOrderId === order.id ? (
+                                  <>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    處理中...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Truck size={18} /> 標記為已出貨
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm('確定要將此訂單標記為「已完成」嗎？')) {
+                                    setCompletingOrderId(order.id);
+                                    try {
+                                      await onUpdateOrderStatus(order.id, 'completed');
+                                      setCompletingOrderId(null);
+                                    } catch (error) {
+                                      console.error('Failed to update order status:', error);
+                                      alert('更新訂單狀態失敗，請重試');
+                                      setCompletingOrderId(null);
+                                    }
+                                  }
+                                }}
+                                disabled={shippingOrderId === order.id || completingOrderId === order.id}
+                                className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                              >
+                                {completingOrderId === order.id ? (
+                                  <>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    處理中...
+                                  </>
+                                ) : (
+                                  <>
+                                    <span>✓</span> 標記為已完成
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-center py-8">目前沒有待處理的訂單</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 已出貨訂單列表 */}
+            <div className="bg-white rounded-3xl border-2 border-purple-200 shadow-lg overflow-hidden mb-8">
+              <button
+                onClick={() => setIsShippedOrdersCollapsed(!isShippedOrdersCollapsed)}
+                className="w-full p-6 border-b-2 border-purple-200 bg-gradient-to-r from-purple-100 to-purple-50 hover:from-purple-200 hover:to-purple-100 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-purple-700 flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-purple-600" />
+                    已出貨訂單
+                    <span className="px-3 py-1 bg-purple-500 text-white rounded-full text-sm font-bold">
+                      {orders.filter(o => o.status === 'shipped').length}
+                    </span>
+                  </h3>
+                  {isShippedOrdersCollapsed ? (
+                    <ChevronDown className="w-5 h-5 text-purple-600" />
+                  ) : (
+                    <ChevronUp className="w-5 h-5 text-purple-600" />
+                  )}
+                </div>
+              </button>
+              {!isShippedOrdersCollapsed && (
+                <div className="p-6">
+                  {orders.filter(o => o.status === 'shipped').length > 0 ? (
+                    <div className="space-y-4">
+                      {orders.filter(o => o.status === 'shipped').map((order: any) => (
+                        <div key={order.id} className="p-6 bg-gradient-to-br from-purple-50 to-white rounded-2xl border-2 border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
+                          <div className="flex justify-between items-start mb-5 pb-4 border-b-2 border-purple-200">
+                            <div>
+                              <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
+                              <div className="text-sm text-gray-600 font-medium">
+                                📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
+                              </div>
+                            </div>
+                            <span className="px-4 py-2 bg-purple-100 text-purple-800 rounded-xl text-sm font-black shadow-sm">已出貨</span>
+                          </div>
+                          
+                          {/* 商品列表 */}
+                          <div className="mb-5">
+                            <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
+                              <Package size={18} className="text-purple-600" />
+                              商品內容
+                            </div>
+                            <div className="space-y-3">
+                              {order.items?.map((item: any, i: number) => (
+                                <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-purple-100 shadow-sm hover:shadow-md transition-shadow">
+                                  <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-purple-100" />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
+                                    <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
+                                  </div>
+                                  <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* 收貨資訊 */}
+                          {order.shippingInfo && (
+                            <div className="mb-5 p-4 bg-purple-50/80 rounded-xl border-2 border-purple-100">
+                              <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">收貨人</span>
+                                  <span className="text-gray-900 font-medium">{order.shippingInfo.name}</span>
+                                </div>
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">電話</span>
+                                  <span className="text-gray-900 font-medium">{order.shippingInfo.phone}</span>
+                                </div>
+                                <div className="bg-white p-3 rounded-lg md:col-span-2">
+                                  <span className="font-bold text-gray-600 block mb-1">地址</span>
+                                  <span className="text-gray-900 font-medium">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
+                                  <div className="text-gray-900 font-medium mt-1">{order.shippingInfo.address}</div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 付款資訊 */}
+                          {order.paymentInfo && (
+                            <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
+                              <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">持卡人</span>
+                                  <span className="text-gray-900 font-medium">{order.paymentInfo.cardholderName}</span>
+                                </div>
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">卡號</span>
+                                  <span className="text-gray-900 font-medium">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 總金額和操作 */}
+                          <div className="pt-4 border-t-2 border-purple-200 mb-4">
+                            <div className="flex justify-between items-center bg-white/50 p-4 rounded-xl mb-4">
+                              <span className="text-gray-700 font-black text-lg">總金額</span>
+                              <span className="text-3xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
+                            </div>
+                            {onUpdateOrderStatus && (
+                              <div className="flex justify-end">
+                                <button
+                                  onClick={async () => {
+                                    if (window.confirm('確定要將此訂單標記為「已完成」嗎？')) {
+                                      setCompletingOrderId(order.id);
+                                      try {
+                                        await onUpdateOrderStatus(order.id, 'completed');
+                                        setCompletingOrderId(null);
+                                      } catch (error) {
+                                        console.error('Failed to update order status:', error);
+                                        alert('更新訂單狀態失敗，請重試');
+                                        setCompletingOrderId(null);
+                                      }
+                                    }
+                                  }}
+                                  disabled={completingOrderId === order.id}
+                                  className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                                >
+                                  {completingOrderId === order.id ? (
+                                    <>
+                                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                      處理中...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span>✓</span> 標記為已完成
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-center py-8">目前沒有已出貨的訂單</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 已完成訂單列表 */}
+            <div className="bg-white rounded-3xl border-2 border-green-200 shadow-lg overflow-hidden mb-8">
+              <button
+                onClick={() => setIsCompletedOrdersCollapsed(!isCompletedOrdersCollapsed)}
+                className="w-full p-6 border-b-2 border-green-200 bg-gradient-to-r from-green-100 to-green-50 hover:from-green-200 hover:to-green-100 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-green-700 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    已完成訂單
+                    <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-bold">
+                      {orders.filter(o => o.status === 'completed').length}
+                    </span>
+                  </h3>
+                  {isCompletedOrdersCollapsed ? (
+                    <ChevronDown className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <ChevronUp className="w-5 h-5 text-green-600" />
+                  )}
+                </div>
+              </button>
+              {!isCompletedOrdersCollapsed && (
+                <div className="p-6">
+                  {orders.filter(o => o.status === 'completed').length > 0 ? (
+                    <div className="space-y-4">
+                      {orders.filter(o => o.status === 'completed').map((order: any) => (
+                        <div key={order.id} className="p-6 bg-gradient-to-br from-green-50 to-white rounded-2xl border-2 border-green-200 shadow-lg hover:shadow-xl transition-shadow">
+                          <div className="flex justify-between items-start mb-5 pb-4 border-b-2 border-green-200">
+                            <div>
+                              <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
+                              <div className="text-sm text-gray-600 font-medium">
+                                📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
+                              </div>
+                            </div>
+                            <span className="px-4 py-2 bg-green-100 text-green-800 rounded-xl text-sm font-black shadow-sm">已完成</span>
+                          </div>
+                          
+                          {/* 商品列表 */}
+                          <div className="mb-5">
+                            <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
+                              <Package size={18} className="text-green-600" />
+                              商品內容
+                            </div>
+                            <div className="space-y-3">
+                              {order.items?.map((item: any, i: number) => (
+                                <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-green-100 shadow-sm hover:shadow-md transition-shadow">
+                                  <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-green-100" />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
+                                    <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
+                                  </div>
+                                  <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* 收貨資訊 */}
+                          {order.shippingInfo && (
+                            <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
+                              <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">收貨人</span>
+                                  <span className="text-gray-900 font-medium">{order.shippingInfo.name}</span>
+                                </div>
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">電話</span>
+                                  <span className="text-gray-900 font-medium">{order.shippingInfo.phone}</span>
+                                </div>
+                                <div className="bg-white p-3 rounded-lg md:col-span-2">
+                                  <span className="font-bold text-gray-600 block mb-1">地址</span>
+                                  <span className="text-gray-900 font-medium">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
+                                  <div className="text-gray-900 font-medium mt-1">{order.shippingInfo.address}</div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 付款資訊 */}
+                          {order.paymentInfo && (
+                            <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
+                              <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">持卡人</span>
+                                  <span className="text-gray-900 font-medium">{order.paymentInfo.cardholderName}</span>
+                                </div>
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">卡號</span>
+                                  <span className="text-gray-900 font-medium">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 總金額 */}
+                          <div className="flex justify-between items-center pt-4 border-t-2 border-green-200 bg-white/50 p-4 rounded-xl">
+                            <span className="text-gray-700 font-black text-lg">總金額</span>
+                            <span className="text-3xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-center py-8">目前沒有已完成的訂單</p>
+                  )}
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -688,12 +936,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
           )}
         </div>
 
-        {/* 已出貨訂單列表 */}
-        <div className="bg-white rounded-3xl border-2 border-purple-200 shadow-lg overflow-hidden mb-8">
-          <button
-            onClick={() => setIsShippedOrdersCollapsed(!isShippedOrdersCollapsed)}
-            className="w-full p-6 border-b-2 border-purple-200 bg-gradient-to-r from-purple-100 to-purple-50 hover:from-purple-200 hover:to-purple-100 transition-colors"
-          >
+            {/* 已出貨訂單列表 */}
+            <div className="bg-white rounded-3xl border-2 border-purple-200 shadow-lg overflow-hidden mb-8">
+              <button
+                onClick={() => setIsShippedOrdersCollapsed(!isShippedOrdersCollapsed)}
+                className="w-full p-6 border-b-2 border-purple-200 bg-gradient-to-r from-purple-100 to-purple-50 hover:from-purple-200 hover:to-purple-100 transition-colors"
+              >
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold text-purple-700 flex items-center gap-2">
                 <Truck className="w-5 h-5 text-purple-600" />
@@ -832,117 +1080,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
           </div>
           )}
         </div>
-
-        {/* 已完成訂單列表 */}
-        <div className="bg-white rounded-3xl border-2 border-green-200 shadow-lg overflow-hidden mb-8">
-          <button
-            onClick={() => setIsCompletedOrdersCollapsed(!isCompletedOrdersCollapsed)}
-            className="w-full p-6 border-b-2 border-green-200 bg-gradient-to-r from-green-100 to-green-50 hover:from-green-200 hover:to-green-100 transition-colors"
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-green-700 flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                已完成訂單
-                <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-bold">
-                  {orders.filter(o => o.status === 'completed').length}
-                </span>
-              </h3>
-              {isCompletedOrdersCollapsed ? (
-                <ChevronDown className="w-5 h-5 text-green-600" />
-              ) : (
-                <ChevronUp className="w-5 h-5 text-green-600" />
-              )}
-            </div>
-          </button>
-          {!isCompletedOrdersCollapsed && (
-          <div className="p-6">
-            {orders.filter(o => o.status === 'completed').length > 0 ? (
-              <div className="space-y-4">
-                {orders.filter(o => o.status === 'completed').map((order: any) => (
-                  <div key={order.id} className="p-6 bg-gradient-to-br from-green-50 to-white rounded-2xl border-2 border-green-200 shadow-lg hover:shadow-xl transition-shadow">
-                    <div className="flex justify-between items-start mb-5 pb-4 border-b-2 border-green-200">
-                      <div>
-                        <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
-                        <div className="text-sm text-gray-600 font-medium">
-                          📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
-                        </div>
-                      </div>
-                      <span className="px-4 py-2 bg-green-100 text-green-800 rounded-xl text-sm font-black shadow-sm">已完成</span>
-                    </div>
-                    
-                    {/* 商品列表 */}
-                    <div className="mb-5">
-                      <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
-                        <Package size={18} className="text-green-600" />
-                        商品內容
-                      </div>
-                      <div className="space-y-3">
-                        {order.items?.map((item: any, i: number) => (
-                          <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-green-100 shadow-sm hover:shadow-md transition-shadow">
-                            <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-green-100" />
-                            <div className="flex-1 min-w-0">
-                              <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
-                              <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
-                            </div>
-                            <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* 收貨資訊 */}
-                    {order.shippingInfo && (
-                      <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
-                        <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                          <div className="bg-white p-3 rounded-lg">
-                            <span className="font-bold text-gray-600 block mb-1">收貨人</span>
-                            <span className="text-gray-900 font-medium">{order.shippingInfo.name}</span>
-                          </div>
-                          <div className="bg-white p-3 rounded-lg">
-                            <span className="font-bold text-gray-600 block mb-1">電話</span>
-                            <span className="text-gray-900 font-medium">{order.shippingInfo.phone}</span>
-                          </div>
-                          <div className="bg-white p-3 rounded-lg md:col-span-2">
-                            <span className="font-bold text-gray-600 block mb-1">地址</span>
-                            <span className="text-gray-900 font-medium">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
-                            <div className="text-gray-900 font-medium mt-1">{order.shippingInfo.address}</div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 付款資訊 */}
-                    {order.paymentInfo && (
-                      <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
-                        <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                          <div className="bg-white p-3 rounded-lg">
-                            <span className="font-bold text-gray-600 block mb-1">持卡人</span>
-                            <span className="text-gray-900 font-medium">{order.paymentInfo.cardholderName}</span>
-                          </div>
-                          <div className="bg-white p-3 rounded-lg">
-                            <span className="font-bold text-gray-600 block mb-1">卡號</span>
-                            <span className="text-gray-900 font-medium">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 總金額 */}
-                    <div className="flex justify-between items-center pt-4 border-t-2 border-green-200 bg-white/50 p-4 rounded-xl">
-                      <span className="text-gray-700 font-black text-lg">總金額</span>
-                      <span className="text-3xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-400 text-center py-8">目前沒有已完成的訂單</p>
-            )}
-          </div>
-          )}
-        </div>
           </>
         )}
 
@@ -958,9 +1095,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                 }}
                 className="bg-cute-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-pink-400 transition-colors shadow-lg active:scale-95"
               >
-                <Plus size={18} /> 新增商品
-              </button>
-            </div>
+            <Plus size={18} /> 新增商品
+          </button>
+        </div>
 
             {/* Product List Table */}
         <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-hidden mb-8">
@@ -1085,10 +1222,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
         {activeTab === 'stats' && (
           <>
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              {[
-                { label: '總銷售額', value: `$${totalSales.toFixed(2)}`, icon: DollarSign, color: 'bg-green-100 text-green-600' },
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          {[
+            { label: '總銷售額', value: `$${totalSales.toFixed(2)}`, icon: DollarSign, color: 'bg-green-100 text-green-600' },
                 { 
                   label: '待處理訂單', 
                   value: activeOrders.toString(), 
@@ -1096,17 +1233,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                   color: 'bg-blue-100 text-blue-600',
                   detail: orders.filter(o => o.status === 'pending')
                 },
-                { label: '顧客總數', value: uniqueCustomers.toString(), icon: Users, color: 'bg-purple-100 text-purple-600' },
-                { label: '成長率', value: orders.length > 0 ? '+100%' : '0%', icon: TrendingUp, color: 'bg-pink-100 text-pink-600' },
-              ].map((stat, i) => (
-                <div key={i} className="bg-white p-6 rounded-3xl border border-pink-50 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-gray-400 font-bold text-sm uppercase tracking-wider">{stat.label}</span>
-                    <div className={`p-3 rounded-2xl ${stat.color}`}>
-                      <stat.icon className="w-5 h-5" />
-                    </div>
-                  </div>
-                  <p className="text-3xl font-black text-gray-800">{stat.value}</p>
+            { label: '顧客總數', value: uniqueCustomers.toString(), icon: Users, color: 'bg-purple-100 text-purple-600' },
+            { label: '成長率', value: orders.length > 0 ? '+100%' : '0%', icon: TrendingUp, color: 'bg-pink-100 text-pink-600' },
+          ].map((stat, i) => (
+            <div key={i} className="bg-white p-6 rounded-3xl border border-pink-50 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-gray-400 font-bold text-sm uppercase tracking-wider">{stat.label}</span>
+                <div className={`p-3 rounded-2xl ${stat.color}`}>
+                  <stat.icon className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-3xl font-black text-gray-800">{stat.value}</p>
                   {stat.detail && stat.detail.length > 0 && stat.label === '待處理訂單' && (
                     <div className="mt-3 pt-3 border-t border-gray-100 space-y-2 max-h-32 overflow-y-auto">
                       {stat.detail.slice(0, 3).map((order: any, idx: number) => (
@@ -1134,9 +1271,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                       )}
                     </div>
                   )}
-                </div>
-              ))}
             </div>
+          ))}
+        </div>
 
             {/* 數據重置按鈕 */}
             <div className="mb-8 flex justify-end">
@@ -1150,42 +1287,42 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
             
             {/* Charts Section - 只在有數據時顯示 */}
             {(orders.length > 0 || products.length > 0) && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                <div className="bg-white p-8 rounded-3xl border border-pink-50 shadow-sm">
-                  <h3 className="text-lg font-bold text-gray-800 mb-6">營收概覽</h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                        <XAxis dataKey="name" stroke="#9ca3af" axisLine={false} tickLine={false} />
-                        <YAxis stroke="#9ca3af" axisLine={false} tickLine={false} />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: '#FFF', borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                        />
-                        <Line type="monotone" dataKey="sales" stroke="#FF90BC" strokeWidth={3} dot={{ r: 6, fill: '#FF90BC', strokeWidth: 2, stroke: '#FFF' }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div className="bg-white p-8 rounded-3xl border border-pink-50 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-800 mb-6">營收概覽</h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <XAxis dataKey="name" stroke="#9ca3af" axisLine={false} tickLine={false} />
+                  <YAxis stroke="#9ca3af" axisLine={false} tickLine={false} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#FFF', borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  />
+                  <Line type="monotone" dataKey="sales" stroke="#FF90BC" strokeWidth={3} dot={{ r: 6, fill: '#FF90BC', strokeWidth: 2, stroke: '#FFF' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
-                <div className="bg-white p-8 rounded-3xl border border-pink-50 shadow-sm">
-                  <h3 className="text-lg font-bold text-gray-800 mb-6">庫存分類</h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={categoryData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                        <XAxis dataKey="name" stroke="#9ca3af" axisLine={false} tickLine={false} />
-                        <YAxis stroke="#9ca3af" axisLine={false} tickLine={false} />
-                        <Tooltip 
-                          cursor={{ fill: '#FFF5F7' }}
-                          contentStyle={{ backgroundColor: '#FFF', borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                        />
-                        <Bar dataKey="count" fill="#8ACDD7" radius={[8, 8, 8, 8]} barSize={40} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
+          <div className="bg-white p-8 rounded-3xl border border-pink-50 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-800 mb-6">庫存分類</h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={categoryData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <XAxis dataKey="name" stroke="#9ca3af" axisLine={false} tickLine={false} />
+                  <YAxis stroke="#9ca3af" axisLine={false} tickLine={false} />
+                  <Tooltip 
+                    cursor={{ fill: '#FFF5F7' }}
+                    contentStyle={{ backgroundColor: '#FFF', borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  />
+                  <Bar dataKey="count" fill="#8ACDD7" radius={[8, 8, 8, 8]} barSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
             )}
           </>
         )}
@@ -1211,7 +1348,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                       <Edit2 size={18} /> 編輯內容
                     </button>
                   )}
-                </div>
+          </div>
               </div>
               <div className="p-6">
                 {isEditingMarquee ? (
@@ -1231,17 +1368,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                   <span className="text-xs text-gray-500 font-bold">訊息 {index + 1}</span>
                                   <div className="flex-1 flex flex-wrap gap-1">
                                     {emojis.map((emoji) => (
-                                      <button
+                      <button 
                                         key={emoji}
                                         onClick={() => insertEmoji(index, emoji)}
                                         className="text-xl hover:scale-125 transition-transform active:scale-150"
                                         title={`插入 ${emoji}`}
                                       >
                                         {emoji}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
+                      </button>
+                ))}
+          </div>
+        </div>
                                 <input
                                   type="text"
                                   value={msg}
@@ -1249,7 +1386,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                   placeholder="輸入跑馬燈訊息..."
                                   className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-cute-primary focus:outline-none focus:ring-2 focus:ring-pink-100"
                                 />
-                              </div>
+      </div>
                               <button
                                 onClick={() => removeMarqueeMessage(index)}
                                 className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
@@ -1594,7 +1731,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                     </>
                   ) : (
                     <>
-                      <Save size={18} /> 儲存變更
+                  <Save size={18} /> 儲存變更
                     </>
                   )}
                 </button>
@@ -1603,6 +1740,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };
