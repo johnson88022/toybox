@@ -772,63 +772,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                 </div>
               )}
             </div>
-          </>
-        )}
 
-        {activeTab === 'wishes' && (
-          <>
-            {/* 買家許願池 */}
-            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-hidden mb-8">
-              <div className="p-6 border-b border-pink-50 bg-gradient-to-r from-pink-50 to-white">
-                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-cute-primary" />
-                  買家許願池（即時同步）
-                </h3>
-              </div>
-              <div className="p-6">
-                {wishes && wishes.length > 0 ? (
-                  <ul className="space-y-3">
-                    {wishes.map((w, i) => {
-                      const wishId = typeof w === 'object' && w.id ? w.id : `wish-${i}`;
-                      const wishText = typeof w === 'string' ? w : (w.text || w);
-                      return (
-                        <li key={wishId} className="p-4 bg-pink-50 rounded-xl border border-pink-100 hover:bg-pink-100 transition-colors">
-                          <div className="flex items-start gap-3">
-                            <span className="text-cute-primary font-bold text-lg flex-shrink-0">#{i + 1}</span>
-                            <p className="text-gray-700 font-medium break-words flex-1">{wishText}</p>
-                            {onDeleteWish && (
-                              <button
-                                onClick={async () => {
-                                  if (window.confirm('確定要刪除此許願嗎？')) {
-                                    try {
-                                      await onDeleteWish(wishId);
-                                    } catch (error) {
-                                      console.error('Failed to delete wish:', error);
-                                      alert('刪除失敗，請重試');
-                                    }
-                                  }
-                                }}
-                                className="flex-shrink-0 w-8 h-8 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg flex items-center justify-center transition-colors"
-                                aria-label="刪除許願"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <p className="text-gray-400 text-center py-8">目前還沒有買家許願，期待第一個願望！✨</p>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-
-        {activeTab === 'orders' && (
-          <>
             {/* 已取消訂單列表 */}
             <div className="bg-white rounded-3xl border-2 border-gray-200 shadow-lg overflow-hidden mb-8">
               <button
@@ -941,6 +885,59 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
             </div>
           </>
         )}
+
+        {activeTab === 'wishes' && (
+          <>
+            {/* 買家許願池 */}
+            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-hidden mb-8">
+              <div className="p-6 border-b border-pink-50 bg-gradient-to-r from-pink-50 to-white">
+                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-cute-primary" />
+                  買家許願池（即時同步）
+                </h3>
+              </div>
+              <div className="p-6">
+                {wishes && wishes.length > 0 ? (
+                  <ul className="space-y-3">
+                    {wishes.map((w, i) => {
+                      const wishId = typeof w === 'object' && w.id ? w.id : `wish-${i}`;
+                      const wishText = typeof w === 'string' ? w : (w.text || w);
+                      return (
+                        <li key={wishId} className="p-4 bg-pink-50 rounded-xl border border-pink-100 hover:bg-pink-100 transition-colors">
+                          <div className="flex items-start gap-3">
+                            <span className="text-cute-primary font-bold text-lg flex-shrink-0">#{i + 1}</span>
+                            <p className="text-gray-700 font-medium break-words flex-1">{wishText}</p>
+                            {onDeleteWish && (
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm('確定要刪除此許願嗎？')) {
+                                    try {
+                                      await onDeleteWish(wishId);
+                                    } catch (error) {
+                                      console.error('Failed to delete wish:', error);
+                                      alert('刪除失敗，請重試');
+                                    }
+                                  }
+                                }}
+                                className="flex-shrink-0 w-8 h-8 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg flex items-center justify-center transition-colors"
+                                aria-label="刪除許願"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="text-gray-400 text-center py-8">目前還沒有買家許願，期待第一個願望！✨</p>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
 
         {activeTab === 'products' && (
           <>

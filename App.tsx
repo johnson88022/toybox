@@ -581,34 +581,34 @@ const App: React.FC = () => {
         </div>
 
         {/* 分類篩選和排序 */}
-        <div className="mb-4">
-          <div className="bg-gradient-to-br from-white to-pink-50/30 backdrop-blur-sm rounded-xl p-3 border border-pink-100 shadow-sm">
-            <div className="flex flex-col gap-2">
+        <div className="mb-3">
+          <div className="bg-white/50 backdrop-blur-sm rounded-lg p-1.5 border border-pink-100/50 shadow-sm">
+            <div className="flex flex-col gap-1">
               {/* 商品分類 - 可展開 */}
               <div>
                 <button
                   onClick={() => setCategoryExpanded(!categoryExpanded)}
-                  className="w-full flex items-center justify-between py-1"
+                  className="w-full flex items-center justify-between py-0.5 px-1"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-0.5 h-3 bg-gradient-to-b from-cute-primary to-cute-secondary rounded-full"></div>
-                    <h3 className="text-xs font-semibold text-gray-700">商品分類</h3>
+                  <div className="flex items-center gap-1">
+                    <div className="w-0.5 h-2 bg-gradient-to-b from-cute-primary to-cute-secondary rounded-full"></div>
+                    <h3 className="text-[10px] font-medium text-gray-600">分類</h3>
                   </div>
                   {categoryExpanded ? (
-                    <ChevronUp className="w-4 h-4 text-gray-500" />
+                    <ChevronUp className="w-3 h-3 text-gray-400" />
                   ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-500" />
+                    <ChevronDown className="w-3 h-3 text-gray-400" />
                   )}
                 </button>
                 {categoryExpanded && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
+                  <div className="flex flex-wrap gap-1 mt-1">
                     {categories.map((category) => (
                       <button
                         key={category}
                         onClick={() => setSelectedCategory(category)}
-                        className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-200 active:scale-95 ${
+                        className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-all duration-200 active:scale-95 ${
                           selectedCategory === category
-                            ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-md'
+                            ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-sm'
                             : 'bg-white text-gray-600 hover:bg-pink-50 border border-gray-100'
                         }`}
                       >
@@ -623,23 +623,23 @@ const App: React.FC = () => {
               <div>
                 <button
                   onClick={() => setSortExpanded(!sortExpanded)}
-                  className="w-full flex items-center justify-between py-1"
+                  className="w-full flex items-center justify-between py-0.5 px-1"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-0.5 h-3 bg-gradient-to-b from-cute-secondary to-cute-primary rounded-full"></div>
-                    <h3 className="text-xs font-semibold text-gray-700">排序方式</h3>
+                  <div className="flex items-center gap-1">
+                    <div className="w-0.5 h-2 bg-gradient-to-b from-cute-secondary to-cute-primary rounded-full"></div>
+                    <h3 className="text-[10px] font-medium text-gray-600">排序</h3>
                   </div>
                   {sortExpanded ? (
-                    <ChevronUp className="w-4 h-4 text-gray-500" />
+                    <ChevronUp className="w-3 h-3 text-gray-400" />
                   ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-500" />
+                    <ChevronDown className="w-3 h-3 text-gray-400" />
                   )}
                 </button>
                 {sortExpanded && (
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full bg-white border border-pink-200 rounded-lg px-2 py-1.5 text-xs text-gray-700 font-semibold focus:outline-none focus:ring-1 focus:ring-pink-200 focus:border-cute-primary transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23FF90BC%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_0.25rem_center] bg-no-repeat mt-2"
+                    className="w-full bg-white border border-pink-200 rounded-md px-1.5 py-1 text-[10px] text-gray-700 font-medium focus:outline-none focus:ring-1 focus:ring-pink-200 focus:border-cute-primary transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23FF90BC%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:10px] bg-[right_0.2rem_center] bg-no-repeat mt-1"
                   >
                     <option value="newest">最新上架</option>
                     <option value="price-asc">價格：低到高</option>
@@ -1039,8 +1039,8 @@ const App: React.FC = () => {
                                 <p className="text-sm text-gray-500">數量: {item.quantity} × ${item.price.toFixed(2)}</p>
                               )}
                             </div>
-                            <div className="flex-shrink-0 text-right">
-                              <span className={`font-bold text-sm ${isSelected ? 'text-cute-primary' : 'text-gray-400'}`}>
+                            <div className="flex-shrink-0 text-right min-w-[60px]">
+                              <span className={`font-bold text-sm whitespace-nowrap ${isSelected ? 'text-cute-primary' : 'text-gray-400'}`}>
                                 ${(item.price * (isSelected ? checkoutQuantity : item.quantity)).toFixed(2)}
                               </span>
                             </div>

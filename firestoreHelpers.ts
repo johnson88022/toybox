@@ -283,28 +283,42 @@ export const deleteWish = async (wishId: string) => {
 export const addOrderAndUpdateStock = async (order: any, cart: any[]) => {
   // 修正：Firestore transactions 要求所有讀取在寫入之前完成
   await runTransaction(db, async (transaction) => {
-    // 第一步：讀取所有需要更新的商品文檔
-    const productRefs = cart.map(item => doc(db, 'products', item.id));
+    // 第一步：合併相同商品的數量（避免重複讀取和更新）
+    const productQuantities = new Map<string, number>();
+    const productNames = new Map<string, string>();
+    for (const item of cart) {
+      const existingQty = productQuantities.get(item.id) || 0;
+      productQuantities.set(item.id, existingQty + item.quantity);
+      if (!productNames.has(item.id)) {
+        productNames.set(item.id, item.name);
+      }
+    }
+    
+    // 第二步：讀取所有需要更新的商品文檔（去重後）
+    const uniqueProductIds = Array.from(productQuantities.keys());
+    const productRefs = uniqueProductIds.map(id => doc(db, 'products', id));
     const productSnaps = await Promise.all(productRefs.map(ref => transaction.get(ref)));
     
-    // 第二步：驗證庫存並準備更新
+    // 第三步：驗證庫存並準備更新
     const updates: Array<{ ref: any; newStock: number }> = [];
-    for (let i = 0; i < cart.length; i++) {
-      const item = cart[i];
+    for (let i = 0; i < uniqueProductIds.length; i++) {
+      const productId = uniqueProductIds[i];
+      const totalQuantity = productQuantities.get(productId) || 0;
       const snap = productSnaps[i];
       if (snap.exists()) {
         const currStock = snap.data().stock || 0;
-        if (currStock < item.quantity) {
-          throw new Error(`商品「${item.name}」庫存不足！目前僅剩 ${currStock} 件，您選擇了 ${item.quantity} 件。`);
+        if (currStock < totalQuantity) {
+          const productName = productNames.get(productId) || '商品';
+          throw new Error(`商品「${productName}」庫存不足！目前僅剩 ${currStock} 件，您選擇了 ${totalQuantity} 件。`);
         }
         updates.push({
           ref: productRefs[i],
-          newStock: Math.max(0, currStock - item.quantity)
+          newStock: Math.max(0, currStock - totalQuantity)
         });
       }
     }
     
-    // 第三步：執行所有更新
+    // 第四步：執行所有更新
     for (const update of updates) {
       transaction.update(update.ref, { stock: update.newStock });
     }
