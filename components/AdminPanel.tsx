@@ -228,15 +228,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
       }
       
       // 處理多張圖片
-      const imagesArray = newProductImages.length > 0 ? newProductImages : (imageUrl ? [imageUrl] : []);
+      const imagesArray = newProductImages.length > 0 ? newProductImages : (newProductImagePreview ? [newProductImagePreview] : (imageUrl ? [imageUrl] : []));
       
       const productToAdd: any = {
         id: `product-${Date.now()}`,
         name: newProduct.name.trim(),
         price: Number(newProduct.price),
         description: (newProduct.description || '').trim(),
-        category: (newProduct.category || 'Custom'),
-        image: imageUrl,
+        category: (newProduct.category || customCategories[0] || 'Custom'),
+        image: imagesArray.length > 0 ? imagesArray[0] : imageUrl,
         stock: Number(newProduct.stock),
         rating: 5.0,
         isNew: true,
