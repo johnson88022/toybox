@@ -815,7 +815,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                 )}
               </div>
             </div>
+          </>
+        )}
 
+        {activeTab === 'orders' && (
+          <>
             {/* 已取消訂單列表 */}
             <div className="bg-white rounded-3xl border-2 border-gray-200 shadow-lg overflow-hidden mb-8">
               <button

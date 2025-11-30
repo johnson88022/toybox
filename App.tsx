@@ -365,6 +365,15 @@ const App: React.FC = () => {
 
     try {
       await addOrderAndUpdateStock(order, selectedItems);
+      
+      // 如果用戶選擇儲存付款資訊為預設
+      if (savePaymentAsDefault && user) {
+        try {
+          localStorage.setItem('toybox_payment_info', JSON.stringify(paymentInfo));
+        } catch (error) {
+          console.error('Failed to save payment info to localStorage:', error);
+        }
+      }
     } catch (error: any) {
       alert(error.message || '結帳失敗，請重試');
       setCheckoutStep(1);
@@ -562,35 +571,35 @@ const App: React.FC = () => {
         </div>
 
         {/* 分類篩選和排序 */}
-        <div className="mb-6">
-          <div className="bg-gradient-to-br from-white to-pink-50/50 backdrop-blur-sm rounded-2xl p-4 border-2 border-pink-100 shadow-lg">
-            <div className="flex flex-col gap-4">
+        <div className="mb-4">
+          <div className="bg-gradient-to-br from-white to-pink-50/30 backdrop-blur-sm rounded-xl p-3 border border-pink-100 shadow-sm">
+            <div className="flex flex-col gap-2">
               {/* 商品分類 - 可展開 */}
               <div>
                 <button
                   onClick={() => setCategoryExpanded(!categoryExpanded)}
-                  className="w-full flex items-center justify-between mb-4"
+                  className="w-full flex items-center justify-between py-1"
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-1 h-4 bg-gradient-to-b from-cute-primary to-cute-secondary rounded-full"></div>
-                    <h3 className="text-base font-bold text-gray-800">商品分類</h3>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-0.5 h-3 bg-gradient-to-b from-cute-primary to-cute-secondary rounded-full"></div>
+                    <h3 className="text-xs font-semibold text-gray-700">商品分類</h3>
                   </div>
                   {categoryExpanded ? (
-                    <ChevronUp className="w-5 h-5 text-gray-600" />
+                    <ChevronUp className="w-4 h-4 text-gray-500" />
                   ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-600" />
+                    <ChevronDown className="w-4 h-4 text-gray-500" />
                   )}
                 </button>
                 {categoryExpanded && (
-                  <div className="flex flex-wrap gap-2.5">
+                  <div className="flex flex-wrap gap-1.5 mt-2">
                     {categories.map((category) => (
                       <button
                         key={category}
                         onClick={() => setSelectedCategory(category)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 active:scale-95 ${
+                        className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-200 active:scale-95 ${
                           selectedCategory === category
-                            ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-lg shadow-pink-300/50'
-                            : 'bg-white text-gray-700 hover:bg-pink-50 border border-gray-100 hover:border-pink-200 shadow-sm'
+                            ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-md'
+                            : 'bg-white text-gray-600 hover:bg-pink-50 border border-gray-100'
                         }`}
                       >
                         {category}
@@ -604,23 +613,23 @@ const App: React.FC = () => {
               <div>
                 <button
                   onClick={() => setSortExpanded(!sortExpanded)}
-                  className="w-full flex items-center justify-between mb-4"
+                  className="w-full flex items-center justify-between py-1"
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-1 h-4 bg-gradient-to-b from-cute-secondary to-cute-primary rounded-full"></div>
-                    <h3 className="text-base font-bold text-gray-800">排序方式</h3>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-0.5 h-3 bg-gradient-to-b from-cute-secondary to-cute-primary rounded-full"></div>
+                    <h3 className="text-xs font-semibold text-gray-700">排序方式</h3>
                   </div>
                   {sortExpanded ? (
-                    <ChevronUp className="w-5 h-5 text-gray-600" />
+                    <ChevronUp className="w-4 h-4 text-gray-500" />
                   ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-600" />
+                    <ChevronDown className="w-4 h-4 text-gray-500" />
                   )}
                 </button>
                 {sortExpanded && (
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-xs text-gray-800 font-bold focus:outline-none focus:ring-2 focus:ring-pink-200/50 focus:border-cute-primary transition-all shadow-sm hover:shadow-md cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23FF90BC%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_0.5rem_center] bg-no-repeat"
+                    className="w-full bg-white border border-pink-200 rounded-lg px-2 py-1.5 text-xs text-gray-700 font-semibold focus:outline-none focus:ring-1 focus:ring-pink-200 focus:border-cute-primary transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23FF90BC%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_0.25rem_center] bg-no-repeat mt-2"
                   >
                     <option value="newest">最新上架</option>
                     <option value="price-asc">價格：低到高</option>
@@ -935,6 +944,7 @@ const App: React.FC = () => {
                                 type="checkbox"
                                 checked={isSelected}
                                 onChange={(e) => {
+                                  e.stopPropagation();
                                   setSelectedCartItems(prev => {
                                     const newSet = new Set(prev);
                                     if (e.target.checked) {
@@ -953,7 +963,8 @@ const App: React.FC = () => {
                                     return newSet;
                                   });
                                 }}
-                                className="w-5 h-5 text-cute-primary border-gray-300 rounded focus:ring-cute-primary cursor-pointer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-6 h-6 text-cute-primary border-gray-300 rounded focus:ring-2 focus:ring-cute-primary cursor-pointer flex-shrink-0"
                               />
                               <img src={(item.images && item.images.length > 0) ? item.images[0] : item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
                             <div className="flex-1 min-w-0">
@@ -961,9 +972,10 @@ const App: React.FC = () => {
                               {isSelected ? (
                                 <div className="flex flex-wrap items-center gap-2 mt-2">
                                   <span className="text-xs text-gray-500">結帳數量:</span>
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-1.5">
                                     <button
-                                      onClick={() => {
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         if (checkoutQuantity > 1) {
                                           setCartItemQuantities(prev => {
                                             const newMap = new Map(prev);
@@ -972,7 +984,7 @@ const App: React.FC = () => {
                                           });
                                         }
                                       }}
-                                      className="w-5 h-5 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center text-gray-700 font-bold text-xs"
+                                      className="w-7 h-7 bg-gray-200 hover:bg-gray-300 active:bg-gray-400 rounded-lg flex items-center justify-center text-gray-700 font-bold text-sm transition-colors touch-manipulation"
                                       disabled={checkoutQuantity <= 1}
                                     >
                                       -
@@ -983,6 +995,7 @@ const App: React.FC = () => {
                                       max={item.quantity}
                                       value={checkoutQuantity}
                                       onChange={(e) => {
+                                        e.stopPropagation();
                                         const newQty = Math.max(1, Math.min(item.quantity, parseInt(e.target.value) || 1));
                                         setCartItemQuantities(prev => {
                                           const newMap = new Map(prev);
@@ -990,10 +1003,12 @@ const App: React.FC = () => {
                                           return newMap;
                                         });
                                       }}
-                                      className="w-10 text-center border border-gray-300 rounded px-1 py-0.5 text-xs font-bold"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="w-12 text-center border border-gray-300 rounded-lg px-2 py-1 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cute-primary"
                                     />
                                     <button
-                                      onClick={() => {
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         if (checkoutQuantity < item.quantity) {
                                           setCartItemQuantities(prev => {
                                             const newMap = new Map(prev);
@@ -1002,7 +1017,7 @@ const App: React.FC = () => {
                                           });
                                         }
                                       }}
-                                      className="w-5 h-5 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center text-gray-700 font-bold text-xs"
+                                      className="w-7 h-7 bg-gray-200 hover:bg-gray-300 active:bg-gray-400 rounded-lg flex items-center justify-center text-gray-700 font-bold text-sm transition-colors touch-manipulation"
                                       disabled={checkoutQuantity >= item.quantity}
                                     >
                                       +
@@ -1133,7 +1148,7 @@ const App: React.FC = () => {
               {checkoutStep === 3 && (
                 <div>
                   <h2 className="text-3xl font-black text-gray-800 mb-6">付款資訊</h2>
-                  <div className="space-y-4 mb-6">
+                  <div className="space-y-4 mb-4">
                     <div>
                       <label className="block text-sm font-bold text-gray-600 mb-2">持卡人姓名 *</label>
                       <input 
@@ -1184,6 +1199,19 @@ const App: React.FC = () => {
                       </div>
                     </div>
                   </div>
+                  {user && (
+                    <div className="mb-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={savePaymentAsDefault}
+                          onChange={(e) => setSavePaymentAsDefault(e.target.checked)}
+                          className="w-5 h-5 text-cute-primary border-gray-300 rounded focus:ring-cute-primary cursor-pointer"
+                        />
+                        <span className="text-sm text-gray-700 font-medium">儲存此付款資訊為預設，下次結帳時自動填入</span>
+                      </label>
+                    </div>
+                  )}
                   <div className="p-6 border border-pink-100 bg-pink-50 rounded-2xl mb-6">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-500 font-bold">總金額</span>
