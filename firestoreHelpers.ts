@@ -266,15 +266,32 @@ export const deleteWish = async (wishId: string) => {
 
 // ORDERS
 export const addOrderAndUpdateStock = async (order: any, cart: any[]) => {
-  // 修正：先在 transaction 內更新庫存，然後在外部建立訂單
+  // 修正：Firestore transactions 要求所有讀取在寫入之前完成
   await runTransaction(db, async (transaction) => {
-    for(const item of cart) {
-      const ref = doc(db, 'products', item.id);
-      const snap = await transaction.get(ref);
+    // 第一步：讀取所有需要更新的商品文檔
+    const productRefs = cart.map(item => doc(db, 'products', item.id));
+    const productSnaps = await Promise.all(productRefs.map(ref => transaction.get(ref)));
+    
+    // 第二步：驗證庫存並準備更新
+    const updates: Array<{ ref: any; newStock: number }> = [];
+    for (let i = 0; i < cart.length; i++) {
+      const item = cart[i];
+      const snap = productSnaps[i];
       if (snap.exists()) {
         const currStock = snap.data().stock || 0;
-        transaction.update(ref, { stock: Math.max(0, currStock - item.quantity) });
+        if (currStock < item.quantity) {
+          throw new Error(`商品「${item.name}」庫存不足！目前僅剩 ${currStock} 件，您選擇了 ${item.quantity} 件。`);
+        }
+        updates.push({
+          ref: productRefs[i],
+          newStock: Math.max(0, currStock - item.quantity)
+        });
       }
+    }
+    
+    // 第三步：執行所有更新
+    for (const update of updates) {
+      transaction.update(update.ref, { stock: update.newStock });
     }
   });
   

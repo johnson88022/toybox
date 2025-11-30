@@ -562,8 +562,8 @@ const App: React.FC = () => {
         </div>
 
         {/* 分類篩選和排序 */}
-        <div className="mb-8">
-          <div className="bg-gradient-to-br from-white to-pink-50/50 backdrop-blur-sm rounded-3xl p-6 border-2 border-pink-100 shadow-lg">
+        <div className="mb-6">
+          <div className="bg-gradient-to-br from-white to-pink-50/50 backdrop-blur-sm rounded-2xl p-4 border-2 border-pink-100 shadow-lg">
             <div className="flex flex-col gap-4">
               {/* 商品分類 - 可展開 */}
               <div>
@@ -572,8 +572,8 @@ const App: React.FC = () => {
                   className="w-full flex items-center justify-between mb-4"
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-1 h-6 bg-gradient-to-b from-cute-primary to-cute-secondary rounded-full"></div>
-                    <h3 className="text-lg font-black text-gray-800">商品分類</h3>
+                    <div className="w-1 h-4 bg-gradient-to-b from-cute-primary to-cute-secondary rounded-full"></div>
+                    <h3 className="text-base font-bold text-gray-800">商品分類</h3>
                   </div>
                   {categoryExpanded ? (
                     <ChevronUp className="w-5 h-5 text-gray-600" />
@@ -587,10 +587,10 @@ const App: React.FC = () => {
                       <button
                         key={category}
                         onClick={() => setSelectedCategory(category)}
-                        className={`px-6 py-3 rounded-2xl text-sm font-black transition-all duration-200 active:scale-95 ${
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 active:scale-95 ${
                           selectedCategory === category
-                            ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-xl shadow-pink-300/50 transform scale-105'
-                            : 'bg-white text-gray-700 hover:bg-pink-50 border-2 border-gray-100 hover:border-pink-200 shadow-sm'
+                            ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-lg shadow-pink-300/50'
+                            : 'bg-white text-gray-700 hover:bg-pink-50 border border-gray-100 hover:border-pink-200 shadow-sm'
                         }`}
                       >
                         {category}
@@ -607,8 +607,8 @@ const App: React.FC = () => {
                   className="w-full flex items-center justify-between mb-4"
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-1 h-6 bg-gradient-to-b from-cute-secondary to-cute-primary rounded-full"></div>
-                    <h3 className="text-lg font-black text-gray-800">排序方式</h3>
+                    <div className="w-1 h-4 bg-gradient-to-b from-cute-secondary to-cute-primary rounded-full"></div>
+                    <h3 className="text-base font-bold text-gray-800">排序方式</h3>
                   </div>
                   {sortExpanded ? (
                     <ChevronUp className="w-5 h-5 text-gray-600" />
@@ -620,7 +620,7 @@ const App: React.FC = () => {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full bg-white border-2 border-pink-200 rounded-2xl px-5 py-3.5 text-sm text-gray-800 font-black focus:outline-none focus:ring-4 focus:ring-pink-200/50 focus:border-cute-primary transition-all shadow-md hover:shadow-lg cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23FF90BC%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:20px] bg-[right_1rem_center] bg-no-repeat"
+                    className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-xs text-gray-800 font-bold focus:outline-none focus:ring-2 focus:ring-pink-200/50 focus:border-cute-primary transition-all shadow-sm hover:shadow-md cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23FF90BC%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_0.5rem_center] bg-no-repeat"
                   >
                     <option value="newest">最新上架</option>
                     <option value="price-asc">價格：低到高</option>
@@ -747,7 +747,7 @@ const App: React.FC = () => {
               ) : (
                 cart.map(item => (
                   <div key={item.id} className="flex gap-4 items-center bg-gray-50 p-4 rounded-2xl border border-pink-100 shadow-sm">
-                    <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover" />
+                    <img src={(item.images && item.images.length > 0) ? item.images[0] : item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover" />
                     <div className="flex-1">
                       <h4 className="text-gray-800 font-bold text-sm line-clamp-1">{item.name}</h4>
                       <p className="text-cute-primary font-bold text-sm">${item.price.toFixed(2)} x {item.quantity}</p>
@@ -955,12 +955,13 @@ const App: React.FC = () => {
                                 }}
                                 className="w-5 h-5 text-cute-primary border-gray-300 rounded focus:ring-cute-primary cursor-pointer"
                               />
-                              <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
-                              <div className="flex-1">
-                                <h3 className="font-bold text-gray-800">{item.name}</h3>
-                                {isSelected ? (
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <span className="text-sm text-gray-500">結帳數量:</span>
+                              <img src={(item.images && item.images.length > 0) ? item.images[0] : item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-bold text-gray-800 truncate">{item.name}</h3>
+                              {isSelected ? (
+                                <div className="flex flex-wrap items-center gap-2 mt-2">
+                                  <span className="text-xs text-gray-500">結帳數量:</span>
+                                  <div className="flex items-center gap-1">
                                     <button
                                       onClick={() => {
                                         if (checkoutQuantity > 1) {
@@ -971,7 +972,7 @@ const App: React.FC = () => {
                                           });
                                         }
                                       }}
-                                      className="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center text-gray-700 font-bold"
+                                      className="w-5 h-5 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center text-gray-700 font-bold text-xs"
                                       disabled={checkoutQuantity <= 1}
                                     >
                                       -
@@ -989,7 +990,7 @@ const App: React.FC = () => {
                                           return newMap;
                                         });
                                       }}
-                                      className="w-12 text-center border border-gray-300 rounded px-2 py-1 text-sm font-bold"
+                                      className="w-10 text-center border border-gray-300 rounded px-1 py-0.5 text-xs font-bold"
                                     />
                                     <button
                                       onClick={() => {
@@ -1001,20 +1002,23 @@ const App: React.FC = () => {
                                           });
                                         }
                                       }}
-                                      className="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center text-gray-700 font-bold"
+                                      className="w-5 h-5 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center text-gray-700 font-bold text-xs"
                                       disabled={checkoutQuantity >= item.quantity}
                                     >
                                       +
                                     </button>
-                                    <span className="text-xs text-gray-400">/ {item.quantity} 件</span>
                                   </div>
-                                ) : (
-                                  <p className="text-sm text-gray-500">數量: {item.quantity} × ${item.price.toFixed(2)}</p>
-                                )}
-                              </div>
-                              <span className={`font-bold ${isSelected ? 'text-cute-primary' : 'text-gray-400'}`}>
+                                  <span className="text-xs text-gray-400">/ {item.quantity} 件</span>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-500">數量: {item.quantity} × ${item.price.toFixed(2)}</p>
+                              )}
+                            </div>
+                            <div className="flex-shrink-0 text-right">
+                              <span className={`font-bold text-sm ${isSelected ? 'text-cute-primary' : 'text-gray-400'}`}>
                                 ${(item.price * (isSelected ? checkoutQuantity : item.quantity)).toFixed(2)}
                               </span>
+                            </div>
                             </div>
                           );
                         })}

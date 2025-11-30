@@ -46,7 +46,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
   // Derived Statistics from REAL orders (passed via props)
   const totalSales = orders.reduce((sum, order) => sum + order.total, 0);
-  const activeOrders = orders.filter(o => o.status === 'pending').length;
+  const pendingOrdersCount = orders.filter(o => o.status === 'pending').length;
+  const shippedOrdersCount = orders.filter(o => o.status === 'shipped').length;
+  const completedOrdersCount = orders.filter(o => o.status === 'completed').length;
+  const cancelledOrdersCount = orders.filter(o => o.status === 'cancelled').length;
+  const totalOrdersCount = orders.length;
   // Mock total users for now as we don't have a full DB, but could track unique userIds from orders
   const uniqueCustomers = new Set(orders.map(o => o.userId)).size; 
 
@@ -1373,29 +1377,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                  <img src={newProductImagePreview || newProduct?.image || 'https://via.placeholder.com/400'} alt="Preview" className={`w-20 h-20 rounded-xl ${newProduct?.imageFit === 'cover' ? 'object-cover' : 'object-contain'} border border-gray-200 bg-gray-50`} />
                  <div className="flex-1">
                     <label className="block text-sm font-bold text-gray-600 mb-1">商品圖片</label>
-                    <div className="flex gap-2">
-                      <label className="flex-1 flex items-center justify-center px-4 py-2 bg-gray-50 border border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors active:bg-gray-200">
-                        <span className="text-sm text-gray-500 flex items-center gap-2"><Upload size={16}/> 從相簿選擇</span>
-                        <input 
-                          type="file" 
-                          id="new-product-image-input-album"
-                          className="hidden" 
-                          accept="image/*"
-                          onChange={(e) => handleImageChange(e, true)}
-                        />
-                      </label>
-                      <label className="flex-1 flex items-center justify-center px-4 py-2 bg-gray-50 border border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors active:bg-gray-200">
-                        <span className="text-sm text-gray-500 flex items-center gap-2"><Upload size={16}/> 拍照</span>
-                        <input 
-                          type="file" 
-                          id="new-product-image-input-camera"
-                          className="hidden" 
-                          accept="image/*"
-                          capture="environment"
-                          onChange={(e) => handleImageChange(e, true)}
-                        />
-                      </label>
-                    </div>
+                    <label className="flex items-center justify-center w-full px-4 py-2 bg-gray-50 border border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors active:bg-gray-200">
+                      <span className="text-sm text-gray-500 flex items-center gap-2"><Upload size={16}/> 上傳圖片</span>
+                      <input 
+                        type="file" 
+                        id="new-product-image-input"
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={(e) => handleImageChange(e, true)}
+                      />
+                    </label>
                     <p className="text-xs text-gray-400 mt-1">支援相機拍照或從相簿選擇</p>
                     <div className="mt-2">
                       <label htmlFor="new-product-image-fit-select" className="block text-xs font-bold text-gray-600 mb-1">圖片顯示方式</label>
@@ -1523,29 +1514,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                  <img src={(editingProduct as any)._newImagePreview || editingProduct.image} alt="Preview" className={`w-20 h-20 rounded-xl ${editingProduct.imageFit === 'cover' ? 'object-cover' : 'object-contain'} border border-gray-200 bg-gray-50`} />
                  <div className="flex-1">
                     <label className="block text-sm font-bold text-gray-600 mb-1">商品圖片</label>
-                    <div className="flex gap-2">
-                      <label className="flex-1 flex items-center justify-center px-4 py-2 bg-gray-50 border border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors active:bg-gray-200">
-                        <span className="text-sm text-gray-500 flex items-center gap-2"><Upload size={16}/> 從相簿選擇</span>
-                        <input 
-                          type="file" 
-                          id="edit-product-image-input-album"
-                          className="hidden" 
-                          accept="image/*"
-                          onChange={(e) => handleImageChange(e, false)}
-                        />
-                      </label>
-                      <label className="flex-1 flex items-center justify-center px-4 py-2 bg-gray-50 border border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors active:bg-gray-200">
-                        <span className="text-sm text-gray-500 flex items-center gap-2"><Upload size={16}/> 拍照</span>
-                        <input 
-                          type="file" 
-                          id="edit-product-image-input-camera"
-                          className="hidden" 
-                          accept="image/*"
-                          capture="environment"
-                          onChange={(e) => handleImageChange(e, false)}
-                        />
-                      </label>
-                    </div>
+                    <label className="flex items-center justify-center w-full px-4 py-2 bg-gray-50 border border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors active:bg-gray-200">
+                      <span className="text-sm text-gray-500 flex items-center gap-2"><Upload size={16}/> 上傳圖片</span>
+                      <input 
+                        type="file" 
+                        id="edit-product-image-input"
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={(e) => handleImageChange(e, false)}
+                      />
+                    </label>
                     <p className="text-xs text-gray-400 mt-1">支援相機拍照或從相簿選擇</p>
                     <div className="mt-2">
                       <label htmlFor="edit-product-image-fit-select" className="block text-xs font-bold text-gray-600 mb-1">圖片顯示方式</label>
