@@ -94,10 +94,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
         ? editedImages 
         : (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : [editingProduct.image]);
       
-      // 保持原主圖不變，新上傳的圖片只添加到 images 陣列中
+      // 如果編輯後的圖片陣列存在且不為空，使用第一張圖片作為新的主圖
+      const newMainImage = (editedImages !== undefined && editedImages.length > 0) 
+        ? editedImages[0] 
+        : editingProduct.image;
+      
       const updatedProduct: any = {
         ...editingProduct,
-        image: editingProduct.image // 保持原主圖
+        image: newMainImage // 使用新圖片作為主圖
       };
       
       // 處理 images 欄位：如果有多張圖片則設置，否則移除該欄位

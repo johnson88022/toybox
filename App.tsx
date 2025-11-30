@@ -72,6 +72,9 @@ const App: React.FC = () => {
     cardholderName: ''
   });
   
+  // Payment default save state
+  const [savePaymentAsDefault, setSavePaymentAsDefault] = useState(false);
+
   // Login State
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
