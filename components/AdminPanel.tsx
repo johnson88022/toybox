@@ -747,7 +747,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             </>
                           ) : (
                             <>
-                              ✓ 標記為已完成
+                              <span>✓</span> 標記為已完成
                             </>
                           )}
                         </button>
@@ -889,7 +889,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             </>
                           ) : (
                             <>
-                              ✓ 標記為已完成
+                              <span>✓</span> 標記為已完成
                             </>
                           )}
                         </button>
