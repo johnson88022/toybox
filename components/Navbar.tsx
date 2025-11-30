@@ -103,7 +103,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onCartClick, user, onLoginCl
               )}
               {/* 展開帳戶選單 */}
               {user && accountMenuOpen && (
-                <div className="absolute right-0 mt-3 w-48 rounded-xl shadow-lg bg-white border border-pink-100 z-50 p-2 flex flex-col">
+                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl shadow-lg bg-white border border-pink-100 z-50 p-2 flex flex-col">
                   {onProfileClick && (
                     <>
                       <button
