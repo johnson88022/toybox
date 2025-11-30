@@ -12,11 +12,12 @@ interface AdminPanelProps {
   onAddProduct: (product: Product) => void;
   onDeleteProduct?: (id: string) => void;
   onUpdateOrderStatus?: (orderId: string, status: 'pending' | 'shipped' | 'completed' | 'cancelled') => Promise<void>;
-  wishes?: string[];
+  wishes?: string[] | Array<{ id: string; text?: string; [key: string]: any }>;
+  onDeleteWish?: (wishId: string) => Promise<void>;
   onResetData?: () => Promise<void>;
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProduct, onAddProduct, onDeleteProduct, onUpdateOrderStatus, wishes = [], onResetData }) => {
+const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProduct, onAddProduct, onDeleteProduct, onUpdateOrderStatus, wishes = [], onDeleteWish, onResetData }) => {
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   const [completingOrderId, setCompletingOrderId] = useState<string | null>(null);
   const [isEditingMarquee, setIsEditingMarquee] = useState(false);
@@ -615,29 +616,32 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
             {orders.filter(o => o.status === 'pending').length > 0 ? (
               <div className="space-y-4">
                 {orders.filter(o => o.status === 'pending').map((order: any) => (
-                  <div key={order.id} className="p-6 bg-blue-50/50 rounded-xl border-2 border-blue-200 shadow-sm">
-                    <div className="flex justify-between items-start mb-4">
+                  <div key={order.id} className="p-6 bg-gradient-to-br from-blue-50 to-white rounded-2xl border-2 border-blue-200 shadow-lg hover:shadow-xl transition-shadow">
+                    <div className="flex justify-between items-start mb-5 pb-4 border-b-2 border-blue-200">
                       <div>
-                        <div className="font-bold text-gray-800 text-lg mb-1">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
-                        <div className="text-sm text-gray-500">
-                          {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
+                        <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
+                        <div className="text-sm text-gray-600 font-medium">
+                          📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
                         </div>
                       </div>
-                      <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">待處理</span>
+                      <span className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-xl text-sm font-black shadow-sm">待處理</span>
                     </div>
                     
                     {/* 商品列表 */}
-                    <div className="mb-4">
-                      <div className="font-bold text-gray-700 mb-2">商品內容：</div>
-                      <div className="space-y-2">
+                    <div className="mb-5">
+                      <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
+                        <Package size={18} className="text-blue-600" />
+                        商品內容
+                      </div>
+                      <div className="space-y-3">
                         {order.items?.map((item: any, i: number) => (
-                          <div key={i} className="flex items-center gap-3 p-2 bg-white rounded-lg">
-                            <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover" />
-                            <div className="flex-1">
-                              <div className="font-bold text-gray-800">{item.name}</div>
-                              <div className="text-sm text-gray-500">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
+                          <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
+                            <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-blue-100" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
+                              <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
                             </div>
-                            <div className="font-bold text-cute-primary">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
+                            <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
                           </div>
                         ))}
                       </div>
@@ -645,21 +649,47 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
                     {/* 收貨資訊 */}
                     {order.shippingInfo && (
-                      <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                        <div className="font-bold text-gray-700 mb-2">收貨資訊：</div>
-                        <div className="space-y-1 text-sm text-gray-600">
-                          <div><span className="font-bold">收貨人：</span>{order.shippingInfo.name}</div>
-                          <div><span className="font-bold">電話：</span>{order.shippingInfo.phone}</div>
-                          <div><span className="font-bold">地址：</span>{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</div>
-                          <div className="pl-12">{order.shippingInfo.address}</div>
+                      <div className="mb-5 p-4 bg-blue-50/80 rounded-xl border-2 border-blue-100">
+                        <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div className="bg-white p-3 rounded-lg">
+                            <span className="font-bold text-gray-600 block mb-1">收貨人</span>
+                            <span className="text-gray-900 font-medium">{order.shippingInfo.name}</span>
+                          </div>
+                          <div className="bg-white p-3 rounded-lg">
+                            <span className="font-bold text-gray-600 block mb-1">電話</span>
+                            <span className="text-gray-900 font-medium">{order.shippingInfo.phone}</span>
+                          </div>
+                          <div className="bg-white p-3 rounded-lg md:col-span-2">
+                            <span className="font-bold text-gray-600 block mb-1">地址</span>
+                            <span className="text-gray-900 font-medium">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
+                            <div className="text-gray-900 font-medium mt-1">{order.shippingInfo.address}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 付款資訊 */}
+                    {order.paymentInfo && (
+                      <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
+                        <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div className="bg-white p-3 rounded-lg">
+                            <span className="font-bold text-gray-600 block mb-1">持卡人</span>
+                            <span className="text-gray-900 font-medium">{order.paymentInfo.cardholderName}</span>
+                          </div>
+                          <div className="bg-white p-3 rounded-lg">
+                            <span className="font-bold text-gray-600 block mb-1">卡號</span>
+                            <span className="text-gray-900 font-medium">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
+                          </div>
                         </div>
                       </div>
                     )}
 
                     {/* 總金額 */}
-                    <div className="flex justify-between items-center pt-4 border-t border-gray-200 mb-4">
-                      <span className="text-gray-600 font-bold">總金額</span>
-                      <span className="text-2xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
+                    <div className="flex justify-between items-center pt-4 border-t-2 border-blue-200 mb-4 bg-white/50 p-4 rounded-xl">
+                      <span className="text-gray-700 font-black text-lg">總金額</span>
+                      <span className="text-3xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
                     </div>
 
                     {/* 操作按鈕 */}
@@ -870,29 +900,32 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
             {orders.filter(o => o.status === 'completed').length > 0 ? (
               <div className="space-y-4">
                 {orders.filter(o => o.status === 'completed').map((order: any) => (
-                  <div key={order.id} className="p-6 bg-green-50/50 rounded-xl border-2 border-green-200 shadow-sm">
-                    <div className="flex justify-between items-start mb-4">
+                  <div key={order.id} className="p-6 bg-gradient-to-br from-green-50 to-white rounded-2xl border-2 border-green-200 shadow-lg hover:shadow-xl transition-shadow">
+                    <div className="flex justify-between items-start mb-5 pb-4 border-b-2 border-green-200">
                       <div>
-                        <div className="font-bold text-gray-800 text-lg mb-1">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
-                        <div className="text-sm text-gray-500">
-                          {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
+                        <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
+                        <div className="text-sm text-gray-600 font-medium">
+                          📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
                         </div>
                       </div>
-                      <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">已完成</span>
+                      <span className="px-4 py-2 bg-green-100 text-green-800 rounded-xl text-sm font-black shadow-sm">已完成</span>
                     </div>
                     
                     {/* 商品列表 */}
-                    <div className="mb-4">
-                      <div className="font-bold text-gray-700 mb-2">商品內容：</div>
-                      <div className="space-y-2">
+                    <div className="mb-5">
+                      <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
+                        <Package size={18} className="text-green-600" />
+                        商品內容
+                      </div>
+                      <div className="space-y-3">
                         {order.items?.map((item: any, i: number) => (
-                          <div key={i} className="flex items-center gap-3 p-2 bg-white rounded-lg">
-                            <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover" />
-                            <div className="flex-1">
-                              <div className="font-bold text-gray-800">{item.name}</div>
-                              <div className="text-sm text-gray-500">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
+                          <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-green-100 shadow-sm hover:shadow-md transition-shadow">
+                            <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-green-100" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
+                              <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
                             </div>
-                            <div className="font-bold text-cute-primary">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
+                            <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
                           </div>
                         ))}
                       </div>
@@ -900,21 +933,47 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
                     {/* 收貨資訊 */}
                     {order.shippingInfo && (
-                      <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                        <div className="font-bold text-gray-700 mb-2">收貨資訊：</div>
-                        <div className="space-y-1 text-sm text-gray-600">
-                          <div><span className="font-bold">收貨人：</span>{order.shippingInfo.name}</div>
-                          <div><span className="font-bold">電話：</span>{order.shippingInfo.phone}</div>
-                          <div><span className="font-bold">地址：</span>{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</div>
-                          <div className="pl-12">{order.shippingInfo.address}</div>
+                      <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
+                        <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div className="bg-white p-3 rounded-lg">
+                            <span className="font-bold text-gray-600 block mb-1">收貨人</span>
+                            <span className="text-gray-900 font-medium">{order.shippingInfo.name}</span>
+                          </div>
+                          <div className="bg-white p-3 rounded-lg">
+                            <span className="font-bold text-gray-600 block mb-1">電話</span>
+                            <span className="text-gray-900 font-medium">{order.shippingInfo.phone}</span>
+                          </div>
+                          <div className="bg-white p-3 rounded-lg md:col-span-2">
+                            <span className="font-bold text-gray-600 block mb-1">地址</span>
+                            <span className="text-gray-900 font-medium">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
+                            <div className="text-gray-900 font-medium mt-1">{order.shippingInfo.address}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 付款資訊 */}
+                    {order.paymentInfo && (
+                      <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
+                        <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div className="bg-white p-3 rounded-lg">
+                            <span className="font-bold text-gray-600 block mb-1">持卡人</span>
+                            <span className="text-gray-900 font-medium">{order.paymentInfo.cardholderName}</span>
+                          </div>
+                          <div className="bg-white p-3 rounded-lg">
+                            <span className="font-bold text-gray-600 block mb-1">卡號</span>
+                            <span className="text-gray-900 font-medium">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
+                          </div>
                         </div>
                       </div>
                     )}
 
                     {/* 總金額 */}
-                    <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-                      <span className="text-gray-600 font-bold">總金額</span>
-                      <span className="text-2xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
+                    <div className="flex justify-between items-center pt-4 border-t-2 border-green-200 bg-white/50 p-4 rounded-xl">
+                      <span className="text-gray-700 font-black text-lg">總金額</span>
+                      <span className="text-3xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
                     </div>
                   </div>
                 ))}
@@ -1055,15 +1114,37 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
           </div>
           <div className="p-6">
             {wishes && wishes.length > 0 ? (
-              <ul className="space-y-4">
-                {wishes.map((w, i) => (
-                  <li key={i} className="p-4 bg-pink-50 rounded-xl border border-pink-100">
-                    <div className="flex items-start gap-3">
-                      <span className="text-cute-primary font-bold text-lg">#{i + 1}</span>
-                      <p className="text-gray-700 font-medium break-words flex-1">{w}</p>
-                    </div>
-                  </li>
-                ))}
+              <ul className="space-y-3">
+                {wishes.map((w, i) => {
+                  const wishId = typeof w === 'object' && w.id ? w.id : `wish-${i}`;
+                  const wishText = typeof w === 'string' ? w : (w.text || w);
+                  return (
+                    <li key={wishId} className="p-4 bg-pink-50 rounded-xl border border-pink-100 hover:bg-pink-100 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <span className="text-cute-primary font-bold text-lg flex-shrink-0">#{i + 1}</span>
+                        <p className="text-gray-700 font-medium break-words flex-1">{wishText}</p>
+                        {onDeleteWish && (
+                          <button
+                            onClick={async () => {
+                              if (window.confirm('確定要刪除此許願嗎？')) {
+                                try {
+                                  await onDeleteWish(wishId);
+                                } catch (error) {
+                                  console.error('Failed to delete wish:', error);
+                                  alert('刪除失敗，請重試');
+                                }
+                              }
+                            }}
+                            className="flex-shrink-0 w-8 h-8 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg flex items-center justify-center transition-colors"
+                            aria-label="刪除許願"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <p className="text-gray-400 text-center py-8">目前還沒有買家許願，期待第一個願望！✨</p>

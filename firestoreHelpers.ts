@@ -259,6 +259,11 @@ export const addWish = async (wish: string) => {
   });
 };
 
+export const deleteWish = async (wishId: string) => {
+  await deleteDoc(doc(db, 'wishes', wishId));
+  console.log('Wish deleted:', wishId);
+};
+
 // ORDERS
 export const addOrderAndUpdateStock = async (order: any, cart: any[]) => {
   // 修正：先在 transaction 內更新庫存，然後在外部建立訂單

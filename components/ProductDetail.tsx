@@ -59,6 +59,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isEditing) return;
+    
     const file = e.target.files?.[0];
     if (!file) {
       e.target.value = '';
@@ -86,25 +88,41 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
         : [editedProduct.image];
       const newImages = [...currentImages, compressedBase64];
       setEditedProduct({ ...editedProduct, images: newImages });
+      setSelectedImageIndex(newImages.length - 1); // 切換到新上傳的圖片
       console.log('Image uploaded successfully, total images:', newImages.length);
     } catch (error: any) {
       console.error('Image upload failed:', error);
       alert(`圖片處理失敗：${error.message || '請重試'}`);
     } finally {
       setIsProcessingImage(false);
-      e.target.value = '';
+      // 重置input，允許重複上傳同一文件
+      if (e.target) {
+        e.target.value = '';
+      }
     }
   };
 
   const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index);
+    if (!isEditing) return;
+    
+    const currentImages = editedProduct.images && editedProduct.images.length > 0 
+      ? editedProduct.images 
+      : [editedProduct.image];
+    
+    const newImages = currentImages.filter((_, i) => i !== index);
+    
     if (newImages.length === 0) {
+      // 如果刪除所有圖片，保留原始圖片
       setEditedProduct({ ...editedProduct, images: [currentProduct.image] });
     } else {
       setEditedProduct({ ...editedProduct, images: newImages });
     }
+    
+    // 調整選中的圖片索引
     if (selectedImageIndex >= newImages.length) {
       setSelectedImageIndex(Math.max(0, newImages.length - 1));
+    } else if (selectedImageIndex >= index && selectedImageIndex > 0) {
+      setSelectedImageIndex(selectedImageIndex - 1);
     }
   };
 
@@ -239,25 +257,45 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
           {/* 左側：商品圖片 */}
           <div className="space-y-4">
             {/* 主圖 */}
-            <div className="relative aspect-square bg-gray-50 rounded-2xl overflow-hidden group">
+            <div 
+              className="relative aspect-square bg-gray-50 rounded-2xl overflow-hidden group cursor-grab active:cursor-grabbing"
+              onTouchStart={(e) => setTouchStart(e.targetTouches[0].clientX)}
+              onTouchMove={(e) => setTouchEnd(e.targetTouches[0].clientX)}
+              onTouchEnd={() => {
+                if (!touchStart || !touchEnd) return;
+                const distance = touchStart - touchEnd;
+                const isLeftSwipe = distance > 50;
+                const isRightSwipe = distance < -50;
+                
+                if (isLeftSwipe && images.length > 1) {
+                  setSelectedImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+                }
+                if (isRightSwipe && images.length > 1) {
+                  setSelectedImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+                }
+                setTouchStart(null);
+                setTouchEnd(null);
+              }}
+            >
               <img
                 src={images[selectedImageIndex]}
                 alt={currentProduct.name}
-                className={`w-full h-full ${currentProduct.imageFit === 'cover' ? 'object-cover' : 'object-contain'}`}
+                className={`w-full h-full select-none ${currentProduct.imageFit === 'cover' ? 'object-cover' : 'object-contain'}`}
+                draggable={false}
               />
               {/* 左右箭頭 */}
               {images.length > 1 && (
                 <>
                   <button
                     onClick={() => setSelectedImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-700 opacity-0 group-hover:opacity-100 hover:bg-white transition-all shadow-lg"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-700 opacity-0 group-hover:opacity-100 hover:bg-white transition-all shadow-lg z-10"
                     aria-label="上一張"
                   >
                     <ChevronLeft size={24} />
                   </button>
                   <button
                     onClick={() => setSelectedImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-700 opacity-0 group-hover:opacity-100 hover:bg-white transition-all shadow-lg"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-700 opacity-0 group-hover:opacity-100 hover:bg-white transition-all shadow-lg z-10"
                     aria-label="下一張"
                   >
                     <ChevronRight size={24} />
@@ -351,29 +389,37 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
                       className="w-full h-full object-cover"
                     />
                   </button>
-                  {isAdmin && (
+                  {isAdmin && isEditing && (
                     <button
-                      onClick={() => removeImage(index)}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeImage(index);
+                      }}
+                      className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg z-20"
                       aria-label="刪除圖片"
                     >
-                      <X size={14} />
+                      <X size={16} />
                     </button>
                   )}
                 </div>
               ))}
               {isAdmin && isEditing && (
-                <label className="flex-shrink-0 w-20 h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-cute-primary transition-colors">
+                <label className="flex-shrink-0 w-20 h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-cute-primary hover:bg-pink-50 transition-all active:scale-95 group">
                   {isProcessingImage ? (
                     <div className="w-6 h-6 border-2 border-cute-primary border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <Plus size={24} className="text-gray-400" />
+                    <Plus size={24} className="text-gray-400 group-hover:text-cute-primary" />
                   )}
                   <input
                     type="file"
                     className="hidden"
                     accept="image/*"
+                    capture="environment"
                     onChange={handleImageUpload}
+                    onClick={(e) => {
+                      // 確保在手機上也能觸發
+                      e.stopPropagation();
+                    }}
                   />
                 </label>
               )}

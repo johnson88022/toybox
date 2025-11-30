@@ -13,7 +13,7 @@ import { Trash2, CreditCard, ShoppingBag, X, LogIn, Apple, Smartphone, Loader2, 
 import { auth, googleProvider, appleProvider, isFirebaseConfigured } from './firebaseConfig';
 import { signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import {
-  listenProducts, addProduct, updateProduct as updateProductFS, deleteProduct as deleteProductFS, listenWishes, addWish, listenOrders, addOrderAndUpdateStock, initializeProducts, resetAllData, getUserProfile, updateOrderStatus as updateOrderStatusFS, listenMarqueeMessages
+  listenProducts, addProduct, updateProduct as updateProductFS, deleteProduct as deleteProductFS, listenWishes, addWish, deleteWish, listenOrders, addOrderAndUpdateStock, initializeProducts, resetAllData, getUserProfile, updateOrderStatus as updateOrderStatusFS, listenMarqueeMessages
 } from './firestoreHelpers';
 
 // Main App Component
@@ -326,6 +326,7 @@ const App: React.FC = () => {
   const handleAddProduct = async (p: Product) => { await addProduct(p); };
   const handleUpdateProduct = async (updated: Product) => { await updateProductFS(updated.id, updated); };
   const handleDeleteProduct = async (id: string) => { await deleteProductFS(id); };
+  const handleDeleteWish = async (wishId: string) => { await deleteWish(wishId); };
   const handleUpdateOrderStatus = async (orderId: string, status: 'pending' | 'shipped' | 'completed' | 'cancelled') => { await updateOrderStatusFS(orderId, status); };
   const handleResetData = async () => { await resetAllData(); };
 
@@ -390,7 +391,8 @@ const App: React.FC = () => {
           onAddProduct={handleAddProduct}
           onDeleteProduct={handleDeleteProduct}
           onUpdateOrderStatus={handleUpdateOrderStatus}
-          wishes={wishes.map(w => typeof w === 'string' ? w : w.text || w)}
+          wishes={wishes}
+          onDeleteWish={handleDeleteWish}
           onResetData={handleResetData}
         />
       );
@@ -451,43 +453,50 @@ const App: React.FC = () => {
         </div>
 
         {/* 分類篩選和排序 */}
-        <div className="mb-8 space-y-3">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-pink-100 shadow-sm">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-gray-500 text-sm font-bold whitespace-nowrap">商品分類</span>
-              <div className="flex-1 h-px bg-gray-200"></div>
-            </div>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${
-                    selectedCategory === category
-                      ? 'bg-cute-primary text-white shadow-lg shadow-pink-200'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+        <div className="mb-8">
+          <div className="bg-gradient-to-br from-white to-pink-50/50 backdrop-blur-sm rounded-3xl p-6 border-2 border-pink-100 shadow-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* 商品分類 */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-6 bg-gradient-to-b from-cute-primary to-cute-secondary rounded-full"></div>
+                  <h3 className="text-lg font-black text-gray-800">商品分類</h3>
+                </div>
+                <div className="flex flex-wrap gap-2.5">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`px-6 py-3 rounded-2xl text-sm font-black transition-all duration-200 active:scale-95 ${
+                        selectedCategory === category
+                          ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-xl shadow-pink-300/50 transform scale-105'
+                          : 'bg-white text-gray-700 hover:bg-pink-50 border-2 border-gray-100 hover:border-pink-200 shadow-sm'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* 排序方式 */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-6 bg-gradient-to-b from-cute-secondary to-cute-primary rounded-full"></div>
+                  <h3 className="text-lg font-black text-gray-800">排序方式</h3>
+                </div>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full bg-white border-2 border-pink-200 rounded-2xl px-5 py-3.5 text-sm text-gray-800 font-black focus:outline-none focus:ring-4 focus:ring-pink-200/50 focus:border-cute-primary transition-all shadow-md hover:shadow-lg cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23FF90BC%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:20px] bg-[right_1rem_center] bg-no-repeat"
                 >
-                  {category}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-pink-100 shadow-sm">
-            <div className="flex items-center gap-3">
-              <span className="text-gray-500 text-sm font-bold whitespace-nowrap">排序方式</span>
-              <div className="flex-1 h-px bg-gray-200"></div>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="bg-white border-2 border-pink-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 font-bold focus:outline-none focus:ring-2 focus:ring-cute-primary focus:border-cute-primary transition-all min-w-[180px]"
-              >
-                <option value="newest">最新上架</option>
-                <option value="price-asc">價格：低到高</option>
-                <option value="price-desc">價格：高到低</option>
-                <option value="name-asc">名稱：A-Z</option>
-                <option value="name-desc">名稱：Z-A</option>
-              </select>
+                  <option value="newest">最新上架</option>
+                  <option value="price-asc">價格：低到高</option>
+                  <option value="price-desc">價格：高到低</option>
+                  <option value="name-asc">名稱：A-Z</option>
+                  <option value="name-desc">名稱：Z-A</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -712,6 +721,21 @@ const App: React.FC = () => {
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => { if(checkoutStep === 5) setIsCheckoutOpen(false); }} />
           <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden max-h-[90vh] overflow-y-auto">
+            {/* 關閉按鈕 */}
+            {checkoutStep !== 4 && checkoutStep !== 5 && (
+              <button
+                onClick={() => {
+                  if (window.confirm('確定要取消結帳嗎？')) {
+                    setIsCheckoutOpen(false);
+                    setCheckoutStep(1);
+                  }
+                }}
+                className="absolute top-4 right-4 z-10 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors shadow-md"
+                aria-label="取消"
+              >
+                <X size={20} />
+              </button>
+            )}
             
             {/* Progress Steps */}
             <div className="p-6 border-b border-pink-100 bg-pink-50">
