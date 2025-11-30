@@ -860,39 +860,42 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                     )}
 
                     {/* 總金額和操作 */}
-                    <div className="flex justify-between items-center pt-4 border-t-2 border-purple-200 mb-4 bg-white/50 p-4 rounded-xl">
-                      <span className="text-gray-700 font-black text-lg">總金額</span>
-                      <span className="text-3xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
-                    </div>
+                    <div className="pt-4 border-t-2 border-purple-200 mb-4">
+                      <div className="flex justify-between items-center bg-white/50 p-4 rounded-xl mb-4">
+                        <span className="text-gray-700 font-black text-lg">總金額</span>
+                        <span className="text-3xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
+                      </div>
                       {onUpdateOrderStatus && (
-                        <button
-                          onClick={async () => {
-                            if (window.confirm('確定要將此訂單標記為「已完成」嗎？')) {
-                              setCompletingOrderId(order.id);
-                              try {
-                                await onUpdateOrderStatus(order.id, 'completed');
-                                setCompletingOrderId(null);
-                              } catch (error) {
-                                console.error('Failed to update order status:', error);
-                                alert('更新訂單狀態失敗，請重試');
-                                setCompletingOrderId(null);
+                        <div className="flex justify-end">
+                          <button
+                            onClick={async () => {
+                              if (window.confirm('確定要將此訂單標記為「已完成」嗎？')) {
+                                setCompletingOrderId(order.id);
+                                try {
+                                  await onUpdateOrderStatus(order.id, 'completed');
+                                  setCompletingOrderId(null);
+                                } catch (error) {
+                                  console.error('Failed to update order status:', error);
+                                  alert('更新訂單狀態失敗，請重試');
+                                  setCompletingOrderId(null);
+                                }
                               }
-                            }
-                          }}
-                          disabled={completingOrderId === order.id}
-                          className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
-                        >
-                          {completingOrderId === order.id ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                              處理中...
-                            </>
-                          ) : (
-                            <>
-                              <span>✓</span> 標記為已完成
-                            </>
-                          )}
-                        </button>
+                            }}
+                            disabled={completingOrderId === order.id}
+                            className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                          >
+                            {completingOrderId === order.id ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                處理中...
+                              </>
+                            ) : (
+                              <>
+                                <span>✓</span> 標記為已完成
+                              </>
+                            )}
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
