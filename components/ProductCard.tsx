@@ -39,7 +39,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onClick
       
       <div className="relative h-72 overflow-hidden bg-gray-50">
         <img 
-          src={product.image} 
+          src={product.images && product.images.length > 0 ? product.images[0] : product.image} 
           alt={product.name} 
           className={`w-full h-full ${product.imageFit === 'cover' ? 'object-cover' : 'object-contain'} transition-transform duration-700 ${isHovered ? 'scale-110' : 'scale-100'}`}
         />
