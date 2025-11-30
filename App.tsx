@@ -560,27 +560,29 @@ const App: React.FC = () => {
     });
 
     return (
-      <main className="pt-28 px-4 pb-12 max-w-7xl mx-auto">
-        {/* 廣告跑馬燈 */}
+      <main className="pt-28 pb-12">
+        {/* 廣告跑馬燈 - 全寬顯示 */}
         {marqueeMessages.length > 0 && marqueeMessages.some(msg => msg.trim() !== '') && (
-          <div className="mb-8 overflow-hidden bg-gradient-to-r from-cute-primary to-cute-secondary rounded-2xl shadow-lg">
+          <div className="mb-8 w-full overflow-hidden bg-gradient-to-r from-cute-primary to-cute-secondary shadow-lg">
             <div 
-              className="py-4 whitespace-nowrap"
+              className="py-4 whitespace-nowrap w-full"
               style={{
                 animation: `scroll ${marqueeSpeed}s linear infinite`
               }}
             >
-              <div className="inline-flex items-center gap-8 text-white font-bold text-lg">
+              <div className="inline-flex items-center gap-8 text-white font-bold text-lg md:text-xl">
                 {marqueeMessages.filter(msg => msg.trim() !== '').map((msg, i) => (
-                  <span key={i} className="inline-block">{msg}</span>
+                  <span key={i} className="inline-block whitespace-nowrap">{msg}</span>
                 ))}
                 {marqueeMessages.filter(msg => msg.trim() !== '').map((msg, i) => (
-                  <span key={`dup-${i}`} className="inline-block">{msg}</span>
+                  <span key={`dup-${i}`} className="inline-block whitespace-nowrap">{msg}</span>
                 ))}
               </div>
             </div>
           </div>
         )}
+        
+        <div className="px-4 max-w-7xl mx-auto">
 
         <div className="text-center mb-12 relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-200/50 blur-[100px] rounded-full -z-10"></div>
@@ -680,23 +682,24 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* 商品列表 */}
-        {filteredProducts.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProducts.map(product => (
-              <ProductCard 
-                key={product.id} 
-                product={product} 
-                onAddToCart={addToCart}
-                onClick={() => setCurrentPage(`/product/${product.id}`)}
-              />
-          ))}
+          {/* 商品列表 */}
+          {filteredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredProducts.map(product => (
+                <ProductCard 
+                  key={product.id} 
+                  product={product} 
+                  onAddToCart={addToCart}
+                  onClick={() => setCurrentPage(`/product/${product.id}`)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <p className="text-gray-400 text-xl font-medium">目前沒有「{selectedCategory}」類別的商品</p>
+            </div>
+          )}
         </div>
-        ) : (
-          <div className="text-center py-16">
-            <p className="text-gray-400 text-xl font-medium">目前沒有「{selectedCategory}」類別的商品</p>
-          </div>
-        )}
       </main>
     );
   };

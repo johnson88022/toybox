@@ -91,15 +91,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
     if (editingProduct) {
       // 使用編輯後的圖片陣列，如果沒有則使用原始圖片
       const editedImages = (editingProduct as any)._editedImages;
+      // 如果 _editedImages 明確設置為空數組，允許完全刪除
       const images = editedImages !== undefined 
         ? editedImages 
         : (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : [editingProduct.image]);
       
       // 如果編輯後的圖片陣列存在且不為空，使用第一張圖片作為新的主圖
       // 如果所有圖片都被刪除，使用預設圖片
-      const newMainImage = (editedImages !== undefined && editedImages.length > 0) 
-        ? editedImages[0] 
-        : (images.length > 0 ? images[0] : editingProduct.image || 'https://via.placeholder.com/400');
+      const newMainImage = (images.length > 0) 
+        ? images[0] 
+        : 'https://via.placeholder.com/400';
       
       const updatedProduct: any = {
         ...editingProduct,
@@ -109,11 +110,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
       // 處理 images 欄位：如果有多張圖片則設置，否則移除該欄位
       if (images.length > 1) {
         updatedProduct.images = images;
-      } else if (images.length === 0) {
-        // 如果所有圖片都被刪除，移除 images 欄位
-        delete updatedProduct.images;
       } else {
-        // 如果只有一張圖片，移除 images 欄位（使用主圖即可）
+        // 如果只有一張或沒有圖片，移除 images 欄位（使用主圖即可）
         delete updatedProduct.images;
       }
       
@@ -1317,6 +1315,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             value={marqueeSpeed}
                             onChange={(e) => setMarqueeSpeed(Number(e.target.value))}
                             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cute-primary"
+                            aria-label="跑馬燈速度調整"
+                            title="調整跑馬燈速度"
                           />
                           <div className="flex justify-between text-xs text-gray-500 mt-1">
                             <span>快 (5秒)</span>
@@ -1589,22 +1589,64 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
               {/* Image Upload/Preview */}
               <div className="mb-4">
                 <label className="block text-sm font-bold text-gray-600 mb-2">商品圖片</label>
-                {/* 顯示現有圖片 */}
+                {/* 顯示現有圖片 - 可拖拽排序 */}
                 <div className="flex flex-wrap gap-3 mb-3">
                   {(() => {
-                    const currentImages = (editingProduct as any)._editedImages || 
-                                         (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : [editingProduct.image]);
+                    const currentImages = (editingProduct as any)._editedImages !== undefined
+                      ? (editingProduct as any)._editedImages
+                      : (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : [editingProduct.image]);
+                    const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
+                    
+                    const handleDragStart = (e: React.DragEvent, index: number) => {
+                      setDraggedIndex(index);
+                      e.dataTransfer.effectAllowed = 'move';
+                    };
+                    
+                    const handleDragOver = (e: React.DragEvent) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                    };
+                    
+                    const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+                      e.preventDefault();
+                      if (draggedIndex === null || draggedIndex === dropIndex) {
+                        setDraggedIndex(null);
+                        return;
+                      }
+                      
+                      const newImages = [...currentImages];
+                      const [removed] = newImages.splice(draggedIndex, 1);
+                      newImages.splice(dropIndex, 0, removed);
+                      
+                      setEditingProduct({...editingProduct, _editedImages: newImages});
+                      setDraggedIndex(null);
+                    };
+                    
                     return currentImages.map((img: string, index: number) => (
-                      <div key={index} className="relative">
-                        <img src={img} alt={`Preview ${index + 1}`} className={`w-20 h-20 rounded-xl ${editingProduct.imageFit === 'cover' ? 'object-cover' : 'object-contain'} border border-gray-200 bg-gray-50`} />
+                      <div 
+                        key={index} 
+                        className="relative cursor-move"
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, index)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, index)}
+                      >
+                        <img 
+                          src={img} 
+                          alt={`Preview ${index + 1}`} 
+                          className={`w-20 h-20 rounded-xl ${editingProduct.imageFit === 'cover' ? 'object-cover' : 'object-contain'} border border-gray-200 bg-gray-50 ${draggedIndex === index ? 'opacity-50' : ''}`}
+                          draggable={false}
+                        />
+                        <div className="absolute top-1 left-1 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded">
+                          {index + 1}
+                        </div>
                         <button
                           type="button"
-                          onClick={() => {
-                            const currentImages = (editingProduct as any)._editedImages || 
-                                                 (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : [editingProduct.image]);
+                          onClick={(e) => {
+                            e.stopPropagation();
                             const newImages = currentImages.filter((_: any, i: number) => i !== index);
                             // 允許完全刪除所有圖片
-                            setEditingProduct({...editingProduct, _editedImages: newImages});
+                            setEditingProduct({...editingProduct, _editedImages: newImages.length > 0 ? newImages : []});
                           }}
                           className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg z-10"
                           aria-label="刪除圖片"
