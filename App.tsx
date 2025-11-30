@@ -481,7 +481,6 @@ const App: React.FC = () => {
               setCurrentPage('/'); // 加入購物車後關閉詳情頁
             }}
             user={user}
-            onUpdateProduct={handleUpdateProduct}
             products={products}
           />
         );

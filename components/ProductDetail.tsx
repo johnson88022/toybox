@@ -1,27 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ShoppingCart, Star, Plus, X, Edit2, Save, Trash2, Upload, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, ShoppingCart, Star, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product, User, Review } from '../types';
-import { updateProduct as updateProductFS } from '../firestoreHelpers';
-import { compressImage } from '../utils/imageCompress';
 
 interface ProductDetailProps {
   product: Product;
   onClose: () => void;
   onAddToCart: (product: Product, quantity: number) => void;
   user: User | null;
-  onUpdateProduct: (product: Product) => Promise<void>;
   products: Product[];
 }
 
-const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddToCart, user, onUpdateProduct, products }) => {
+const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddToCart, user, products }) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedProduct, setEditedProduct] = useState<Product>(product);
-  const [newImageFile, setNewImageFile] = useState<File | null>(null);
-  const [isProcessingImage, setIsProcessingImage] = useState(false);
-  const [newSpecKey, setNewSpecKey] = useState('');
-  const [newSpecValue, setNewSpecValue] = useState('');
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
@@ -31,18 +22,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
   // 從 products 陣列中獲取最新的商品資料
   const currentProduct = products.find(p => p.id === product.id) || product;
   
-  // 在編輯模式下使用 editedProduct 的圖片，否則使用 currentProduct 的圖片
-  const images = isEditing 
-    ? (editedProduct.images && editedProduct.images.length > 0 
-        ? editedProduct.images 
-        : [editedProduct.image])
-    : (currentProduct.images && currentProduct.images.length > 0 
-        ? currentProduct.images 
-        : [currentProduct.image]);
-
-  useEffect(() => {
-    setEditedProduct(currentProduct);
-  }, [currentProduct]);
+  // 使用 currentProduct 的圖片
+  const images = currentProduct.images && currentProduct.images.length > 0 
+    ? currentProduct.images 
+    : [currentProduct.image];
 
   const translateCategory = (cat: string) => {
     switch(cat) {
@@ -215,7 +198,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
     }
   };
 
-  const isAdmin = user?.role === 'admin';
 
   return (
     <div className="min-h-screen pt-28 px-4 pb-12 bg-cute-bg">
@@ -229,37 +211,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
           返回商品列表
         </button>
 
-        {/* Admin 編輯按鈕 */}
-        {isAdmin && (
-          <div className="mb-4 flex justify-end">
-            {!isEditing ? (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="bg-cute-primary text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-pink-400 transition-colors"
-              >
-                <Edit2 size={18} /> 編輯商品
-              </button>
-            ) : (
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditedProduct(currentProduct);
-                  }}
-                  className="bg-gray-100 text-gray-600 px-6 py-2 rounded-xl font-bold hover:bg-gray-200 transition-colors"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="bg-green-500 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-green-600 transition-colors"
-                >
-                  <Save size={18} /> 儲存
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-white rounded-3xl p-6 md:p-12 shadow-lg">
           {/* 左側：商品圖片 */}
@@ -332,61 +283,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
             <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-bold text-gray-800">商品規格</h2>
-                {isAdmin && isEditing && (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="規格名稱"
-                      value={newSpecKey}
-                      onChange={(e) => setNewSpecKey(e.target.value)}
-                      className="px-2 py-1 border border-gray-300 rounded-lg text-xs"
-                      style={{ maxWidth: '80px' }}
-                    />
-                    <input
-                      type="text"
-                      placeholder="規格值"
-                      value={newSpecValue}
-                      onChange={(e) => setNewSpecValue(e.target.value)}
-                      className="px-2 py-1 border border-gray-300 rounded-lg text-xs"
-                      style={{ maxWidth: '100px' }}
-                    />
-                    <button
-                      onClick={addSpecification}
-                      className="bg-cute-primary text-white px-3 py-1 rounded-lg text-xs font-bold hover:bg-pink-400"
-                    >
-                      新增
-                    </button>
-                  </div>
-                )}
               </div>
               {currentProduct.specifications && Object.keys(currentProduct.specifications).length > 0 ? (
                 <div className="space-y-2">
                   {Object.entries(currentProduct.specifications).map(([key, value]) => (
                     <div key={key} className="flex items-center gap-2 text-sm">
                       <span className="font-bold text-gray-700 min-w-[80px]">{key}：</span>
-                      {isEditing ? (
-                        <div className="flex-1 flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={value}
-                            onChange={(e) => {
-                              const newSpecs = { ...(currentProduct.specifications || {}) };
-                              newSpecs[key] = e.target.value;
-                              setEditedProduct({ ...editedProduct, specifications: newSpecs });
-                            }}
-                            className="flex-1 border border-gray-300 rounded-lg px-2 py-1 text-xs"
-                          />
-                          <button
-                            onClick={() => removeSpecification(key)}
-                            className="text-red-500 hover:text-red-700"
-                            aria-label="刪除規格"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-gray-600">{value}</span>
-                      )}
+                      <span className="text-gray-600">{value}</span>
                     </div>
                   ))}
                 </div>
@@ -413,39 +316,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
                       className="w-full h-full object-cover"
                     />
                   </button>
-                  {isAdmin && isEditing && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeImage(index);
-                      }}
-                      className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg z-20"
-                      aria-label="刪除圖片"
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
                 </div>
               ))}
-              {isAdmin && isEditing && (
-                <label className="flex-shrink-0 w-20 h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-cute-primary hover:bg-pink-50 transition-all active:scale-95 group">
-                  {isProcessingImage ? (
-                    <div className="w-6 h-6 border-2 border-cute-primary border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <Plus size={24} className="text-gray-400 group-hover:text-cute-primary" />
-                  )}
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    onClick={(e) => {
-                      // 確保在手機上也能觸發
-                      e.stopPropagation();
-                    }}
-                  />
-                </label>
-              )}
             </div>
           </div>
 
@@ -456,16 +328,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
               <span className="text-cute-secondary text-sm font-bold uppercase tracking-wider">
                 {translateCategory(currentProduct.category)}
               </span>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedProduct.name}
-                  onChange={(e) => setEditedProduct({ ...editedProduct, name: e.target.value })}
-                  className="w-full text-4xl font-black text-gray-800 mt-2 mb-4 border-2 border-cute-primary rounded-xl px-4 py-2"
-                />
-              ) : (
-                <h1 className="text-4xl font-black text-gray-800 mt-2 mb-4">{currentProduct.name}</h1>
-              )}
+              <h1 className="text-4xl font-black text-gray-800 mt-2 mb-4">{currentProduct.name}</h1>
               
               {/* 評分 */}
               <div className="flex items-center gap-2 mb-4">
@@ -485,16 +348,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
 
             {/* 價格 */}
             <div className="p-6 bg-pink-50 rounded-2xl border border-pink-100">
-              {isEditing ? (
-                <input
-                  type="number"
-                  value={editedProduct.price}
-                  onChange={(e) => setEditedProduct({ ...editedProduct, price: parseFloat(e.target.value) || 0 })}
-                  className="text-4xl font-black text-cute-primary w-full border-2 border-cute-primary rounded-xl px-4 py-2"
-                />
-              ) : (
-                <div className="text-4xl font-black text-cute-primary">${currentProduct.price.toFixed(2)}</div>
-              )}
+              <div className="text-4xl font-black text-cute-primary">${currentProduct.price.toFixed(2)}</div>
               <div className="flex items-center gap-4 mt-2">
                 <span className={`text-sm font-bold px-3 py-1 rounded-full ${
                   currentProduct.stock === 0 
@@ -511,68 +365,57 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
             {/* 商品描述 */}
             <div>
               <h2 className="text-xl font-bold text-gray-800 mb-3">商品描述</h2>
-              {isEditing ? (
-                <textarea
-                  value={editedProduct.description}
-                  onChange={(e) => setEditedProduct({ ...editedProduct, description: e.target.value })}
-                  className="w-full h-32 border-2 border-cute-primary rounded-xl px-4 py-2"
-                />
-              ) : (
-                <p className="text-gray-600 leading-relaxed">{currentProduct.description}</p>
-              )}
+              <p className="text-gray-600 leading-relaxed">{currentProduct.description}</p>
             </div>
 
-
             {/* 數量選擇和加入購物車 */}
-            {!isEditing && (
-              <div className="space-y-4 pt-4 border-t border-gray-200">
-                <div className="flex items-center gap-4">
-                  <span className="font-bold text-gray-700">數量：</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                      className="w-10 h-10 bg-pink-100 text-cute-primary rounded-full font-bold hover:bg-pink-200 transition-colors"
-                      aria-label="減少數量"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      min={1}
-                      max={currentProduct.stock}
-                      value={quantity}
-                      onChange={(e) => setQuantity(Math.max(1, Math.min(currentProduct.stock, parseInt(e.target.value) || 1)))}
-                      className="w-16 text-center border-2 border-cute-primary rounded-lg font-bold"
-                      aria-label="商品數量"
-                    />
-                    <button
-                      onClick={() => setQuantity(q => Math.min(currentProduct.stock, q + 1))}
-                      className="w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold hover:bg-green-200 transition-colors"
-                      aria-label="增加數量"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
+            <div className="space-y-4 pt-4 border-t border-gray-200">
+              <div className="flex items-center gap-4">
+                <span className="font-bold text-gray-700">數量：</span>
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={handleAddToCart}
-                    disabled={currentProduct.stock === 0 || quantity > currentProduct.stock}
-                    className="flex-1 bg-cute-primary text-white font-bold py-4 rounded-xl hover:bg-pink-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    className="w-10 h-10 bg-pink-100 text-cute-primary rounded-full font-bold hover:bg-pink-200 transition-colors"
+                    aria-label="減少數量"
                   >
-                    <ShoppingCart size={24} />
-                    加入購物車
+                    -
                   </button>
+                  <input
+                    type="number"
+                    min={1}
+                    max={currentProduct.stock}
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(1, Math.min(currentProduct.stock, parseInt(e.target.value) || 1)))}
+                    className="w-16 text-center border-2 border-cute-primary rounded-lg font-bold"
+                    aria-label="商品數量"
+                  />
                   <button
-                    onClick={onClose}
-                    className="bg-gray-100 text-gray-600 font-bold py-4 px-6 rounded-xl hover:bg-gray-200 transition-colors"
+                    onClick={() => setQuantity(q => Math.min(currentProduct.stock, q + 1))}
+                    className="w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold hover:bg-green-200 transition-colors"
+                    aria-label="增加數量"
                   >
-                    取消
+                    +
                   </button>
                 </div>
               </div>
-            )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={currentProduct.stock === 0 || quantity > currentProduct.stock}
+                  className="flex-1 bg-cute-primary text-white font-bold py-4 rounded-xl hover:bg-pink-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                >
+                  <ShoppingCart size={24} />
+                  加入購物車
+                </button>
+                <button
+                  onClick={onClose}
+                  className="bg-gray-100 text-gray-600 font-bold py-4 px-6 rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
 
             {/* 商品評價 */}
             <div className="pt-6 border-t border-gray-200">
@@ -582,7 +425,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
               </h2>
               
               {/* 提交評價表單 */}
-              {user && !isAdmin && (
+              {user && user.role !== 'admin' && (
                 <div className="mb-6 p-4 bg-gray-50 rounded-xl">
                   <div className="mb-3">
                     <span className="text-sm font-bold text-gray-700 mr-2">評分：</span>

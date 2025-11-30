@@ -88,9 +88,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const handleEditSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingProduct) {
-      let imageUrl = editingProduct.image;
+      // 使用編輯後的圖片陣列，如果沒有則使用單一圖片
+      const images = (editingProduct as any)._editedImages || 
+                    (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : null) ||
+                    [editingProduct.image];
       
-      // 如果有新圖片，直接使用已壓縮的 base64（已在 handleImageChange 中處理）
+      // 如果有新上傳的主圖，使用新圖
+      let imageUrl = editingProduct.image;
       const newImagePreview = (editingProduct as any)._newImagePreview;
       if (newImagePreview) {
         imageUrl = newImagePreview;
@@ -98,15 +102,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
       
       const updatedProduct = {
         ...editingProduct,
-        image: imageUrl
+        image: imageUrl,
+        images: images.length > 1 ? images : undefined
       };
       // 移除臨時欄位
       delete (updatedProduct as any)._newImageFile;
       delete (updatedProduct as any)._newImagePreview;
+      delete (updatedProduct as any)._editedImages;
       
       try {
         await onUpdateProduct(updatedProduct);
-      setEditingProduct(null);
+        setEditingProduct(null);
         console.log('Product updated successfully:', updatedProduct.name);
       } catch (error: any) {
         console.error('Failed to update product:', error);
@@ -1514,34 +1520,82 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
             
             <form onSubmit={handleEditSave} className="space-y-4">
               {/* Image Upload/Preview */}
-              <div className="flex items-center gap-4 mb-2">
-                 <img src={(editingProduct as any)._newImagePreview || editingProduct.image} alt="Preview" className={`w-20 h-20 rounded-xl ${editingProduct.imageFit === 'cover' ? 'object-cover' : 'object-contain'} border border-gray-200 bg-gray-50`} />
-                 <div className="flex-1">
-                    <label className="block text-sm font-bold text-gray-600 mb-1">商品圖片</label>
-                    <label className="flex items-center justify-center w-full px-4 py-2 bg-gray-50 border border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors active:bg-gray-200">
-                      <span className="text-sm text-gray-500 flex items-center gap-2"><Upload size={16}/> 上傳圖片</span>
-                      <input 
-                        type="file" 
-                        id="edit-product-image-input"
-                        className="hidden" 
-                        accept="image/*"
-                        onChange={(e) => handleImageChange(e, false)}
-                      />
-                    </label>
-                    <p className="text-xs text-gray-400 mt-1">支援相機拍照或從相簿選擇</p>
-                    <div className="mt-2">
-                      <label htmlFor="edit-product-image-fit-select" className="block text-xs font-bold text-gray-600 mb-1">圖片顯示方式</label>
-                      <select
-                        id="edit-product-image-fit-select"
-                        value={editingProduct.imageFit || 'contain'}
-                        onChange={(e) => setEditingProduct({...editingProduct, imageFit: e.target.value as 'cover' | 'contain'})}
-                        className="w-full bg-gray-50 border border-pink-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                      >
-                        <option value="contain">完整顯示（不裁切）</option>
-                        <option value="cover">填滿（可能裁切）</option>
-                      </select>
-                    </div>
-                 </div>
+              <div className="mb-4">
+                <label className="block text-sm font-bold text-gray-600 mb-2">商品圖片</label>
+                {/* 顯示現有圖片 */}
+                <div className="flex flex-wrap gap-3 mb-3">
+                  {(() => {
+                    const currentImages = (editingProduct as any)._editedImages || 
+                                         (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : [editingProduct.image]);
+                    return currentImages.map((img: string, index: number) => (
+                      <div key={index} className="relative">
+                        <img src={img} alt={`Preview ${index + 1}`} className={`w-20 h-20 rounded-xl ${editingProduct.imageFit === 'cover' ? 'object-cover' : 'object-contain'} border border-gray-200 bg-gray-50`} />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentImages = (editingProduct as any)._editedImages || 
+                                                 (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : [editingProduct.image]);
+                            const newImages = currentImages.filter((_: any, i: number) => i !== index);
+                            if (newImages.length === 0) {
+                              setEditingProduct({...editingProduct, _editedImages: [editingProduct.image]});
+                            } else {
+                              setEditingProduct({...editingProduct, _editedImages: newImages});
+                            }
+                          }}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg z-10"
+                          aria-label="刪除圖片"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ));
+                  })()}
+                </div>
+                {/* 上傳新圖片 */}
+                <label className="flex items-center justify-center w-full px-4 py-2 bg-gray-50 border border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors active:bg-gray-200">
+                  <span className="text-sm text-gray-500 flex items-center gap-2"><Upload size={16}/> 上傳圖片</span>
+                  <input 
+                    type="file" 
+                    id="edit-product-image-input"
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (!file.type.startsWith('image/')) {
+                        alert('請選擇圖片檔案');
+                        e.target.value = '';
+                        return;
+                      }
+                      setIsUploadingImage(true);
+                      try {
+                        const compressedBase64 = await compressImage(file);
+                        const currentImages = (editingProduct as any)._editedImages || 
+                                             (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : [editingProduct.image]);
+                        const newImages = [...currentImages, compressedBase64];
+                        setEditingProduct({...editingProduct, _editedImages: newImages});
+                      } catch (error: any) {
+                        alert(`圖片處理失敗：${error.message || '請重試'}`);
+                      } finally {
+                        setIsUploadingImage(false);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                </label>
+                <p className="text-xs text-gray-400 mt-1">支援相機拍照或從相簿選擇，可上傳多張圖片</p>
+                <div className="mt-2">
+                  <label htmlFor="edit-product-image-fit-select" className="block text-xs font-bold text-gray-600 mb-1">圖片顯示方式</label>
+                  <select
+                    id="edit-product-image-fit-select"
+                    value={editingProduct.imageFit || 'contain'}
+                    onChange={(e) => setEditingProduct({...editingProduct, imageFit: e.target.value as 'cover' | 'contain'})}
+                    className="w-full bg-gray-50 border border-pink-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                  >
+                    <option value="contain">完整顯示（不裁切）</option>
+                    <option value="cover">填滿（可能裁切）</option>
+                  </select>
+                </div>
               </div>
 
               <div>
