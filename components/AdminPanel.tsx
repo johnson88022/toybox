@@ -17,7 +17,7 @@ interface AdminPanelProps {
   onResetData?: () => Promise<void>;
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProduct, onAddProduct, onDeleteProduct, onUpdateOrderStatus, wishes = [], onDeleteWish, onResetData }) => {
+const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProduct, onAddProduct, onDeleteProduct, onUpdateOrderStatus, wishes = [], onDeleteWish, onResetData, onCategoriesChange }) => {
   const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'wishes' | 'marquee' | 'stats'>('orders');
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   const [completingOrderId, setCompletingOrderId] = useState<string | null>(null);
