@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ShoppingCart, Star, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product, User, Review } from '../types';
+import { updateProduct } from '../firestoreHelpers';
 
 interface ProductDetailProps {
   product: Product;
@@ -49,115 +50,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
     onAddToCart(currentProduct, quantity);
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!isEditing) return;
-    
-    const file = e.target.files?.[0];
-    if (!file) {
-      e.target.value = '';
-      return;
-    }
-    
-    if (!file.type.startsWith('image/')) {
-      alert('請選擇圖片檔案');
-      e.target.value = '';
-      return;
-    }
-
-    const maxSize = 20 * 1024 * 1024; // 20MB
-    if (file.size > maxSize) {
-      alert(`圖片檔案大小不能超過 ${Math.round(maxSize / 1024 / 1024)}MB`);
-      e.target.value = '';
-      return;
-    }
-
-    setIsProcessingImage(true);
-    try {
-      const compressedBase64 = await compressImage(file, 1200, 1200, 500 * 1024);
-      const currentImages = editedProduct.images && editedProduct.images.length > 0 
-        ? editedProduct.images 
-        : [editedProduct.image];
-      const newImages = [...currentImages, compressedBase64];
-      setEditedProduct({ ...editedProduct, images: newImages });
-      setSelectedImageIndex(newImages.length - 1); // 切換到新上傳的圖片
-      console.log('Image uploaded successfully, total images:', newImages.length);
-    } catch (error: any) {
-      console.error('Image upload failed:', error);
-      alert(`圖片處理失敗：${error.message || '請重試'}`);
-    } finally {
-      setIsProcessingImage(false);
-      // 重置input，允許重複上傳同一文件
-      if (e.target) {
-        e.target.value = '';
-      }
-    }
-  };
-
-  const removeImage = (index: number) => {
-    if (!isEditing) return;
-    
-    const currentImages = editedProduct.images && editedProduct.images.length > 0 
-      ? editedProduct.images 
-      : [editedProduct.image];
-    
-    const newImages = currentImages.filter((_, i) => i !== index);
-    
-    if (newImages.length === 0) {
-      // 如果刪除所有圖片，保留原始圖片
-      setEditedProduct({ ...editedProduct, images: [currentProduct.image] });
-    } else {
-      setEditedProduct({ ...editedProduct, images: newImages });
-    }
-    
-    // 調整選中的圖片索引
-    if (selectedImageIndex >= newImages.length) {
-      setSelectedImageIndex(Math.max(0, newImages.length - 1));
-    } else if (selectedImageIndex >= index && selectedImageIndex > 0) {
-      setSelectedImageIndex(selectedImageIndex - 1);
-    }
-  };
-
-  const addSpecification = () => {
-    if (newSpecKey && newSpecValue) {
-      const newSpecs = { ...(editedProduct.specifications || {}), [newSpecKey]: newSpecValue };
-      setEditedProduct({ ...editedProduct, specifications: newSpecs });
-      setNewSpecKey('');
-      setNewSpecValue('');
-    }
-  };
-
-  const removeSpecification = (key: string) => {
-    const newSpecs = { ...(editedProduct.specifications || {}) };
-    delete newSpecs[key];
-    setEditedProduct({ ...editedProduct, specifications: newSpecs });
-  };
-
-  const handleSave = async () => {
-    try {
-      // 確保 images 陣列正確保存
-      const productToSave = {
-        ...editedProduct,
-        images: editedProduct.images && editedProduct.images.length > 0 
-          ? editedProduct.images 
-          : [editedProduct.image],
-        // 確保所有欄位都正確
-        name: editedProduct.name || currentProduct.name,
-        price: Number(editedProduct.price) || currentProduct.price,
-        description: editedProduct.description || currentProduct.description,
-        category: editedProduct.category || currentProduct.category,
-        stock: Number(editedProduct.stock) ?? currentProduct.stock,
-        rating: Number(editedProduct.rating) || currentProduct.rating,
-      };
-      
-      await onUpdateProduct(productToSave);
-      setIsEditing(false);
-      alert('商品已更新！');
-    } catch (error) {
-      console.error('Failed to update product:', error);
-      alert('更新失敗，請重試');
-    }
-  };
-
   const handleSubmitReview = async () => {
     if (!user) {
       alert('請先登入');
@@ -186,7 +78,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
         rating: updatedReviews.reduce((sum, r) => sum + r.rating, 0) / updatedReviews.length
       };
       
-      await onUpdateProduct(updatedProduct);
+      // 使用 updateProduct 直接更新（需要 id 和 updates）
+      await updateProduct(currentProduct.id, updatedProduct);
       setReviewComment('');
       setReviewRating(5);
       alert('評價已提交！');
@@ -435,6 +328,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
                           key={rating}
                           onClick={() => setReviewRating(rating)}
                           className="text-yellow-400 hover:scale-110 transition-transform"
+                          title={`評分 ${rating} 星`}
+                          aria-label={`評分 ${rating} 星`}
                         >
                           <Star size={24} fill={rating <= reviewRating ? 'currentColor' : 'none'} />
                         </button>

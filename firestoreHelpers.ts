@@ -85,18 +85,33 @@ export const addProduct = async (product: any) => {
 };
 export const updateProduct = async (id: string, updates: any) => {
   const { id: _, createdAt, ...updateData } = updates;
-  // 確保更新時不覆蓋 createdAt，但可以更新其他所有欄位
-  await updateDoc(doc(db, 'products', id), {
-    ...updateData,
-    // 確保必要欄位都是正確類型
-    name: updateData.name || '',
-    price: Number(updateData.price) || 0,
-    description: updateData.description || '',
-    category: updateData.category || 'Custom',
-    image: updateData.image || 'https://via.placeholder.com/400',
-    stock: Number(updateData.stock) ?? 0,
-    rating: Number(updateData.rating) || 5.0,
+  
+  // 過濾掉 undefined 值，Firestore 不接受 undefined
+  const cleanUpdateData: any = {};
+  Object.keys(updateData).forEach(key => {
+    if (updateData[key] !== undefined) {
+      cleanUpdateData[key] = updateData[key];
+    }
   });
+  
+  // 確保必要欄位都是正確類型
+  const finalUpdateData = {
+    ...cleanUpdateData,
+    name: cleanUpdateData.name || '',
+    price: Number(cleanUpdateData.price) || 0,
+    description: cleanUpdateData.description || '',
+    category: cleanUpdateData.category || 'Custom',
+    image: cleanUpdateData.image || 'https://via.placeholder.com/400',
+    stock: Number(cleanUpdateData.stock) ?? 0,
+    rating: Number(cleanUpdateData.rating) || 5.0,
+  };
+  
+  // 如果 images 是空陣列或只有一張圖片，移除 images 欄位（使用主圖即可）
+  if (finalUpdateData.images && Array.isArray(finalUpdateData.images) && finalUpdateData.images.length <= 1) {
+    delete finalUpdateData.images;
+  }
+  
+  await updateDoc(doc(db, 'products', id), finalUpdateData);
 };
 export const deleteProduct = async (id: string) => {
   await deleteDoc(doc(db, 'products', id));

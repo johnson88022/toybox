@@ -100,15 +100,23 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
         imageUrl = newImagePreview;
       }
       
-      const updatedProduct = {
+      const updatedProduct: any = {
         ...editingProduct,
-        image: imageUrl,
-        images: images.length > 1 ? images : undefined
+        image: imageUrl
       };
+      
+      // 處理 images 欄位：如果有多張圖片則設置，否則移除該欄位
+      if (images.length > 1) {
+        updatedProduct.images = images;
+      } else {
+        // 如果只有一張圖片，移除 images 欄位（使用主圖即可）
+        delete updatedProduct.images;
+      }
+      
       // 移除臨時欄位
-      delete (updatedProduct as any)._newImageFile;
-      delete (updatedProduct as any)._newImagePreview;
-      delete (updatedProduct as any)._editedImages;
+      delete updatedProduct._newImageFile;
+      delete updatedProduct._newImagePreview;
+      delete updatedProduct._editedImages;
       
       try {
         await onUpdateProduct(updatedProduct);
@@ -1108,7 +1116,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
             { label: '總銷售額', value: `$${totalSales.toFixed(2)}`, icon: DollarSign, color: 'bg-green-100 text-green-600' },
                 { 
                   label: '待處理訂單', 
-                  value: activeOrders.toString(), 
+                  value: pendingOrdersCount.toString(), 
                   icon: Package, 
                   color: 'bg-blue-100 text-blue-600',
                   detail: orders.filter(o => o.status === 'pending')
