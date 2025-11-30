@@ -282,6 +282,17 @@ const App: React.FC = () => {
       return;
     }
     
+    // 載入儲存的付款資訊
+    try {
+      const savedPayment = localStorage.getItem('toybox_payment_info');
+      if (savedPayment) {
+        const parsedPayment = JSON.parse(savedPayment);
+        setPaymentInfo(parsedPayment);
+      }
+    } catch (error) {
+      console.error('Failed to load saved payment info:', error);
+    }
+    
     // 嘗試從用戶基本資料自動填充收貨資訊
     try {
       const userProfile = await getUserProfile(user.id);
