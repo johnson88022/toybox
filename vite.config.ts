@@ -8,13 +8,23 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        allowedHosts: [
+          'cybercollector.zeabur.app',
+          '.zeabur.app',
+          'localhost',
+          '127.0.0.1'
+        ]
       },
       preview: {
         port: 8080,
         host: '0.0.0.0',
         strictPort: false,
-        // 允許所有主機（生產環境使用）
-        allowedHosts: 'all'
+        allowedHosts: [
+          'cybercollector.zeabur.app',
+          '.zeabur.app',
+          'localhost',
+          '127.0.0.1'
+        ]
       },
       plugins: [react()],
       define: {
