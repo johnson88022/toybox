@@ -9,6 +9,16 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
       },
+      preview: {
+        port: 8080,
+        host: '0.0.0.0',
+        allowedHosts: [
+          'cybercollector.zeabur.app',
+          '.zeabur.app', // 允許所有 zeabur.app 子域名
+          'localhost',
+          '127.0.0.1'
+        ]
+      },
       plugins: [react()],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
