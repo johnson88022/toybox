@@ -25,6 +25,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   // 從 products 陣列中獲取最新的商品資料
   const currentProduct = products.find(p => p.id === product.id) || product;
@@ -262,7 +264,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
               onTouchStart={(e) => setTouchStart(e.targetTouches[0].clientX)}
               onTouchMove={(e) => setTouchEnd(e.targetTouches[0].clientX)}
               onTouchEnd={() => {
-                if (!touchStart || !touchEnd) return;
+                if (touchStart === null || touchEnd === null) {
+                  setTouchStart(null);
+                  setTouchEnd(null);
+                  return;
+                }
                 const distance = touchStart - touchEnd;
                 const isLeftSwipe = distance > 50;
                 const isRightSwipe = distance < -50;
@@ -273,6 +279,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
                 if (isRightSwipe && images.length > 1) {
                   setSelectedImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
                 }
+                // 重置觸摸狀態
                 setTouchStart(null);
                 setTouchEnd(null);
               }}
@@ -414,7 +421,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
                     type="file"
                     className="hidden"
                     accept="image/*"
-                    capture="environment"
                     onChange={handleImageUpload}
                     onClick={(e) => {
                       // 確保在手機上也能觸發

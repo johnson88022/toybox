@@ -337,6 +337,20 @@ const App: React.FC = () => {
     }
   }, [currentPage, user]);
 
+  // ESC鍵關閉結帳模態框
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isCheckoutOpen && checkoutStep !== 4 && checkoutStep !== 5) {
+        if (window.confirm('確定要取消結帳嗎？')) {
+          setIsCheckoutOpen(false);
+          setCheckoutStep(1);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isCheckoutOpen, checkoutStep]);
+
   const renderContent = () => {
     // 商品詳情頁路由
     if (currentPage.startsWith('/product/')) {
@@ -719,7 +733,19 @@ const App: React.FC = () => {
       {/* Checkout Modal */}
       {isCheckoutOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => { if(checkoutStep === 5) setIsCheckoutOpen(false); }} />
+          <div 
+            className="absolute inset-0 bg-black/40 backdrop-blur-md" 
+            onClick={() => { 
+              if(checkoutStep === 5) {
+                setIsCheckoutOpen(false);
+              } else if (checkoutStep !== 4) {
+                if (window.confirm('確定要取消結帳嗎？')) {
+                  setIsCheckoutOpen(false);
+                  setCheckoutStep(1);
+                }
+              }
+            }} 
+          />
           <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden max-h-[90vh] overflow-y-auto">
             {/* 關閉按鈕 */}
             {checkoutStep !== 4 && checkoutStep !== 5 && (
