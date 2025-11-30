@@ -15,11 +15,13 @@ const MyOrders: React.FC<MyOrdersProps> = ({ orders, user, onUpdateOrderStatus, 
   const [isPendingCollapsed, setIsPendingCollapsed] = useState(false);
   const [isShippedCollapsed, setIsShippedCollapsed] = useState(false);
   const [isCompletedCollapsed, setIsCompletedCollapsed] = useState(false);
+  const [isCancelledCollapsed, setIsCancelledCollapsed] = useState(false);
 
   const userOrders = orders.filter(o => o.userId === user.id);
   const pendingOrders = userOrders.filter(o => o.status === 'pending');
   const shippedOrders = userOrders.filter(o => o.status === 'shipped');
   const completedOrders = userOrders.filter(o => o.status === 'completed');
+  const cancelledOrders = userOrders.filter(o => o.status === 'cancelled');
 
   const handleCancelOrder = async (orderId: string) => {
     if (!window.confirm('確定要取消此訂單嗎？取消後庫存會自動恢復。')) {
@@ -218,6 +220,36 @@ const MyOrders: React.FC<MyOrdersProps> = ({ orders, user, onUpdateOrderStatus, 
             {!isCompletedCollapsed && (
               <div className="p-6 space-y-4">
                 {completedOrders.map(order => renderOrderCard(order, false))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 已取消訂單 */}
+        {cancelledOrders.length > 0 && (
+          <div className="bg-white rounded-3xl border-2 border-gray-200 shadow-lg overflow-hidden mb-6">
+            <button
+              onClick={() => setIsCancelledCollapsed(!isCancelledCollapsed)}
+              className="w-full p-6 border-b-2 border-gray-200 bg-gradient-to-r from-gray-100 to-gray-50 hover:from-gray-200 hover:to-gray-100 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-gray-700 flex items-center gap-2">
+                  <X className="w-5 h-5 text-gray-600" />
+                  已取消訂單
+                  <span className="px-3 py-1 bg-gray-500 text-white rounded-full text-sm font-bold">
+                    {cancelledOrders.length}
+                  </span>
+                </h3>
+                {isCancelledCollapsed ? (
+                  <ChevronDown className="w-5 h-5 text-gray-600" />
+                ) : (
+                  <ChevronUp className="w-5 h-5 text-gray-600" />
+                )}
+              </div>
+            </button>
+            {!isCancelledCollapsed && (
+              <div className="p-6 space-y-4">
+                {cancelledOrders.map(order => renderOrderCard(order, false))}
               </div>
             )}
           </div>

@@ -9,7 +9,7 @@ import ProductDetail from './components/ProductDetail';
 import MyOrders from './components/MyOrders';
 import { Product, CartItem, User, Order, ShippingInfo, PaymentInfo } from './types';
 import { MOCK_PRODUCTS } from './constants';
-import { Trash2, CreditCard, ShoppingBag, X, LogIn, Apple, Smartphone, Loader2, LogOut, Settings, AlertTriangle, Copy } from 'lucide-react';
+import { Trash2, CreditCard, ShoppingBag, X, LogIn, Apple, Smartphone, Loader2, LogOut, Settings, AlertTriangle, Copy, ChevronDown, ChevronUp } from 'lucide-react';
 import { auth, googleProvider, appleProvider, isFirebaseConfigured } from './firebaseConfig';
 import { signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import {
@@ -19,7 +19,19 @@ import {
 // Main App Component
 const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    // 從localStorage恢復購物車
+    try {
+      const savedCart = localStorage.getItem('toybox_cart');
+      if (savedCart) {
+        return JSON.parse(savedCart);
+      }
+    } catch (error) {
+      console.error('Failed to load cart from localStorage:', error);
+    }
+    return [];
+  });
+  const [selectedCartItems, setSelectedCartItems] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<User | null>(null);
   const [orders, setOrders] = useState<Order[]>([]); // Track sales for admin
   const [wishes, setWishes] = useState<any[]>([]);
@@ -40,6 +52,7 @@ const App: React.FC = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('全部'); // 商品分類篩選
   const [sortBy, setSortBy] = useState<string>('newest'); // 排序方式：newest, price-asc, price-desc, name-asc, name-desc
+  const [categoryExpanded, setCategoryExpanded] = useState(false); // 分類展開狀態
   
   // Checkout form states
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
@@ -131,6 +144,15 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // 保存購物車到localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('toybox_cart', JSON.stringify(cart));
+    } catch (error) {
+      console.error('Failed to save cart to localStorage:', error);
+    }
+  }, [cart]);
+
   // Cart Functions (local)
   const addToCart = (product: Product, quantity: number = 1) => {
     // 檢查庫存
@@ -149,19 +171,33 @@ const App: React.FC = () => {
     
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item);
-      }
-      return [...prev, { ...product, quantity }];
+      const newCart = existing
+        ? prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item)
+        : [...prev, { ...product, quantity }];
+      return newCart;
     });
+    // 自動選中新加入的商品
+    setSelectedCartItems(prev => new Set([...prev, product.id]));
     setShowAddCartToast(true);
   };
 
   const removeFromCart = (id: string) => {
     setCart(prev => prev.filter(item => item.id !== id));
+    setSelectedCartItems(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
+    });
   };
 
-  const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  const cartTotal = cart.reduce((total, item) => {
+    if (selectedCartItems.has(item.id)) {
+      return total + (item.price * item.quantity);
+    }
+    return total;
+  }, 0);
+
+  const selectedCartItemsList = cart.filter(item => selectedCartItems.has(item.id));
 
   // Auth Logic - Email/Password
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -217,6 +253,8 @@ const App: React.FC = () => {
     try {
       await signOut(auth);
       setCart([]); // Clear cart on logout
+      setSelectedCartItems(new Set()); // Clear selected items
+      localStorage.removeItem('toybox_cart'); // Clear localStorage
       setCurrentPage('/');
     } catch (error) {
       console.error("Logout Error:", error);
@@ -281,14 +319,21 @@ const App: React.FC = () => {
     }
     
     setCheckoutStep(4); // Processing
-    // 保存購物車副本和總金額（在清空前）
-    const cartCopy = [...cart];
-    const totalCopy = cartCopy.reduce((total, item) => total + (item.price * item.quantity), 0);
+    // 只使用選中的商品進行結帳
+    const selectedItems = cart.filter(item => selectedCartItems.has(item.id));
+    
+    if (selectedItems.length === 0) {
+      alert('請至少選擇一個商品進行結帳');
+      setCheckoutStep(1);
+      return;
+    }
+    
+    const totalCopy = selectedItems.reduce((total, item) => total + (item.price * item.quantity), 0);
     
     const order: Order = {
       id: `ord-${Date.now()}`,
       userId: user ? user.id : 'none',
-      items: cartCopy,
+      items: selectedItems,
       total: totalCopy,
       date: new Date(),
       status: 'pending',
@@ -296,11 +341,13 @@ const App: React.FC = () => {
       paymentInfo: paymentInfo
     };
 
-    await addOrderAndUpdateStock(order, cartCopy);
+    await addOrderAndUpdateStock(order, selectedItems);
 
     setTimeout(() => {
       setCheckoutStep(5); // Success
-      setCart([]); // 最後清空購物車
+      // 只移除已結帳的商品
+      setCart(prev => prev.filter(item => !selectedCartItems.has(item.id)));
+      setSelectedCartItems(new Set()); // 清空選中狀態
       // 重置表單
       setShippingInfo({
         name: '',
@@ -469,28 +516,40 @@ const App: React.FC = () => {
         {/* 分類篩選和排序 */}
         <div className="mb-8">
           <div className="bg-gradient-to-br from-white to-pink-50/50 backdrop-blur-sm rounded-3xl p-6 border-2 border-pink-100 shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 商品分類 */}
+            <div className="flex flex-col gap-4">
+              {/* 商品分類 - 可展開 */}
               <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-1 h-6 bg-gradient-to-b from-cute-primary to-cute-secondary rounded-full"></div>
-                  <h3 className="text-lg font-black text-gray-800">商品分類</h3>
-                </div>
-                <div className="flex flex-wrap gap-2.5">
-                  {categories.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`px-6 py-3 rounded-2xl text-sm font-black transition-all duration-200 active:scale-95 ${
-                        selectedCategory === category
-                          ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-xl shadow-pink-300/50 transform scale-105'
-                          : 'bg-white text-gray-700 hover:bg-pink-50 border-2 border-gray-100 hover:border-pink-200 shadow-sm'
-                      }`}
-                    >
-                      {category}
-                    </button>
-                  ))}
-                </div>
+                <button
+                  onClick={() => setCategoryExpanded(!categoryExpanded)}
+                  className="w-full flex items-center justify-between mb-4"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-6 bg-gradient-to-b from-cute-primary to-cute-secondary rounded-full"></div>
+                    <h3 className="text-lg font-black text-gray-800">商品分類</h3>
+                  </div>
+                  {categoryExpanded ? (
+                    <ChevronUp className="w-5 h-5 text-gray-600" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-gray-600" />
+                  )}
+                </button>
+                {categoryExpanded && (
+                  <div className="flex flex-wrap gap-2.5">
+                    {categories.map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => setSelectedCategory(category)}
+                        className={`px-6 py-3 rounded-2xl text-sm font-black transition-all duration-200 active:scale-95 ${
+                          selectedCategory === category
+                            ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-xl shadow-pink-300/50 transform scale-105'
+                            : 'bg-white text-gray-700 hover:bg-pink-50 border-2 border-gray-100 hover:border-pink-200 shadow-sm'
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               
               {/* 排序方式 */}
@@ -762,6 +821,18 @@ const App: React.FC = () => {
                 <X size={20} />
               </button>
             )}
+            {checkoutStep === 5 && (
+              <button
+                onClick={() => {
+                  setIsCheckoutOpen(false);
+                  setCheckoutStep(1);
+                }}
+                className="absolute top-4 right-4 z-10 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors shadow-md"
+                aria-label="關閉"
+              >
+                <X size={20} />
+              </button>
+            )}
             
             {/* Progress Steps */}
             <div className="p-6 border-b border-pink-100 bg-pink-50">
@@ -794,29 +865,67 @@ const App: React.FC = () => {
               {checkoutStep === 1 && (
                 <div>
                   <h2 className="text-3xl font-black text-gray-800 mb-6">購物車確認</h2>
-                  <div className="space-y-4 mb-6">
-                    {cart.map((item) => (
-                      <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                        <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
-                        <div className="flex-1">
-                          <h3 className="font-bold text-gray-800">{item.name}</h3>
-                          <p className="text-sm text-gray-500">數量: {item.quantity} × ${item.price.toFixed(2)}</p>
-                        </div>
-                        <span className="font-bold text-cute-primary">${(item.price * item.quantity).toFixed(2)}</span>
+                  {cart.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-gray-400 text-lg mb-4">購物車是空的</p>
+                      <button 
+                        onClick={() => setIsCheckoutOpen(false)}
+                        className="text-cute-primary hover:underline font-bold"
+                      >
+                        繼續購物
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-4 mb-6">
+                        {cart.map((item) => (
+                          <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                            <input
+                              type="checkbox"
+                              checked={selectedCartItems.has(item.id)}
+                              onChange={(e) => {
+                                setSelectedCartItems(prev => {
+                                  const newSet = new Set(prev);
+                                  if (e.target.checked) {
+                                    newSet.add(item.id);
+                                  } else {
+                                    newSet.delete(item.id);
+                                  }
+                                  return newSet;
+                                });
+                              }}
+                              className="w-5 h-5 text-cute-primary border-gray-300 rounded focus:ring-cute-primary cursor-pointer"
+                            />
+                            <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
+                            <div className="flex-1">
+                              <h3 className="font-bold text-gray-800">{item.name}</h3>
+                              <p className="text-sm text-gray-500">數量: {item.quantity} × ${item.price.toFixed(2)}</p>
+                            </div>
+                            <span className={`font-bold ${selectedCartItems.has(item.id) ? 'text-cute-primary' : 'text-gray-400'}`}>
+                              ${(item.price * item.quantity).toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                  <div className="p-6 border border-pink-100 bg-pink-50 rounded-2xl flex justify-between items-center mb-6">
-                    <span className="text-gray-500 font-bold">總金額</span>
-                    <span className="text-4xl font-black text-cute-primary">${cartTotal.toFixed(2)}</span>
-                  </div>
-                  <button 
-                    onClick={() => setCheckoutStep(2)}
-                    disabled={cart.length === 0}
-                    className="w-full bg-cute-primary text-white font-bold py-4 rounded-xl hover:bg-pink-400 transition-colors flex items-center justify-center gap-2 shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    下一步：填寫收貨資訊
-                  </button>
+                      <div className="p-6 border border-pink-100 bg-pink-50 rounded-2xl flex justify-between items-center mb-6">
+                        <span className="text-gray-500 font-bold">總金額（已選 {selectedCartItems.size} 項）</span>
+                        <span className="text-4xl font-black text-cute-primary">${cartTotal.toFixed(2)}</span>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          if (selectedCartItems.size === 0) {
+                            alert('請至少選擇一個商品進行結帳');
+                            return;
+                          }
+                          setCheckoutStep(2);
+                        }}
+                        disabled={selectedCartItems.size === 0}
+                        className="w-full bg-cute-primary text-white font-bold py-4 rounded-xl hover:bg-pink-400 transition-colors flex items-center justify-center gap-2 shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        下一步：填寫收貨資訊
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
 

@@ -28,6 +28,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const [isPendingOrdersCollapsed, setIsPendingOrdersCollapsed] = useState(false);
   const [isShippedOrdersCollapsed, setIsShippedOrdersCollapsed] = useState(false);
   const [isCompletedOrdersCollapsed, setIsCompletedOrdersCollapsed] = useState(false);
+  const [isCancelledOrdersCollapsed, setIsCancelledOrdersCollapsed] = useState(false);
   const [shippingOrderId, setShippingOrderId] = useState<string | null>(null);
   
   // 表情符號列表
@@ -809,6 +810,117 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                   <p className="text-gray-400 text-center py-8">目前還沒有買家許願，期待第一個願望！✨</p>
                 )}
               </div>
+            </div>
+
+            {/* 已取消訂單列表 */}
+            <div className="bg-white rounded-3xl border-2 border-gray-200 shadow-lg overflow-hidden mb-8">
+              <button
+                onClick={() => setIsCancelledOrdersCollapsed(!isCancelledOrdersCollapsed)}
+                className="w-full p-6 border-b-2 border-gray-200 bg-gradient-to-r from-gray-100 to-gray-50 hover:from-gray-200 hover:to-gray-100 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-gray-700 flex items-center gap-2">
+                    <X className="w-5 h-5 text-gray-600" />
+                    已取消訂單
+                    <span className="px-3 py-1 bg-gray-500 text-white rounded-full text-sm font-bold">
+                      {orders.filter(o => o.status === 'cancelled').length}
+                    </span>
+                  </h3>
+                  {isCancelledOrdersCollapsed ? (
+                    <ChevronDown className="w-5 h-5 text-gray-600" />
+                  ) : (
+                    <ChevronUp className="w-5 h-5 text-gray-600" />
+                  )}
+                </div>
+              </button>
+              {!isCancelledOrdersCollapsed && (
+                <div className="p-6">
+                  {orders.filter(o => o.status === 'cancelled').length > 0 ? (
+                    <div className="space-y-4">
+                      {orders.filter(o => o.status === 'cancelled').map((order: any) => (
+                        <div key={order.id} className="p-6 bg-gradient-to-br from-gray-50 to-white rounded-2xl border-2 border-gray-200 shadow-lg hover:shadow-xl transition-shadow">
+                          <div className="flex justify-between items-start mb-5 pb-4 border-b-2 border-gray-200">
+                            <div>
+                              <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
+                              <div className="text-sm text-gray-600 font-medium">
+                                📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
+                              </div>
+                            </div>
+                            <span className="px-4 py-2 bg-gray-100 text-gray-800 rounded-xl text-sm font-black shadow-sm">已取消</span>
+                          </div>
+                          
+                          {/* 商品列表 */}
+                          <div className="mb-5">
+                            <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
+                              <Package size={18} className="text-gray-600" />
+                              商品內容
+                            </div>
+                            <div className="space-y-3">
+                              {order.items?.map((item: any, i: number) => (
+                                <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                                  <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-gray-100" />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
+                                    <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
+                                  </div>
+                                  <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* 收貨資訊 */}
+                          {order.shippingInfo && (
+                            <div className="mb-5 p-4 bg-gray-50/80 rounded-xl border-2 border-gray-100">
+                              <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">收貨人</span>
+                                  <span className="text-gray-900 font-medium">{order.shippingInfo.name}</span>
+                                </div>
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">電話</span>
+                                  <span className="text-gray-900 font-medium">{order.shippingInfo.phone}</span>
+                                </div>
+                                <div className="bg-white p-3 rounded-lg md:col-span-2">
+                                  <span className="font-bold text-gray-600 block mb-1">地址</span>
+                                  <span className="text-gray-900 font-medium">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
+                                  <div className="text-gray-900 font-medium mt-1">{order.shippingInfo.address}</div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 付款資訊 */}
+                          {order.paymentInfo && (
+                            <div className="mb-5 p-4 bg-gray-50/80 rounded-xl border-2 border-gray-100">
+                              <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">持卡人</span>
+                                  <span className="text-gray-900 font-medium">{order.paymentInfo.cardholderName}</span>
+                                </div>
+                                <div className="bg-white p-3 rounded-lg">
+                                  <span className="font-bold text-gray-600 block mb-1">卡號</span>
+                                  <span className="text-gray-900 font-medium">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 總金額 */}
+                          <div className="flex justify-between items-center pt-4 border-t-2 border-gray-200 bg-white/50 p-4 rounded-xl">
+                            <span className="text-gray-700 font-black text-lg">總金額</span>
+                            <span className="text-3xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-center py-8">目前沒有已取消的訂單</p>
+                  )}
+                </div>
+              )}
             </div>
           </>
         )}
