@@ -30,9 +30,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
 
   // 從 products 陣列中獲取最新的商品資料
   const currentProduct = products.find(p => p.id === product.id) || product;
-  const images = currentProduct.images && currentProduct.images.length > 0 
-    ? currentProduct.images 
-    : [currentProduct.image];
+  
+  // 在編輯模式下使用 editedProduct 的圖片，否則使用 currentProduct 的圖片
+  const images = isEditing 
+    ? (editedProduct.images && editedProduct.images.length > 0 
+        ? editedProduct.images 
+        : [editedProduct.image])
+    : (currentProduct.images && currentProduct.images.length > 0 
+        ? currentProduct.images 
+        : [currentProduct.image]);
 
   useEffect(() => {
     setEditedProduct(currentProduct);
