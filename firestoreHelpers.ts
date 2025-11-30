@@ -1,0 +1,388 @@
+import { db } from './firebaseConfig';
+import {
+  collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, runTransaction, serverTimestamp, orderBy, Timestamp, where, getDoc, setDoc
+} from 'firebase/firestore';
+
+// PRODUCTS
+export const listenProducts = (cb: (products: any[]) => void) => {
+  // 直接使用無排序查詢，在客戶端排序（避免索引問題）
+  const q = query(collection(db, 'products'));
+  return onSnapshot(q, 
+    (snapshot) => {
+      const products = snapshot.docs.map(doc => {
+        const data = doc.data();
+        const createdAt = data.createdAt;
+        let createdAtTime = 0;
+        
+        // 處理 Firestore Timestamp
+        if (createdAt) {
+          if (createdAt.seconds) {
+            createdAtTime = createdAt.seconds * 1000;
+          } else if (createdAt.toMillis) {
+            createdAtTime = createdAt.toMillis();
+          } else if (createdAt.toDate) {
+            createdAtTime = createdAt.toDate().getTime();
+          } else if (createdAt instanceof Date) {
+            createdAtTime = createdAt.getTime();
+          }
+        }
+        
+        return { 
+          id: doc.id, 
+          ...data,
+          // 確保所有必要欄位都存在
+          name: data.name || '',
+          price: Number(data.price) || 0,
+          description: data.description || '',
+          category: data.category || 'Custom',
+          image: data.image || 'https://via.placeholder.com/400',
+          stock: Number(data.stock) ?? 0,
+          rating: Number(data.rating) || 5.0,
+          isNew: data.isNew !== undefined ? data.isNew : (createdAtTime > 0),
+          _createdAtTime: createdAtTime || Date.now() // 用於排序
+        };
+      });
+      
+      // 在客戶端排序：新商品在前（按時間降序），然後按 isNew，最後按名稱
+      products.sort((a: any, b: any) => {
+        // 優先按創建時間（新商品在前）
+        if (a._createdAtTime && b._createdAtTime) {
+          return b._createdAtTime - a._createdAtTime;
+        }
+        // 其次按 isNew
+        if (a.isNew && !b.isNew) return -1;
+        if (!a.isNew && b.isNew) return 1;
+        // 最後按名稱
+        return (a.name || '').localeCompare(b.name || '');
+      });
+      
+      console.log('Products loaded:', products.length, 'Newest:', products[0]?.name);
+      cb(products);
+    },
+    (error) => {
+      console.error('Firestore listenProducts error:', error);
+      cb([]);
+    }
+  );
+};
+export const addProduct = async (product: any) => {
+  const { id, ...productData } = product;
+  const dataToAdd = {
+    name: (productData.name || '').trim(),
+    price: Number(productData.price) || 0,
+    description: (productData.description || '').trim(),
+    category: productData.category || 'Custom',
+    image: productData.image || 'https://via.placeholder.com/400',
+    stock: Number(productData.stock) ?? 0,
+    rating: Number(productData.rating) || 5.0,
+    isNew: productData.isNew !== undefined ? productData.isNew : true,
+    createdAt: serverTimestamp()
+  };
+  console.log('Adding product to Firestore:', dataToAdd);
+  const docRef = await addDoc(collection(db, 'products'), dataToAdd);
+  console.log('Product added successfully with ID:', docRef.id);
+  return docRef.id;
+};
+export const updateProduct = async (id: string, updates: any) => {
+  const { id: _, createdAt, ...updateData } = updates;
+  // 確保更新時不覆蓋 createdAt，但可以更新其他所有欄位
+  await updateDoc(doc(db, 'products', id), {
+    ...updateData,
+    // 確保必要欄位都是正確類型
+    name: updateData.name || '',
+    price: Number(updateData.price) || 0,
+    description: updateData.description || '',
+    category: updateData.category || 'Custom',
+    image: updateData.image || 'https://via.placeholder.com/400',
+    stock: Number(updateData.stock) ?? 0,
+    rating: Number(updateData.rating) || 5.0,
+  });
+};
+export const deleteProduct = async (id: string) => {
+  await deleteDoc(doc(db, 'products', id));
+  console.log('Product deleted:', id);
+};
+export const updateOrderStatus = async (orderId: string, status: 'pending' | 'shipped' | 'completed' | 'cancelled') => {
+  const orderRef = doc(db, 'orders', orderId);
+  const orderSnap = await getDoc(orderRef);
+  
+  if (!orderSnap.exists()) {
+    throw new Error('Order not found');
+  }
+  
+  const orderData = orderSnap.data();
+  
+  // 如果是取消訂單，需要恢復庫存
+  if (status === 'cancelled' && orderData.status !== 'cancelled') {
+    await runTransaction(db, async (transaction) => {
+      for (const item of orderData.items || []) {
+        const productRef = doc(db, 'products', item.id);
+        const productSnap = await transaction.get(productRef);
+        if (productSnap.exists()) {
+          const currStock = productSnap.data().stock || 0;
+          transaction.update(productRef, { stock: currStock + (item.quantity || 0) });
+        }
+      }
+    });
+  }
+  
+  await updateDoc(orderRef, {
+    status: status
+  });
+  console.log('Order status updated:', orderId, status);
+};
+export const initializeProducts = async (products: any[]) => {
+  const snapshot = await getDocs(collection(db, 'products'));
+  if (snapshot.empty) {
+    console.log('Initializing products in Firestore...');
+    for (const product of products) {
+      const { id, ...productData } = product;
+      await addDoc(collection(db, 'products'), {
+        ...productData,
+        createdAt: serverTimestamp()
+      });
+  }
+  }
+};
+
+// 重置所有資料
+export const resetAllData = async () => {
+  // 刪除所有 products
+  const productsSnapshot = await getDocs(collection(db, 'products'));
+  for (const docSnap of productsSnapshot.docs) {
+    await deleteDoc(doc(db, 'products', docSnap.id));
+  }
+  
+  // 刪除所有 wishes
+  const wishesSnapshot = await getDocs(collection(db, 'wishes'));
+  for (const docSnap of wishesSnapshot.docs) {
+    await deleteDoc(doc(db, 'wishes', docSnap.id));
+  }
+  
+  // 刪除所有 orders
+  const ordersSnapshot = await getDocs(collection(db, 'orders'));
+  for (const docSnap of ordersSnapshot.docs) {
+    await deleteDoc(doc(db, 'orders', docSnap.id));
+  }
+  
+  // 重新初始化商品
+  const MOCK_PRODUCTS = [
+    {
+      id: '1',
+      name: '霓虹武士 2077',
+      price: 129.99,
+      description: '超可愛的 1/6 比例公仔，附帶發光武士刀！非常適合擺在辦公桌上。',
+      category: 'Sci-Fi',
+      image: 'https://picsum.photos/seed/samurai/400/400',
+      stock: 15,
+      rating: 4.8,
+      isNew: true,
+    },
+    {
+      id: '2',
+      name: '銀河賞金獵人',
+      price: 89.50,
+      description: '附帶 3 個可愛的可替換頭雕和一個迷你噴射背包。',
+      category: 'Sci-Fi',
+      image: 'https://picsum.photos/seed/bounty/400/400',
+      stock: 42,
+      rating: 4.5,
+    },
+    {
+      id: '3',
+      name: '精靈女王 萊拉',
+      price: 145.00,
+      description: '精美的手繪樹脂雕像，身穿真絲連衣裙。',
+      category: 'Fantasy',
+      image: 'https://picsum.photos/seed/elf/400/400',
+      stock: 8,
+      rating: 4.9,
+    },
+    {
+      id: '4',
+      name: '機甲龍 X',
+      price: 299.99,
+      description: '巨大的友善龍龍！18 英寸高，翅膀觸感柔軟。',
+      category: 'Anime',
+      image: 'https://picsum.photos/seed/dragon/400/400',
+      stock: 3,
+      rating: 5.0,
+      isNew: true,
+    },
+    {
+      id: '5',
+      name: '虛空行者',
+      price: 65.00,
+      description: '虛空編年史標準版公仔。可動性超高！',
+      category: 'Sci-Fi',
+      image: 'https://picsum.photos/seed/void/400/400',
+      stock: 100,
+      rating: 4.2,
+    },
+    {
+      id: '6',
+      name: '水晶法師',
+      price: 110.00,
+      description: '閃亮的水晶部件在紫外線下會發光。太神奇了！',
+      category: 'Fantasy',
+      image: 'https://picsum.photos/seed/mage/400/400',
+      stock: 20,
+      rating: 4.6,
+    }
+  ];
+  for (const product of MOCK_PRODUCTS) {
+    const { id, ...productData } = product;
+    await addDoc(collection(db, 'products'), {
+      ...productData,
+      createdAt: serverTimestamp()
+    });
+  }
+};
+
+// WISHES
+export const listenWishes = (cb: (wishes: any[]) => void) => {
+  const q = query(collection(db, 'wishes'), orderBy('created', 'desc'));
+  return onSnapshot(q, 
+    (snapshot) => {
+      const wishes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      cb(wishes);
+    },
+    (error) => {
+      console.error('Firestore listenWishes error:', error);
+    }
+  );
+};
+export const addWish = async (wish: string) => {
+  await addDoc(collection(db, 'wishes'), { 
+    text: wish, 
+    created: serverTimestamp() 
+  });
+};
+
+// ORDERS
+export const addOrderAndUpdateStock = async (order: any, cart: any[]) => {
+  // 修正：先在 transaction 內更新庫存，然後在外部建立訂單
+  await runTransaction(db, async (transaction) => {
+    for(const item of cart) {
+      const ref = doc(db, 'products', item.id);
+      const snap = await transaction.get(ref);
+      if (snap.exists()) {
+        const currStock = snap.data().stock || 0;
+        transaction.update(ref, { stock: Math.max(0, currStock - item.quantity) });
+      }
+    }
+  });
+  
+  // Transaction 完成後建立訂單
+  const { id, date, ...orderData } = order;
+  await addDoc(collection(db, 'orders'), {
+    ...orderData,
+    date: serverTimestamp(),
+    status: order.status || 'pending'
+  });
+};
+export const listenOrders = (cb: (orders: any[]) => void) => {
+  const q = query(collection(db, 'orders'), orderBy('date', 'desc'));
+  return onSnapshot(q, 
+    (snapshot) => {
+      const orders = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return { 
+          id: doc.id, 
+          ...data,
+          date: data.date?.toDate ? data.date.toDate() : new Date(data.date)
+        };
+      });
+      cb(orders);
+    },
+    (error) => {
+      console.error('Firestore listenOrders error:', error);
+    }
+  );
+};
+
+// USER PROFILES
+export const getUserProfile = async (userId: string): Promise<any> => {
+  const docRef = doc(db, 'userProfiles', userId);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    return {
+      ...data,
+      name: data.name || '',
+      phone: data.phone || '',
+      address: data.address || '',
+      city: data.city || '',
+      postalCode: data.postalCode || '',
+      country: data.country || '台灣',
+      birthday: data.birthday || '',
+      gender: data.gender || undefined,
+      emergencyContact: data.emergencyContact || '',
+      emergencyPhone: data.emergencyPhone || '',
+      updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : (data.updatedAt ? new Date(data.updatedAt) : undefined)
+    };
+  }
+  return null;
+};
+
+export const updateUserProfile = async (profile: any) => {
+  const { updatedAt, ...profileData } = profile;
+  const docRef = doc(db, 'userProfiles', profile.userId);
+  await setDoc(docRef, {
+    ...profileData,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+};
+
+// MARQUEE MESSAGES
+export const getMarqueeMessages = async (): Promise<string[]> => {
+  const docRef = doc(db, 'settings', 'marquee');
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    const messages = data.messages || [];
+    // 如果訊息陣列為空或所有訊息都是空的，返回空陣列
+    if (messages.length === 0 || !messages.some((msg: string) => msg.trim() !== '')) {
+      return [];
+    }
+    return messages;
+  }
+  // 如果不存在，返回空陣列（不顯示預設內容）
+  return [];
+};
+
+export const updateMarqueeMessages = async (messages: string[]) => {
+  const docRef = doc(db, 'settings', 'marquee');
+  await setDoc(docRef, {
+    messages: messages,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+};
+
+export const listenMarqueeMessages = (cb: (messages: string[]) => void) => {
+  const docRef = doc(db, 'settings', 'marquee');
+  return onSnapshot(docRef, 
+    (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const messages = data.messages || [];
+        // 如果訊息陣列為空或所有訊息都是空的，返回空陣列
+        if (messages.length === 0 || !messages.some((msg: string) => msg.trim() !== '')) {
+          cb([]);
+          return;
+        }
+        cb(messages);
+      } else {
+        // 如果不存在，返回空陣列（不顯示預設內容）
+        cb([]);
+      }
+    },
+    (error) => {
+      console.error('Firestore listenMarqueeMessages error:', error);
+      cb([]);
+    }
+  );
+};
+
+// 圖片壓縮功能已移至 utils/imageCompress.ts
+// 此處不再需要 Storage 上傳功能

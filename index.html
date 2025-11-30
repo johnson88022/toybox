@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ToyBox - 收藏級公仔專賣</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              cute: {
+                bg: '#FFF5F7', // Very light pink background
+                card: '#FFFFFF',
+                primary: '#FF90BC', // Pink
+                secondary: '#8ACDD7', // Soft Blue
+                accent: '#FFC0D9', // Light Pink
+                yellow: '#F9F9E0', // Cream Yellow
+                text: '#4A4A4A', // Dark Gray text
+                textLight: '#888888',
+              }
+            },
+            fontFamily: {
+              sans: ['Nunito', 'Inter', 'Microsoft JhengHei', 'sans-serif'], // Added Chinese font
+            },
+            animation: {
+              'bounce-slow': 'bounce 3s infinite',
+              'wiggle': 'wiggle 1s ease-in-out infinite',
+              'scroll': 'scroll 30s linear infinite',
+            },
+            keyframes: {
+              wiggle: {
+                '0%, 100%': { transform: 'rotate(-3deg)' },
+                '50%': { transform: 'rotate(3deg)' },
+              },
+              scroll: {
+                '0%': { transform: 'translateX(0)' },
+                '100%': { transform: 'translateX(-50%)' },
+              }
+            }
+          },
+        },
+      };
+    </script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+      
+      body {
+        background-color: #FFF5F7;
+        color: #4A4A4A;
+        font-family: 'Nunito', 'Microsoft JhengHei', sans-serif;
+      }
+      /* Marquee Animation */
+      @keyframes scroll {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(-50%);
+        }
+      }
+      
+      .animate-scroll {
+        animation: scroll 30s linear infinite;
+      }
+      
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #FFF5F7; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #FF90BC; 
+        border-radius: 5px;
+        border: 2px solid #FFF5F7;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #ff7da8; 
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
