@@ -74,7 +74,7 @@ const App: React.FC = () => {
   
   // Payment default save state
   const [savePaymentAsDefault, setSavePaymentAsDefault] = useState(false);
-
+  
   // Login State
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -367,11 +367,11 @@ const App: React.FC = () => {
     const totalCopy = selectedItems.reduce((total, item) => total + (item.price * item.quantity), 0);
     
     const order: Order = {
-      id: `ord-${Date.now()}`,
+          id: `ord-${Date.now()}`,
       userId: user ? user.id : 'none',
       items: selectedItems,
       total: totalCopy,
-      date: new Date(),
+          date: new Date(),
       status: 'pending',
       shippingInfo: shippingInfo,
       paymentInfo: paymentInfo
@@ -584,35 +584,40 @@ const App: React.FC = () => {
         </div>
 
         {/* 分類篩選和排序 */}
-        <div className="mb-3">
-          <div className="bg-white/50 backdrop-blur-sm rounded-lg p-1.5 border border-pink-100/50 shadow-sm">
-            <div className="flex flex-col gap-1">
+        <div className="mb-6">
+          <div className="bg-white rounded-2xl p-4 border border-pink-100 shadow-sm">
+            <div className="flex flex-col gap-3">
               {/* 商品分類 - 可展開 */}
               <div>
                 <button
                   onClick={() => setCategoryExpanded(!categoryExpanded)}
-                  className="w-full flex items-center justify-between py-0.5 px-1"
+                  className="w-full flex items-center justify-between py-2 px-3 rounded-xl hover:bg-pink-50 transition-colors"
                 >
-                  <div className="flex items-center gap-1">
-                    <div className="w-0.5 h-2 bg-gradient-to-b from-cute-primary to-cute-secondary rounded-full"></div>
-                    <h3 className="text-[10px] font-medium text-gray-600">分類</h3>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-4 bg-gradient-to-b from-cute-primary to-cute-secondary rounded-full"></div>
+                    <h3 className="text-sm font-semibold text-gray-700">商品分類</h3>
+                    {selectedCategory !== '全部' && (
+                      <span className="px-2 py-0.5 bg-cute-primary/20 text-cute-primary text-xs font-bold rounded-full">
+                        {selectedCategory}
+                      </span>
+                    )}
                   </div>
                   {categoryExpanded ? (
-                    <ChevronUp className="w-3 h-3 text-gray-400" />
+                    <ChevronUp className="w-4 h-4 text-gray-500" />
                   ) : (
-                    <ChevronDown className="w-3 h-3 text-gray-400" />
+                    <ChevronDown className="w-4 h-4 text-gray-500" />
                   )}
                 </button>
                 {categoryExpanded && (
-                  <div className="flex flex-wrap gap-1 mt-1">
+                  <div className="flex flex-wrap gap-2 mt-3 px-3">
                     {categories.map((category) => (
                       <button
                         key={category}
                         onClick={() => setSelectedCategory(category)}
-                        className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-all duration-200 active:scale-95 ${
+                        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95 ${
                           selectedCategory === category
-                            ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-sm'
-                            : 'bg-white text-gray-600 hover:bg-pink-50 border border-gray-100'
+                            ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-md'
+                            : 'bg-gray-50 text-gray-700 hover:bg-pink-50 border border-gray-200'
                         }`}
                       >
                         {category}
@@ -626,30 +631,38 @@ const App: React.FC = () => {
               <div>
                 <button
                   onClick={() => setSortExpanded(!sortExpanded)}
-                  className="w-full flex items-center justify-between py-0.5 px-1"
+                  className="w-full flex items-center justify-between py-2 px-3 rounded-xl hover:bg-pink-50 transition-colors"
                 >
-                  <div className="flex items-center gap-1">
-                    <div className="w-0.5 h-2 bg-gradient-to-b from-cute-secondary to-cute-primary rounded-full"></div>
-                    <h3 className="text-[10px] font-medium text-gray-600">排序</h3>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-4 bg-gradient-to-b from-cute-secondary to-cute-primary rounded-full"></div>
+                    <h3 className="text-sm font-semibold text-gray-700">排序方式</h3>
+                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-full">
+                      {sortBy === 'newest' ? '最新上架' : 
+                       sortBy === 'price-asc' ? '價格：低到高' :
+                       sortBy === 'price-desc' ? '價格：高到低' :
+                       sortBy === 'name-asc' ? '名稱：A-Z' : '名稱：Z-A'}
+                    </span>
                   </div>
                   {sortExpanded ? (
-                    <ChevronUp className="w-3 h-3 text-gray-400" />
+                    <ChevronUp className="w-4 h-4 text-gray-500" />
                   ) : (
-                    <ChevronDown className="w-3 h-3 text-gray-400" />
+                    <ChevronDown className="w-4 h-4 text-gray-500" />
                   )}
                 </button>
                 {sortExpanded && (
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full bg-white border border-pink-200 rounded-md px-1.5 py-1 text-[10px] text-gray-700 font-medium focus:outline-none focus:ring-1 focus:ring-pink-200 focus:border-cute-primary transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23FF90BC%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:10px] bg-[right_0.2rem_center] bg-no-repeat mt-1"
-                  >
-                    <option value="newest">最新上架</option>
-                    <option value="price-asc">價格：低到高</option>
-                    <option value="price-desc">價格：高到低</option>
-                    <option value="name-asc">名稱：A-Z</option>
-                    <option value="name-desc">名稱：Z-A</option>
-                  </select>
+                  <div className="mt-3 px-3">
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="w-full bg-white border-2 border-pink-200 rounded-xl px-4 py-3 text-sm text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-cute-primary focus:border-cute-primary transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23FF90BC%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_1rem_center] bg-no-repeat"
+                    >
+                      <option value="newest">最新上架</option>
+                      <option value="price-asc">價格：低到高</option>
+                      <option value="price-desc">價格：高到低</option>
+                      <option value="name-asc">名稱：A-Z</option>
+                      <option value="name-desc">名稱：Z-A</option>
+                    </select>
+                  </div>
                 )}
               </div>
             </div>
@@ -658,7 +671,7 @@ const App: React.FC = () => {
 
         {/* 商品列表 */}
         {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredProducts.map(product => (
               <ProductCard 
                 key={product.id} 
@@ -666,8 +679,8 @@ const App: React.FC = () => {
                 onAddToCart={addToCart}
                 onClick={() => setCurrentPage(`/product/${product.id}`)}
               />
-            ))}
-          </div>
+          ))}
+        </div>
         ) : (
           <div className="text-center py-16">
             <p className="text-gray-400 text-xl font-medium">目前沒有「{selectedCategory}」類別的商品</p>
@@ -928,7 +941,7 @@ const App: React.FC = () => {
                 <span className={checkoutStep >= 5 ? 'text-cute-primary font-bold' : ''}>完成</span>
               </div>
             </div>
-
+            
             {/* Checkout Steps */}
             <div className="p-8 md:p-12">
               {/* Step 1: Cart Review */}
@@ -952,108 +965,122 @@ const App: React.FC = () => {
                           const checkoutQuantity = cartItemQuantities.get(item.id) || item.quantity;
                           const isSelected = selectedCartItems.has(item.id);
                           return (
-                            <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedCartItems(prev => {
-                                    const newSet = new Set(prev);
-                                    if (e.target.checked) {
-                                      newSet.add(item.id);
-                                      // 初始化數量為購物車中的數量
-                                      setCartItemQuantities(prevQty => {
-                                        const newMap = new Map(prevQty);
-                                        if (!newMap.has(item.id)) {
-                                          newMap.set(item.id, item.quantity);
-                                        }
-                                        return newMap;
-                                      });
-                                    } else {
-                                      newSet.delete(item.id);
-                                    }
-                                    return newSet;
-                                  });
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="w-6 h-6 text-cute-primary border-gray-300 rounded focus:ring-2 focus:ring-cute-primary cursor-pointer flex-shrink-0"
-                              />
-                              <img src={(item.images && item.images.length > 0) ? item.images[0] : item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-bold text-gray-800 truncate">{item.name}</h3>
-                              {isSelected ? (
-                                <div className="flex flex-wrap items-center gap-2 mt-2">
-                                  <span className="text-xs text-gray-500">結帳數量:</span>
-                                  <div className="flex items-center gap-1.5">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (checkoutQuantity > 1) {
-                                          setCartItemQuantities(prev => {
-                                            const newMap = new Map(prev);
-                                            newMap.set(item.id, checkoutQuantity - 1);
-                                            return newMap;
-                                          });
-                                        }
-                                      }}
-                                      className="w-7 h-7 bg-gray-200 hover:bg-gray-300 active:bg-gray-400 rounded-lg flex items-center justify-center text-gray-700 font-bold text-sm transition-colors touch-manipulation"
-                                      disabled={checkoutQuantity <= 1}
-                                    >
-                                      -
-                                    </button>
-                                    <input
-                                      type="number"
-                                      min={1}
-                                      max={item.quantity}
-                                      value={checkoutQuantity}
-                                      onChange={(e) => {
-                                        e.stopPropagation();
-                                        const newQty = Math.max(1, Math.min(item.quantity, parseInt(e.target.value) || 1));
-                                        setCartItemQuantities(prev => {
-                                          const newMap = new Map(prev);
-                                          newMap.set(item.id, newQty);
+                            <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-4 bg-gray-50 rounded-xl">
+                              <div className="flex items-center gap-3 w-full sm:w-auto">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedCartItems(prev => {
+                                      const newSet = new Set(prev);
+                                      if (e.target.checked) {
+                                        newSet.add(item.id);
+                                        // 初始化數量為購物車中的數量
+                                        setCartItemQuantities(prevQty => {
+                                          const newMap = new Map(prevQty);
+                                          if (!newMap.has(item.id)) {
+                                            newMap.set(item.id, item.quantity);
+                                          }
                                           return newMap;
                                         });
-                                      }}
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="w-12 text-center border border-gray-300 rounded-lg px-2 py-1 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                                    />
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (checkoutQuantity < item.quantity) {
+                                      } else {
+                                        newSet.delete(item.id);
+                                      }
+                                      return newSet;
+                                    });
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-6 h-6 text-cute-primary border-gray-300 rounded focus:ring-2 focus:ring-cute-primary cursor-pointer flex-shrink-0"
+                                />
+                                <img src={(item.images && item.images.length > 0) ? item.images[0] : item.image} alt={item.name} className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-bold text-gray-800 truncate text-sm sm:text-base">{item.name}</h3>
+                                  {!isSelected && (
+                                    <p className="text-xs sm:text-sm text-gray-500 mt-1">數量: {item.quantity} × ${item.price.toFixed(2)}</p>
+                                  )}
+                                </div>
+                              </div>
+                              {isSelected && (
+                                <div className="w-full sm:w-auto flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 pl-9 sm:pl-0">
+                                  <div className="flex flex-col gap-2 w-full sm:w-auto">
+                                    <span className="text-xs font-semibold text-gray-600">結帳數量</span>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (checkoutQuantity > 1) {
+                                            setCartItemQuantities(prev => {
+                                              const newMap = new Map(prev);
+                                              newMap.set(item.id, checkoutQuantity - 1);
+                                              return newMap;
+                                            });
+                                          }
+                                        }}
+                                        className="w-8 h-8 bg-gray-200 hover:bg-gray-300 active:bg-gray-400 rounded-lg flex items-center justify-center text-gray-700 font-bold text-base transition-colors touch-manipulation"
+                                        disabled={checkoutQuantity <= 1}
+                                      >
+                                        -
+                                      </button>
+                                      <input
+                                        type="number"
+                                        min={1}
+                                        max={item.quantity}
+                                        value={checkoutQuantity}
+                                        onChange={(e) => {
+                                          e.stopPropagation();
+                                          const newQty = Math.max(1, Math.min(item.quantity, parseInt(e.target.value) || 1));
                                           setCartItemQuantities(prev => {
                                             const newMap = new Map(prev);
-                                            newMap.set(item.id, checkoutQuantity + 1);
+                                            newMap.set(item.id, newQty);
                                             return newMap;
                                           });
-                                        }
-                                      }}
-                                      className="w-7 h-7 bg-gray-200 hover:bg-gray-300 active:bg-gray-400 rounded-lg flex items-center justify-center text-gray-700 font-bold text-sm transition-colors touch-manipulation"
-                                      disabled={checkoutQuantity >= item.quantity}
-                                    >
-                                      +
-                                    </button>
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="w-16 text-center border-2 border-gray-300 rounded-lg px-2 py-2 text-base font-bold focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                                      />
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (checkoutQuantity < item.quantity) {
+                                            setCartItemQuantities(prev => {
+                                              const newMap = new Map(prev);
+                                              newMap.set(item.id, checkoutQuantity + 1);
+                                              return newMap;
+                                            });
+                                          }
+                                        }}
+                                        className="w-8 h-8 bg-gray-200 hover:bg-gray-300 active:bg-gray-400 rounded-lg flex items-center justify-center text-gray-700 font-bold text-base transition-colors touch-manipulation"
+                                        disabled={checkoutQuantity >= item.quantity}
+                                      >
+                                        +
+                                      </button>
+                                      <span className="text-xs text-gray-400 ml-1">/ {item.quantity} 件</span>
+                                    </div>
                                   </div>
-                                  <span className="text-xs text-gray-400">/ {item.quantity} 件</span>
+                                  <div className="flex flex-col items-end sm:items-start gap-1 ml-auto sm:ml-0">
+                                    <span className="text-xs font-semibold text-gray-600">小計</span>
+                                    <span className="font-bold text-lg sm:text-xl text-cute-primary whitespace-nowrap">
+                                      ${(item.price * checkoutQuantity).toFixed(2)}
+                                    </span>
+                                  </div>
                                 </div>
-                              ) : (
-                                <p className="text-sm text-gray-500">數量: {item.quantity} × ${item.price.toFixed(2)}</p>
                               )}
-                            </div>
-                            <div className="flex-shrink-0 text-right min-w-[60px]">
-                              <span className={`font-bold text-sm whitespace-nowrap ${isSelected ? 'text-cute-primary' : 'text-gray-400'}`}>
-                                ${(item.price * (isSelected ? checkoutQuantity : item.quantity)).toFixed(2)}
-                              </span>
-                            </div>
+                              {!isSelected && (
+                                <div className="flex flex-col items-end gap-1 ml-auto sm:ml-0 pl-9 sm:pl-0">
+                                  <span className="text-xs font-semibold text-gray-600">小計</span>
+                                  <span className="font-bold text-lg sm:text-xl text-gray-400 whitespace-nowrap">
+                                    ${(item.price * item.quantity).toFixed(2)}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
                       </div>
                       <div className="p-6 border border-pink-100 bg-pink-50 rounded-2xl flex justify-between items-center mb-6">
                         <span className="text-gray-500 font-bold">總金額（已選 {selectedCartItems.size} 項）</span>
-                        <span className="text-4xl font-black text-cute-primary">${cartTotal.toFixed(2)}</span>
+                      <span className="text-4xl font-black text-cute-primary">${cartTotal.toFixed(2)}</span>
                       </div>
                       <button 
                         onClick={() => {
@@ -1108,7 +1135,7 @@ const App: React.FC = () => {
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-cute-primary focus:outline-none"
                           required
                         />
-                      </div>
+                    </div>
                       <div>
                         <label className="block text-sm font-bold text-gray-600 mb-2">縣市 *</label>
                         <input 
@@ -1118,7 +1145,7 @@ const App: React.FC = () => {
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-cute-primary focus:outline-none"
                           required
                         />
-                      </div>
+                  </div>
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-gray-600 mb-2">郵遞區號 *</label>
@@ -1238,12 +1265,12 @@ const App: React.FC = () => {
                     >
                       上一步
                     </button>
-                    <button 
-                      onClick={processPayment}
+                  <button 
+                    onClick={processPayment}
                       className="flex-1 bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 shadow-lg active:scale-95"
-                    >
+                  >
                       <CreditCard size={20} /> 確認付款
-                    </button>
+                  </button>
                   </div>
                 </div>
               )}
