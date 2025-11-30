@@ -15,6 +15,7 @@ interface AdminPanelProps {
   wishes?: string[] | Array<{ id: string; text?: string; [key: string]: any }>;
   onDeleteWish?: (wishId: string) => Promise<void>;
   onResetData?: () => Promise<void>;
+  onCategoriesChange?: (categories: string[]) => void; // 通知父組件類別變更
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProduct, onAddProduct, onDeleteProduct, onUpdateOrderStatus, wishes = [], onDeleteWish, onResetData, onCategoriesChange }) => {
