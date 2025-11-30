@@ -88,21 +88,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const handleEditSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingProduct) {
-      // 使用編輯後的圖片陣列，如果沒有則使用單一圖片
-      const images = (editingProduct as any)._editedImages || 
-                    (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : null) ||
-                    [editingProduct.image];
+      // 使用編輯後的圖片陣列，如果沒有則使用原始圖片
+      const editedImages = (editingProduct as any)._editedImages;
+      const images = editedImages !== undefined 
+        ? editedImages 
+        : (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : [editingProduct.image]);
       
-      // 如果有新上傳的主圖，使用新圖
-      let imageUrl = editingProduct.image;
-      const newImagePreview = (editingProduct as any)._newImagePreview;
-      if (newImagePreview) {
-        imageUrl = newImagePreview;
-      }
-      
+      // 保持原主圖不變，新上傳的圖片只添加到 images 陣列中
       const updatedProduct: any = {
         ...editingProduct,
-        image: imageUrl
+        image: editingProduct.image // 保持原主圖
       };
       
       // 處理 images 欄位：如果有多張圖片則設置，否則移除該欄位
@@ -120,7 +115,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
       
       try {
         await onUpdateProduct(updatedProduct);
-        setEditingProduct(null);
+      setEditingProduct(null);
         console.log('Product updated successfully:', updatedProduct.name);
       } catch (error: any) {
         console.error('Failed to update product:', error);
@@ -1001,7 +996,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                         <td className="px-4 lg:px-8 py-5">
                           <div className="flex items-center gap-2">
                             <button 
-                              onClick={() => setEditingProduct(product)}
+                              onClick={() => {
+                                // 初始化編輯時，設置 _editedImages 為當前圖片陣列
+                                const currentImages = product.images && product.images.length > 0 
+                                  ? product.images 
+                                  : [product.image];
+                                setEditingProduct({
+                                  ...product,
+                                  _editedImages: currentImages
+                                });
+                              }}
                               className="text-cute-secondary hover:text-cute-primary p-2 hover:bg-pink-50 rounded-lg transition-colors"
                               aria-label="編輯商品"
                             >
@@ -1068,7 +1072,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                       </span>
                       <div className="flex items-center gap-2">
                         <button 
-                          onClick={() => setEditingProduct(product)}
+                          onClick={() => {
+                            // 初始化編輯時，設置 _editedImages 為當前圖片陣列
+                            const currentImages = product.images && product.images.length > 0 
+                              ? product.images 
+                              : [product.image];
+                            setEditingProduct({
+                              ...product,
+                              _editedImages: currentImages
+                            });
+                          }}
                           className="text-cute-secondary hover:text-cute-primary p-2 hover:bg-pink-50 rounded-lg transition-colors"
                           aria-label="編輯商品"
                         >
@@ -1590,7 +1603,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                       }
                     }}
                   />
-                </label>
+                    </label>
                 <p className="text-xs text-gray-400 mt-1">支援相機拍照或從相簿選擇，可上傳多張圖片</p>
                 <div className="mt-2">
                   <label htmlFor="edit-product-image-fit-select" className="block text-xs font-bold text-gray-600 mb-1">圖片顯示方式</label>
@@ -1603,7 +1616,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                     <option value="contain">完整顯示（不裁切）</option>
                     <option value="cover">填滿（可能裁切）</option>
                   </select>
-                </div>
+                 </div>
               </div>
 
               <div>
