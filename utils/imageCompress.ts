@@ -39,15 +39,16 @@ export const compressImage = (file: File, maxWidth: number = 1200, maxHeight: nu
         ctx.drawImage(img, 0, 0, width, height);
         
         // 轉換為 base64，嘗試不同的品質直到符合大小限制
+        // 考慮多張圖片的情況，單張圖片限制更嚴格（約150KB，確保3-4張圖片不超過1MB）
         let currentQuality = quality;
-        const maxSize = 500 * 1024; // 500KB
+        const maxSize = 150 * 1024; // 150KB per image (確保多張圖片時總大小不超過1MB)
         let base64 = '';
         
         const tryCompress = () => {
           base64 = canvas.toDataURL('image/jpeg', currentQuality);
           const size = (base64.length * 3) / 4; // base64 大小估算
           
-          if (size > maxSize && currentQuality > 0.3) {
+          if (size > maxSize && currentQuality > 0.2) {
             // 如果還是太大，降低品質
             currentQuality -= 0.1;
             tryCompress();

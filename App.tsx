@@ -56,6 +56,7 @@ const App: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('newest'); // 排序方式：newest, price-asc, price-desc, name-asc, name-desc
   const [categoryExpanded, setCategoryExpanded] = useState(false); // 分類展開狀態
   const [sortExpanded, setSortExpanded] = useState(false); // 排序展開狀態
+  const [customCategories, setCustomCategories] = useState<string[]>(['Sci-Fi', 'Fantasy', 'Anime', 'Custom']); // 自定義類別，與AdminPanel同步
   
   // Checkout form states
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
@@ -530,11 +531,12 @@ const App: React.FC = () => {
           wishes={wishes}
           onDeleteWish={handleDeleteWish}
           onResetData={handleResetData}
+          onCategoriesChange={setCustomCategories}
         />
       );
     }
-    // Default to Home
-    const categories = ['全部', 'Sci-Fi', 'Fantasy', 'Anime', 'Custom'];
+    // Default to Home - 使用自定義類別
+    const categories = ['全部', ...customCategories];
     let filteredProducts = selectedCategory === '全部' 
       ? products 
       : products.filter(p => p.category === selectedCategory);

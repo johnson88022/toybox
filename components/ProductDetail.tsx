@@ -93,7 +93,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
 
 
   return (
-    <div className="min-h-screen pt-28 px-4 pb-12 bg-cute-bg">
+    <div className="min-h-screen pt-28 px-4 pb-12 bg-cute-bg fixed inset-0 overflow-y-auto z-50" style={{ touchAction: 'pan-y' }}>
       <div className="max-w-7xl mx-auto">
         {/* 返回按鈕 */}
         <button
@@ -111,19 +111,28 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
             {/* 主圖 */}
             <div 
               className="relative aspect-square bg-gray-50 rounded-2xl overflow-hidden group cursor-grab active:cursor-grabbing"
+              style={{ touchAction: 'pan-x' }}
               onTouchStart={(e) => {
-                e.preventDefault();
-                setTouchStart(e.targetTouches[0].clientX);
+                // 只阻止圖片區域的默認滾動，允許橫向滑動
+                const touch = e.targetTouches[0];
+                setTouchStart(touch.clientX);
                 setTouchEnd(null);
               }}
               onTouchMove={(e) => {
-                e.preventDefault();
+                // 允許橫向滑動，但阻止縱向滾動
                 if (touchStart !== null) {
-                  setTouchEnd(e.targetTouches[0].clientX);
+                  const touch = e.targetTouches[0];
+                  const deltaX = Math.abs(touch.clientX - touchStart);
+                  const deltaY = Math.abs(touch.clientY - (e.targetTouches[0].clientY));
+                  
+                  // 如果是橫向滑動，阻止默認行為
+                  if (deltaX > deltaY && deltaX > 10) {
+                    e.preventDefault();
+                  }
+                  setTouchEnd(touch.clientX);
                 }
               }}
               onTouchEnd={(e) => {
-                e.preventDefault();
                 if (touchStart === null || touchEnd === null) {
                   setTouchStart(null);
                   setTouchEnd(null);

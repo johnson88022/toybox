@@ -176,8 +176,25 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
       console.log('Image compressed successfully');
       
       if (isNewProduct) {
-        // 新增商品：支援多張圖片
+        // 新增商品：支援多張圖片，但限制總數量和大小
         setNewProductImages(prev => {
+          // 限制最多5張圖片，避免超過Firestore 1MB限制
+          if (prev.length >= 5) {
+            alert('最多只能上傳5張圖片！');
+            setIsUploadingImage(false);
+            e.target.value = '';
+            return prev;
+          }
+          
+          // 檢查總大小（估算）
+          const estimatedTotalSize = (prev.length + 1) * 150 * 1024; // 每張約150KB
+          if (estimatedTotalSize > 900 * 1024) { // 預留100KB給其他資料
+            alert('圖片總大小過大，請減少圖片數量或使用更小的圖片！');
+            setIsUploadingImage(false);
+            e.target.value = '';
+            return prev;
+          }
+          
           const updatedImages = [...prev, compressedBase64];
           if (prev.length === 0) {
             // 第一張圖片作為主圖預覽
@@ -984,7 +1001,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                     if (newCategory && newCategory.trim()) {
                       const categoryValue = newCategory.trim();
                       if (!customCategories.includes(categoryValue)) {
-                        setCustomCategories([...customCategories, categoryValue]);
+                        const updatedCategories = [...customCategories, categoryValue];
+                        setCustomCategories(updatedCategories);
+                        onCategoriesChange?.(updatedCategories);
                         alert(`類別「${categoryValue}」已新增！`);
                       } else {
                         alert('此類別已存在！');
@@ -1745,6 +1764,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                         const compressedBase64 = await compressImage(file);
                         const currentImages = (editingProduct as any)._editedImages || 
                                              (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : [editingProduct.image]);
+                        
+                        // 限制最多5張圖片，避免超過Firestore 1MB限制
+                        if (currentImages.length >= 5) {
+                          alert('最多只能上傳5張圖片！');
+                          setIsUploadingImage(false);
+                          e.target.value = '';
+                          return;
+                        }
+                        
+                        // 檢查總大小（估算）
+                        const estimatedTotalSize = (currentImages.length + 1) * 150 * 1024; // 每張約150KB
+                        if (estimatedTotalSize > 900 * 1024) { // 預留100KB給其他資料
+                          alert('圖片總大小過大，請減少圖片數量或使用更小的圖片！');
+                          setIsUploadingImage(false);
+                          e.target.value = '';
+                          return;
+                        }
+                        
                         const newImages = [...currentImages, compressedBase64];
                         setEditingProduct({...editingProduct, _editedImages: newImages});
                       } catch (error: any) {
