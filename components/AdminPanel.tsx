@@ -1527,22 +1527,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                   />
                 </label>
                 <p className="text-xs text-gray-400 mt-1">支援相機拍照或從相簿選擇，可上傳多張圖片</p>
-                    <div className="mt-2">
-                      <label htmlFor="new-product-image-fit-select" className="block text-xs font-bold text-gray-600 mb-1">圖片顯示方式</label>
-                      <select
-                        id="new-product-image-fit-select"
-                        value={newProduct?.imageFit || 'contain'}
-                        onChange={(e) => setNewProduct(prev => ({ ...prev, imageFit: e.target.value as 'cover' | 'contain' }))}
-                        className="w-full bg-gray-50 border border-pink-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                      >
-                        <option value="contain">完整顯示（不裁切）</option>
-                        <option value="cover">填滿（可能裁切，可拖拉調整位置）</option>
-                      </select>
-                      {newProduct?.imageFit === 'cover' && (
-                        <p className="text-xs text-gray-500 mt-1">提示：使用 cover 模式時，可在商品詳情頁面拖拉圖片調整顯示位置</p>
-                      )}
-                    </div>
-                 </div>
+                <div className="mt-2">
+                  <label htmlFor="new-product-image-fit-select" className="block text-xs font-bold text-gray-600 mb-1">圖片顯示方式</label>
+                  <select
+                    id="new-product-image-fit-select"
+                    value={newProduct?.imageFit || 'contain'}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, imageFit: e.target.value as 'cover' | 'contain' }))}
+                    className="w-full bg-gray-50 border border-pink-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                  >
+                    <option value="contain">完整顯示（不裁切）</option>
+                    <option value="cover">填滿（可能裁切，可拖拉調整位置）</option>
+                  </select>
+                  {newProduct?.imageFit === 'cover' && (
+                    <p className="text-xs text-gray-500 mt-1">提示：使用 cover 模式時，可在商品詳情頁面拖拉圖片調整顯示位置</p>
+                  )}
+                </div>
               </div>
 
               <div>
