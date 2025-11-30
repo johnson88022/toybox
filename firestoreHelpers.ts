@@ -386,51 +386,67 @@ export const updateUserProfile = async (profile: any) => {
 };
 
 // MARQUEE MESSAGES
-export const getMarqueeMessages = async (): Promise<string[]> => {
+export const getMarqueeMessages = async (): Promise<{ messages: string[]; speed: number }> => {
   const docRef = doc(db, 'settings', 'marquee');
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
     const data = docSnap.data();
     const messages = data.messages || [];
+    const speed = data.speed || 30;
     // 如果訊息陣列為空或所有訊息都是空的，返回空陣列
     if (messages.length === 0 || !messages.some((msg: string) => msg.trim() !== '')) {
-      return [];
+      return { messages: [], speed };
     }
-    return messages;
+    return { messages, speed };
   }
   // 如果不存在，返回空陣列（不顯示預設內容）
-  return [];
+  return { messages: [], speed: 30 };
 };
 
-export const updateMarqueeMessages = async (messages: string[]) => {
+export const updateMarqueeMessages = async (messages: string[], speed?: number) => {
   const docRef = doc(db, 'settings', 'marquee');
-  await setDoc(docRef, {
+  const updateData: any = {
     messages: messages,
     updatedAt: serverTimestamp()
-  }, { merge: true });
+  };
+  if (speed !== undefined) {
+    updateData.speed = speed;
+  }
+  await setDoc(docRef, updateData, { merge: true });
 };
 
-export const listenMarqueeMessages = (cb: (messages: string[]) => void) => {
+export const getMarqueeSpeed = async (): Promise<number> => {
+  const docRef = doc(db, 'settings', 'marquee');
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    return data.speed || 30; // 預設30秒
+  }
+  return 30;
+};
+
+export const listenMarqueeMessages = (cb: (messages: string[], speed?: number) => void) => {
   const docRef = doc(db, 'settings', 'marquee');
   return onSnapshot(docRef, 
     (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         const messages = data.messages || [];
+        const speed = data.speed || 30;
         // 如果訊息陣列為空或所有訊息都是空的，返回空陣列
         if (messages.length === 0 || !messages.some((msg: string) => msg.trim() !== '')) {
-          cb([]);
+          cb([], speed);
           return;
         }
-        cb(messages);
+        cb(messages, speed);
       } else {
         // 如果不存在，返回空陣列（不顯示預設內容）
-        cb([]);
+        cb([], 30);
       }
     },
     (error) => {
       console.error('Firestore listenMarqueeMessages error:', error);
-      cb([]);
+      cb([], 30);
     }
   );
 };

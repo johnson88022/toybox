@@ -23,6 +23,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const [completingOrderId, setCompletingOrderId] = useState<string | null>(null);
   const [isEditingMarquee, setIsEditingMarquee] = useState(false);
   const [marqueeMessages, setMarqueeMessages] = useState<string[]>([]);
+  const [marqueeSpeed, setMarqueeSpeed] = useState<number>(30);
   const [isLoadingMarquee, setIsLoadingMarquee] = useState(true);
   const [isSavingMarquee, setIsSavingMarquee] = useState(false);
   const [isPendingOrdersCollapsed, setIsPendingOrdersCollapsed] = useState(false);
@@ -95,9 +96,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
         : (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : [editingProduct.image]);
       
       // 如果編輯後的圖片陣列存在且不為空，使用第一張圖片作為新的主圖
+      // 如果所有圖片都被刪除，使用預設圖片
       const newMainImage = (editedImages !== undefined && editedImages.length > 0) 
         ? editedImages[0] 
-        : editingProduct.image;
+        : (images.length > 0 ? images[0] : editingProduct.image || 'https://via.placeholder.com/400');
       
       const updatedProduct: any = {
         ...editingProduct,
@@ -107,6 +109,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
       // 處理 images 欄位：如果有多張圖片則設置，否則移除該欄位
       if (images.length > 1) {
         updatedProduct.images = images;
+      } else if (images.length === 0) {
+        // 如果所有圖片都被刪除，移除 images 欄位
+        delete updatedProduct.images;
       } else {
         // 如果只有一張圖片，移除 images 欄位（使用主圖即可）
         delete updatedProduct.images;
@@ -261,8 +266,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const loadMarqueeMessages = async () => {
     setIsLoadingMarquee(true);
     try {
-      const messages = await getMarqueeMessages();
+      const { messages, speed } = await getMarqueeMessages();
       setMarqueeMessages(messages);
+      setMarqueeSpeed(speed);
     } catch (error) {
       console.error('Failed to load marquee messages:', error);
     } finally {
@@ -273,7 +279,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const handleSaveMarquee = async () => {
     setIsSavingMarquee(true);
     try {
-      await updateMarqueeMessages(marqueeMessages);
+      await updateMarqueeMessages(marqueeMessages, marqueeSpeed);
       setIsEditingMarquee(false);
       alert('跑馬燈內容已更新！');
     } catch (error) {
@@ -1299,6 +1305,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             </div>
                           ))}
                         </div>
+                        {/* 跑馬燈速度調整 */}
+                        <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                          <label className="block text-sm font-bold text-gray-700 mb-3">
+                            跑馬燈速度: {marqueeSpeed} 秒
+                          </label>
+                          <input
+                            type="range"
+                            min="5"
+                            max="60"
+                            value={marqueeSpeed}
+                            onChange={(e) => setMarqueeSpeed(Number(e.target.value))}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cute-primary"
+                          />
+                          <div className="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>快 (5秒)</span>
+                            <span>慢 (60秒)</span>
+                          </div>
+                        </div>
                         <div className="flex gap-3">
                           <button
                             onClick={addMarqueeMessage}
@@ -1426,11 +1450,32 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                         id="new-product-image-fit-select"
                         value={newProduct?.imageFit || 'contain'}
                         onChange={(e) => setNewProduct(prev => ({ ...prev, imageFit: e.target.value as 'cover' | 'contain' }))}
-                        className="w-full bg-gray-50 border border-pink-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                        className="w-full bg-gray-50 border border-pink-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary mb-2"
                       >
                         <option value="contain">完整顯示（不裁切）</option>
                         <option value="cover">填滿（可能裁切）</option>
                       </select>
+                      {newProduct?.imageFit === 'cover' && (
+                        <>
+                          <label htmlFor="new-product-image-position-select" className="block text-xs font-bold text-gray-600 mb-1 mt-2">圖片位置調整</label>
+                          <select
+                            id="new-product-image-position-select"
+                            value={(newProduct as any)?.imagePosition || 'center'}
+                            onChange={(e) => setNewProduct(prev => ({ ...prev, imagePosition: e.target.value as string }))}
+                            className="w-full bg-gray-50 border border-pink-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                          >
+                            <option value="center">居中</option>
+                            <option value="top">上方</option>
+                            <option value="bottom">下方</option>
+                            <option value="left">左側</option>
+                            <option value="right">右側</option>
+                            <option value="top left">左上</option>
+                            <option value="top right">右上</option>
+                            <option value="bottom left">左下</option>
+                            <option value="bottom right">右下</option>
+                          </select>
+                        </>
+                      )}
                     </div>
                  </div>
               </div>
@@ -1558,11 +1603,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             const currentImages = (editingProduct as any)._editedImages || 
                                                  (editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : [editingProduct.image]);
                             const newImages = currentImages.filter((_: any, i: number) => i !== index);
-                            if (newImages.length === 0) {
-                              setEditingProduct({...editingProduct, _editedImages: [editingProduct.image]});
-                            } else {
-                              setEditingProduct({...editingProduct, _editedImages: newImages});
-                            }
+                            // 允許完全刪除所有圖片
+                            setEditingProduct({...editingProduct, _editedImages: newImages});
                           }}
                           className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg z-10"
                           aria-label="刪除圖片"
@@ -1612,11 +1654,32 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                     id="edit-product-image-fit-select"
                     value={editingProduct.imageFit || 'contain'}
                     onChange={(e) => setEditingProduct({...editingProduct, imageFit: e.target.value as 'cover' | 'contain'})}
-                    className="w-full bg-gray-50 border border-pink-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                    className="w-full bg-gray-50 border border-pink-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary mb-2"
                   >
                     <option value="contain">完整顯示（不裁切）</option>
                     <option value="cover">填滿（可能裁切）</option>
                   </select>
+                  {editingProduct.imageFit === 'cover' && (
+                    <>
+                      <label htmlFor="edit-product-image-position-select" className="block text-xs font-bold text-gray-600 mb-1 mt-2">圖片位置調整</label>
+                      <select
+                        id="edit-product-image-position-select"
+                        value={(editingProduct as any).imagePosition || 'center'}
+                        onChange={(e) => setEditingProduct({...editingProduct, imagePosition: e.target.value as string})}
+                        className="w-full bg-gray-50 border border-pink-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                      >
+                        <option value="center">居中</option>
+                        <option value="top">上方</option>
+                        <option value="bottom">下方</option>
+                        <option value="left">左側</option>
+                        <option value="right">右側</option>
+                        <option value="top left">左上</option>
+                        <option value="top right">右上</option>
+                        <option value="bottom left">左下</option>
+                        <option value="bottom right">右下</option>
+                      </select>
+                    </>
+                  )}
                  </div>
               </div>
 

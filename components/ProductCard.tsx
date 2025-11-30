@@ -42,6 +42,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onClick
           src={product.images && product.images.length > 0 ? product.images[0] : product.image} 
           alt={product.name} 
           className={`w-full h-full ${product.imageFit === 'cover' ? 'object-cover' : 'object-contain'} transition-transform duration-700 ${isHovered ? 'scale-110' : 'scale-100'}`}
+          style={product.imageFit === 'cover' && (product as any).imagePosition ? { objectPosition: (product as any).imagePosition } : undefined}
         />
         <div className={`absolute inset-0 bg-white/20 backdrop-blur-[2px] flex flex-col items-center justify-center transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
           {showQty ? (

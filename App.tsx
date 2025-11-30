@@ -43,6 +43,7 @@ const App: React.FC = () => {
     '💝 買二送一，數量有限',
     '🎁 精選商品最低5折起'
   ]);
+  const [marqueeSpeed, setMarqueeSpeed] = useState<number>(30);
   
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -107,10 +108,15 @@ const App: React.FC = () => {
       setOrders(orders as Order[]);
     });
     
-    const unsubMarquee = listenMarqueeMessages((messages) => {
+    const unsubMarquee = listenMarqueeMessages((messages, speed) => {
       console.log('Marquee messages updated from Firestore:', messages.length);
       if (messages && messages.length > 0) {
         setMarqueeMessages(messages);
+      } else {
+        setMarqueeMessages([]);
+      }
+      if (speed !== undefined) {
+        setMarqueeSpeed(speed);
       }
     });
     
@@ -558,7 +564,12 @@ const App: React.FC = () => {
         {/* 廣告跑馬燈 */}
         {marqueeMessages.length > 0 && marqueeMessages.some(msg => msg.trim() !== '') && (
           <div className="mb-8 overflow-hidden bg-gradient-to-r from-cute-primary to-cute-secondary rounded-2xl shadow-lg">
-            <div className="py-4 whitespace-nowrap animate-scroll">
+            <div 
+              className="py-4 whitespace-nowrap"
+              style={{
+                animation: `scroll ${marqueeSpeed}s linear infinite`
+              }}
+            >
               <div className="inline-flex items-center gap-8 text-white font-bold text-lg">
                 {marqueeMessages.filter(msg => msg.trim() !== '').map((msg, i) => (
                   <span key={i} className="inline-block">{msg}</span>
