@@ -12,12 +12,9 @@ export default defineConfig(({ mode }) => {
       preview: {
         port: 8080,
         host: '0.0.0.0',
-        allowedHosts: [
-          'cybercollector.zeabur.app',
-          '.zeabur.app', // 允許所有 zeabur.app 子域名
-          'localhost',
-          '127.0.0.1'
-        ]
+        strictPort: false,
+        // 允許所有主機（生產環境使用）
+        allowedHosts: 'all'
       },
       plugins: [react()],
       define: {
