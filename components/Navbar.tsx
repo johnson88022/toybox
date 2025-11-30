@@ -80,14 +80,27 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onCartClick, user, onLoginCl
             <button
               ref={accountRef}
               onClick={user ? () => setAccountMenuOpen((v)=>!v) : onLoginClick}
-              className="text-gray-500 hover:text-cute-primary px-2 sm:px-4 py-2 rounded-full text-sm font-bold transition-colors hover:bg-pink-50 relative"
+              className="text-gray-500 hover:text-cute-primary px-2 sm:px-4 py-2 rounded-full text-sm font-bold transition-colors hover:bg-pink-50 relative flex items-center gap-2"
             >
               {user ? (
-                <div className="flex items-center gap-2">
-                  <UserIcon className="w-4 h-4" />
+                <>
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.name} className="w-6 h-6 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-cute-primary/20 flex items-center justify-center">
+                      <UserIcon className="w-4 h-4 text-cute-primary" />
+                    </div>
+                  )}
                   <span className="hidden sm:inline">{user.name}</span>
-                </div>
-              ) : <span className="hidden sm:inline">登入</span>}
+                </>
+              ) : (
+                <>
+                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                    <UserIcon className="w-4 h-4 text-gray-500" />
+                  </div>
+                  <span className="hidden sm:inline">登入</span>
+                </>
+              )}
               {/* 展開帳戶選單 */}
               {user && accountMenuOpen && (
                 <div className="absolute right-0 mt-3 w-48 rounded-xl shadow-lg bg-white border border-pink-100 z-50 p-2 flex flex-col">

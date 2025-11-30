@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Package, Users, DollarSign, TrendingUp, Plus, Edit2, X, Save, Upload, Sparkles, Trash2, RotateCcw, ScrollText, CheckCircle2, Smile, ChevronDown, ChevronUp, Truck } from 'lucide-react';
+import { Package, Users, DollarSign, TrendingUp, Plus, Edit2, X, Save, Upload, Sparkles, Trash2, RotateCcw, ScrollText, CheckCircle2, Smile, ChevronDown, ChevronUp, Truck, LayoutDashboard } from 'lucide-react';
 import { Product, Order } from '../types';
 import { compressImage } from '../utils/imageCompress';
 import { getMarqueeMessages, updateMarqueeMessages } from '../firestoreHelpers';
@@ -18,6 +18,7 @@ interface AdminPanelProps {
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProduct, onAddProduct, onDeleteProduct, onUpdateOrderStatus, wishes = [], onDeleteWish, onResetData }) => {
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'wishes' | 'marquee' | 'stats'>('orders');
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   const [completingOrderId, setCompletingOrderId] = useState<string | null>(null);
   const [isEditingMarquee, setIsEditingMarquee] = useState(false);
@@ -288,88 +289,48 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   return (
     <div className="min-h-screen pt-28 px-4 pb-12 bg-cute-bg">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-black text-gray-800">賣家儀表板</h1>
-            <p className="text-gray-500">歡迎回來，老闆！ 🍪</p>
-          </div>
-          <button 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsAddingProduct(true);
-            }}
-            className="bg-cute-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-pink-400 transition-colors shadow-lg active:scale-95"
-          >
-            <Plus size={18} /> 新增商品
-          </button>
+        <div className="mb-8">
+          <h1 className="text-3xl font-black text-gray-800 mb-2">賣家儀表板</h1>
+          <p className="text-gray-500">歡迎回來，老闆！ 🍪</p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {[
-            { label: '總銷售額', value: `$${totalSales.toFixed(2)}`, icon: DollarSign, color: 'bg-green-100 text-green-600' },
-            { 
-              label: '待處理訂單', 
-              value: activeOrders.toString(), 
-              icon: Package, 
-              color: 'bg-blue-100 text-blue-600',
-              detail: orders.filter(o => o.status === 'pending')
-            },
-            { label: '顧客總數', value: uniqueCustomers.toString(), icon: Users, color: 'bg-purple-100 text-purple-600' },
-            { label: '成長率', value: orders.length > 0 ? '+100%' : '0%', icon: TrendingUp, color: 'bg-pink-100 text-pink-600' },
-          ].map((stat, i) => (
-            <div key={i} className="bg-white p-6 rounded-3xl border border-pink-50 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-gray-400 font-bold text-sm uppercase tracking-wider">{stat.label}</span>
-                <div className={`p-3 rounded-2xl ${stat.color}`}>
-                  <stat.icon className="w-5 h-5" />
-                </div>
-              </div>
-              <p className="text-3xl font-black text-gray-800">{stat.value}</p>
-              {stat.detail && stat.detail.length > 0 && stat.label === '待處理訂單' && (
-                <div className="mt-3 pt-3 border-t border-gray-100 space-y-2 max-h-32 overflow-y-auto">
-                  {stat.detail.slice(0, 3).map((order: any, idx: number) => (
-                    <div key={idx} className="text-xs bg-blue-50 p-2 rounded-lg">
-                      <div className="font-bold text-blue-800">訂單 #{order.id?.slice(-6)}</div>
-                      <div className="text-gray-600">
-                        {order.items?.map((item: any, i: number) => (
-                          <div key={i}>• {item.name} x{item.quantity}</div>
-                        ))}
-                        <div className="font-bold text-gray-800 mt-1">總計: ${order.total?.toFixed(2) || '0.00'}</div>
-                        {order.shippingInfo && (
-                          <div className="mt-2 pt-2 border-t border-blue-200">
-                            <div className="font-bold text-blue-700 text-xs mb-1">收貨資訊：</div>
-                            <div className="text-gray-600">{order.shippingInfo.name}</div>
-                            <div className="text-gray-600">{order.shippingInfo.phone}</div>
-                            <div className="text-gray-600">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</div>
-                            <div className="text-gray-600">{order.shippingInfo.address}</div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {stat.detail.length > 3 && (
-                    <div className="text-xs text-gray-500 text-center">...還有 {stat.detail.length - 3} 筆訂單</div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+        {/* 標籤頁導航 */}
+        <div className="bg-white rounded-3xl border border-pink-50 shadow-sm mb-6 overflow-x-auto">
+          <div className="flex space-x-1 p-2">
+            {[
+              { id: 'orders' as const, label: '訂單管理', icon: Package, count: orders.length },
+              { id: 'products' as const, label: '商品管理', icon: Edit2, count: products.length },
+              { id: 'wishes' as const, label: '許願池', icon: Sparkles, count: wishes.length },
+              { id: 'marquee' as const, label: '跑馬燈', icon: ScrollText },
+              { id: 'stats' as const, label: '數據統計', icon: BarChart },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-cute-primary text-white shadow-lg'
+                    : 'text-gray-600 hover:bg-pink-50 hover:text-cute-primary'
+                }`}
+              >
+                <tab.icon size={18} />
+                <span>{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span className={`px-2 py-0.5 rounded-full text-xs ${
+                    activeTab === tab.id ? 'bg-white/20' : 'bg-gray-200'
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
-        
-        {/* 數據重置按鈕 */}
-        <div className="mb-8 flex justify-end">
-          <button
-            onClick={() => setShowResetConfirm(true)}
-            className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-colors shadow-lg"
-          >
-            <RotateCcw size={18} /> 重置所有資料
-          </button>
-        </div>
-        
-        {/* 重置確認 Modal */}
-        {showResetConfirm && (
+
+        {/* 標籤頁內容 */}
+        {activeTab === 'orders' && (
+          <>
+            {/* 待處理訂單列表 */}
           <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !isResetting && setShowResetConfirm(false)} />
             <div className="relative w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl">
@@ -407,51 +368,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
           </div>
         )}
 
-        {/* Charts Section - 只在有數據時顯示 */}
-        {(orders.length > 0 || products.length > 0) && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div className="bg-white p-8 rounded-3xl border border-pink-50 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-800 mb-6">營收概覽</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                    <XAxis dataKey="name" stroke="#9ca3af" axisLine={false} tickLine={false} />
-                    <YAxis stroke="#9ca3af" axisLine={false} tickLine={false} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#FFF', borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                    />
-                    <Line type="monotone" dataKey="sales" stroke="#FF90BC" strokeWidth={3} dot={{ r: 6, fill: '#FF90BC', strokeWidth: 2, stroke: '#FFF' }} />
-                  </LineChart>
-                </ResponsiveContainer>
+            {/* Product List Table */}
+            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-hidden">
+              <div className="p-4 sm:p-8 border-b border-pink-50">
+                <h3 className="text-xl font-bold text-gray-800">商品列表</h3>
               </div>
-            </div>
-
-            <div className="bg-white p-8 rounded-3xl border border-pink-50 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-800 mb-6">庫存分類</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={categoryData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                    <XAxis dataKey="name" stroke="#9ca3af" axisLine={false} tickLine={false} />
-                    <YAxis stroke="#9ca3af" axisLine={false} tickLine={false} />
-                    <Tooltip 
-                      cursor={{ fill: '#FFF5F7' }}
-                      contentStyle={{ backgroundColor: '#FFF', borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                    />
-                    <Bar dataKey="count" fill="#8ACDD7" radius={[8, 8, 8, 8]} barSize={40} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Product List Table */}
-        <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-hidden">
-          <div className="p-4 sm:p-8 border-b border-pink-50">
-            <h3 className="text-xl font-bold text-gray-800">近期庫存</h3>
-          </div>
           {/* Desktop Table View */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left">
@@ -589,8 +510,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
             ))}
           </div>
         </div>
+          </>
+        )}
 
-        {/* 待處理訂單列表 */}
+        {activeTab === 'wishes' && (
+          <>
+            {/* 買家許願池 */}
         <div className="bg-white rounded-3xl border-2 border-blue-200 shadow-lg overflow-hidden mb-8">
           <button
             onClick={() => setIsPendingOrdersCollapsed(!isPendingOrdersCollapsed)}
@@ -1018,8 +943,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
           </div>
           )}
         </div>
+          </>
+        )}
 
-        {/* 跑馬燈內容管理 */}
+        {activeTab === 'products' && (
+          <>
+            <div className="mb-6 flex justify-between items-center">
+              <h2 className="text-2xl font-black text-gray-800">商品管理</h2>
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsAddingProduct(true);
+                }}
+                className="bg-cute-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-pink-400 transition-colors shadow-lg active:scale-95"
+              >
+                <Plus size={18} /> 新增商品
+              </button>
+            </div>
+
+            {/* Product List Table */}
         <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-hidden mb-8">
           <div className="p-6 border-b border-pink-50 bg-gradient-to-r from-purple-50 to-white">
             <div className="flex justify-between items-center">
@@ -1137,55 +1080,277 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
             )}
           </div>
         </div>
+          </>
+        )}
 
-        {/* 買家許願池 */}
-        <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-hidden mb-8">
-          <div className="p-6 border-b border-pink-50 bg-gradient-to-r from-pink-50 to-white">
-            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-cute-primary" />
-              買家許願池（即時同步）
-            </h3>
-          </div>
-          <div className="p-6">
-            {wishes && wishes.length > 0 ? (
-              <ul className="space-y-3">
-                {wishes.map((w, i) => {
-                  const wishId = typeof w === 'object' && w.id ? w.id : `wish-${i}`;
-                  const wishText = typeof w === 'string' ? w : (w.text || w);
-                  return (
-                    <li key={wishId} className="p-4 bg-pink-50 rounded-xl border border-pink-100 hover:bg-pink-100 transition-colors">
-                      <div className="flex items-start gap-3">
-                        <span className="text-cute-primary font-bold text-lg flex-shrink-0">#{i + 1}</span>
-                        <p className="text-gray-700 font-medium break-words flex-1">{wishText}</p>
-                        {onDeleteWish && (
-                          <button
-                            onClick={async () => {
-                              if (window.confirm('確定要刪除此許願嗎？')) {
-                                try {
-                                  await onDeleteWish(wishId);
-                                } catch (error) {
-                                  console.error('Failed to delete wish:', error);
-                                  alert('刪除失敗，請重試');
-                                }
-                              }
-                            }}
-                            className="flex-shrink-0 w-8 h-8 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg flex items-center justify-center transition-colors"
-                            aria-label="刪除許願"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="text-gray-400 text-center py-8">目前還沒有買家許願，期待第一個願望！✨</p>
+        {activeTab === 'stats' && (
+          <>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              {[
+                { label: '總銷售額', value: `$${totalSales.toFixed(2)}`, icon: DollarSign, color: 'bg-green-100 text-green-600' },
+                { 
+                  label: '待處理訂單', 
+                  value: activeOrders.toString(), 
+                  icon: Package, 
+                  color: 'bg-blue-100 text-blue-600',
+                  detail: orders.filter(o => o.status === 'pending')
+                },
+                { label: '顧客總數', value: uniqueCustomers.toString(), icon: Users, color: 'bg-purple-100 text-purple-600' },
+                { label: '成長率', value: orders.length > 0 ? '+100%' : '0%', icon: TrendingUp, color: 'bg-pink-100 text-pink-600' },
+              ].map((stat, i) => (
+                <div key={i} className="bg-white p-6 rounded-3xl border border-pink-50 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-gray-400 font-bold text-sm uppercase tracking-wider">{stat.label}</span>
+                    <div className={`p-3 rounded-2xl ${stat.color}`}>
+                      <stat.icon className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-black text-gray-800">{stat.value}</p>
+                  {stat.detail && stat.detail.length > 0 && stat.label === '待處理訂單' && (
+                    <div className="mt-3 pt-3 border-t border-gray-100 space-y-2 max-h-32 overflow-y-auto">
+                      {stat.detail.slice(0, 3).map((order: any, idx: number) => (
+                        <div key={idx} className="text-xs bg-blue-50 p-2 rounded-lg">
+                          <div className="font-bold text-blue-800">訂單 #{order.id?.slice(-6)}</div>
+                          <div className="text-gray-600">
+                            {order.items?.map((item: any, i: number) => (
+                              <div key={i}>• {item.name} x{item.quantity}</div>
+                            ))}
+                            <div className="font-bold text-gray-800 mt-1">總計: ${order.total?.toFixed(2) || '0.00'}</div>
+                            {order.shippingInfo && (
+                              <div className="mt-2 pt-2 border-t border-blue-200">
+                                <div className="font-bold text-blue-700 text-xs mb-1">收貨資訊：</div>
+                                <div className="text-gray-600">{order.shippingInfo.name}</div>
+                                <div className="text-gray-600">{order.shippingInfo.phone}</div>
+                                <div className="text-gray-600">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</div>
+                                <div className="text-gray-600">{order.shippingInfo.address}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {stat.detail.length > 3 && (
+                        <div className="text-xs text-gray-500 text-center">...還有 {stat.detail.length - 3} 筆訂單</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* 數據重置按鈕 */}
+            <div className="mb-8 flex justify-end">
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-colors shadow-lg"
+              >
+                <RotateCcw size={18} /> 重置所有資料
+              </button>
+            </div>
+            
+            {/* Charts Section - 只在有數據時顯示 */}
+            {(orders.length > 0 || products.length > 0) && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div className="bg-white p-8 rounded-3xl border border-pink-50 shadow-sm">
+                  <h3 className="text-lg font-bold text-gray-800 mb-6">營收概覽</h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                        <XAxis dataKey="name" stroke="#9ca3af" axisLine={false} tickLine={false} />
+                        <YAxis stroke="#9ca3af" axisLine={false} tickLine={false} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#FFF', borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        />
+                        <Line type="monotone" dataKey="sales" stroke="#FF90BC" strokeWidth={3} dot={{ r: 6, fill: '#FF90BC', strokeWidth: 2, stroke: '#FFF' }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="bg-white p-8 rounded-3xl border border-pink-50 shadow-sm">
+                  <h3 className="text-lg font-bold text-gray-800 mb-6">庫存分類</h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={categoryData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                        <XAxis dataKey="name" stroke="#9ca3af" axisLine={false} tickLine={false} />
+                        <YAxis stroke="#9ca3af" axisLine={false} tickLine={false} />
+                        <Tooltip 
+                          cursor={{ fill: '#FFF5F7' }}
+                          contentStyle={{ backgroundColor: '#FFF', borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        />
+                        <Bar dataKey="count" fill="#8ACDD7" radius={[8, 8, 8, 8]} barSize={40} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
             )}
+          </>
+        )}
+
+        {activeTab === 'marquee' && (
+          <>
+            {/* 跑馬燈內容管理 */}
+            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-hidden mb-8">
+              <div className="p-6 border-b border-pink-50 bg-gradient-to-r from-purple-50 to-white">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <ScrollText className="w-5 h-5 text-cute-primary" />
+                    跑馬燈內容管理
+                  </h3>
+                  {!isEditingMarquee && (
+                    <button
+                      onClick={() => {
+                        setIsEditingMarquee(true);
+                        loadMarqueeMessages();
+                      }}
+                      className="bg-cute-primary text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-pink-400 transition-colors active:scale-95"
+                    >
+                      <Edit2 size={18} /> 編輯內容
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="p-6">
+                {isEditingMarquee ? (
+                  <div className="space-y-4">
+                    {isLoadingMarquee ? (
+                      <div className="text-center py-8">
+                        <div className="w-8 h-8 border-4 border-cute-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                        <p className="text-gray-500">載入中...</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-3">
+                          {marqueeMessages.map((msg, index) => (
+                            <div key={index} className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-pink-100">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-xs text-gray-500 font-bold">訊息 {index + 1}</span>
+                                  <div className="flex-1 flex flex-wrap gap-1">
+                                    {emojis.map((emoji) => (
+                                      <button
+                                        key={emoji}
+                                        onClick={() => insertEmoji(index, emoji)}
+                                        className="text-xl hover:scale-125 transition-transform active:scale-150"
+                                        title={`插入 ${emoji}`}
+                                      >
+                                        {emoji}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                                <input
+                                  type="text"
+                                  value={msg}
+                                  onChange={(e) => updateMarqueeMessage(index, e.target.value)}
+                                  placeholder="輸入跑馬燈訊息..."
+                                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-cute-primary focus:outline-none focus:ring-2 focus:ring-pink-100"
+                                />
+                              </div>
+                              <button
+                                onClick={() => removeMarqueeMessage(index)}
+                                className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                aria-label="刪除此訊息"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={addMarqueeMessage}
+                            className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Plus size={18} /> 新增訊息
+                          </button>
+                          <button
+                            onClick={() => setIsEditingMarquee(false)}
+                            className="bg-gray-100 text-gray-600 font-bold py-3 px-6 rounded-xl hover:bg-gray-200 transition-colors"
+                          >
+                            取消
+                          </button>
+                          <button
+                            onClick={handleSaveMarquee}
+                            disabled={isSavingMarquee}
+                            className="bg-cute-primary text-white font-bold py-3 px-6 rounded-xl hover:bg-pink-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isSavingMarquee ? (
+                              <>
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                儲存中...
+                              </>
+                            ) : (
+                              <>
+                                <Save size={18} /> 儲存
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {isLoadingMarquee ? (
+                      <p className="text-gray-400 text-center py-8">載入中...</p>
+                    ) : marqueeMessages.length > 0 ? (
+                      marqueeMessages.map((msg, index) => (
+                        <div key={index} className="p-3 bg-gray-50 rounded-lg text-gray-700">
+                          {msg || '(空白訊息)'}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-400 text-center py-8">目前沒有設定跑馬燈內容</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* 重置確認 Modal */}
+        {showResetConfirm && (
+          <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !isResetting && setShowResetConfirm(false)} />
+            <div className="relative w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl">
+              <h3 className="text-2xl font-bold text-gray-800 mb-4">確認重置資料</h3>
+              <p className="text-gray-600 mb-6">這將刪除所有商品、訂單和許願資料，並恢復為預設商品。此操作無法復原！</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  disabled={isResetting}
+                  className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={async () => {
+                    setIsResetting(true);
+                    try {
+                      if (onResetData) await onResetData();
+                      setShowResetConfirm(false);
+                      alert('資料已重置！');
+                    } catch (error) {
+                      alert('重置失敗，請重試');
+                      console.error(error);
+                    } finally {
+                      setIsResetting(false);
+                    }
+                  }}
+                  disabled={isResetting}
+                  className="flex-1 bg-red-500 text-white font-bold py-3 rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50"
+                >
+                  {isResetting ? '重置中...' : '確認重置'}
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        )}
 
       {/* Add Product Modal */}
       {isAddingProduct && (

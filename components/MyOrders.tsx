@@ -98,7 +98,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ orders, user, onUpdateOrderStatus, 
       {/* 總金額和操作 */}
       <div className="flex justify-between items-center pt-4 border-t border-gray-200">
         <span className="text-2xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
-        {canCancel && order.status !== 'cancelled' && order.status !== 'completed' && (
+        {canCancel && order.status !== 'cancelled' && order.status !== 'completed' && order.status !== 'shipped' && (
           <button
             onClick={() => handleCancelOrder(order.id)}
             disabled={cancellingOrderId === order.id}
@@ -187,7 +187,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ orders, user, onUpdateOrderStatus, 
             </button>
             {!isShippedCollapsed && (
               <div className="p-6 space-y-4">
-                {shippedOrders.map(order => renderOrderCard(order, true))}
+                {shippedOrders.map(order => renderOrderCard(order, false))}
               </div>
             )}
           </div>

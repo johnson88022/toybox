@@ -267,17 +267,28 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
             {/* 主圖 */}
             <div 
               className="relative aspect-square bg-gray-50 rounded-2xl overflow-hidden group cursor-grab active:cursor-grabbing"
-              onTouchStart={(e) => setTouchStart(e.targetTouches[0].clientX)}
-              onTouchMove={(e) => setTouchEnd(e.targetTouches[0].clientX)}
-              onTouchEnd={() => {
+              onTouchStart={(e) => {
+                e.preventDefault();
+                setTouchStart(e.targetTouches[0].clientX);
+                setTouchEnd(null);
+              }}
+              onTouchMove={(e) => {
+                e.preventDefault();
+                if (touchStart !== null) {
+                  setTouchEnd(e.targetTouches[0].clientX);
+                }
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
                 if (touchStart === null || touchEnd === null) {
                   setTouchStart(null);
                   setTouchEnd(null);
                   return;
                 }
                 const distance = touchStart - touchEnd;
-                const isLeftSwipe = distance > 50;
-                const isRightSwipe = distance < -50;
+                const minSwipeDistance = 30; // 降低觸發距離，讓滑動更靈敏
+                const isLeftSwipe = distance > minSwipeDistance;
+                const isRightSwipe = distance < -minSwipeDistance;
                 
                 if (isLeftSwipe && images.length > 1) {
                   setSelectedImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
