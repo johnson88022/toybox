@@ -56,7 +56,7 @@ const App: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('newest'); // 排序方式：newest, price-asc, price-desc, name-asc, name-desc
   const [categoryExpanded, setCategoryExpanded] = useState(false); // 分類展開狀態
   const [sortExpanded, setSortExpanded] = useState(false); // 排序展開狀態
-  const [customCategories, setCustomCategories] = useState<string[]>(['Sci-Fi', 'Fantasy', 'Anime', 'Custom']); // 自定義類別，與AdminPanel同步
+  const [customCategories, setCustomCategories] = useState<string[]>(['Sci-Fi', 'Fantasy', 'Anime', 'Custom']);
   
   // Checkout form states
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
@@ -85,6 +85,12 @@ const App: React.FC = () => {
 
   // Setup Guide State
   const [showConfigGuide, setShowConfigGuide] = useState(!isFirebaseConfigured);
+
+  // 新增一個處理分類變更的函式
+  const handleCategoriesChange = (categories: string[]) => {
+    setCustomCategories(categories);
+    // 若有 firestore 持久化分類，可在這裡寫入
+  };
 
   // Firestore 雲端同步監聽
   useEffect(() => {
@@ -531,7 +537,8 @@ const App: React.FC = () => {
           wishes={wishes}
           onDeleteWish={handleDeleteWish}
           onResetData={handleResetData}
-          onCategoriesChange={setCustomCategories}
+          onCategoriesChange={handleCategoriesChange}
+          customCategories={customCategories}
           currentUser={user}
         />
       );

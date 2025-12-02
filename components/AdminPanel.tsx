@@ -17,9 +17,10 @@ interface AdminPanelProps {
   onResetData?: () => Promise<void>;
   onCategoriesChange?: (categories: string[]) => void; // 通知父組件類別變更
   currentUser?: User | null;
+  customCategories: string[];
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProduct, onAddProduct, onDeleteProduct, onUpdateOrderStatus, wishes = [], onDeleteWish, onResetData, onCategoriesChange, currentUser }) => {
+const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProduct, onAddProduct, onDeleteProduct, onUpdateOrderStatus, wishes = [], onDeleteWish, onResetData, onCategoriesChange, currentUser, customCategories }) => {
   const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'wishes' | 'marquee' | 'stats' | 'users'>('orders');
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   const [completingOrderId, setCompletingOrderId] = useState<string | null>(null);
@@ -236,7 +237,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const [newProductImageFile, setNewProductImageFile] = useState<File|null>(null);
   const [newProductImagePreview, setNewProductImagePreview] = useState<string>('');
   const [newProductImages, setNewProductImages] = useState<string[]>([]); // 支援多張圖片
-  const [customCategories, setCustomCategories] = useState<string[]>(['Sci-Fi', 'Fantasy', 'Anime', 'Custom']); // 自定義類別
 
   const handleAddProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -378,6 +378,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
     }
     if (activeTab === 'users') fetchAllUsers();
   }, [activeTab, orders]);
+
+  const handleAddCategory = (newCategory: string) => {
+    if (!customCategories.includes(newCategory)) {
+      const updated = [...customCategories, newCategory];
+      onCategoriesChange?.(updated);
+    }
+  };
+
+  const handleDeleteCategory = (cat: string) => {
+    const updated = customCategories.filter(c => c !== cat);
+    onCategoriesChange?.(updated);
+  };
 
   return (
     <div className="min-h-screen pt-28 px-4 pb-12 bg-cute-bg">
@@ -1033,7 +1045,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                       const categoryValue = newCategory.trim();
                       if (!customCategories.includes(categoryValue)) {
                         const updatedCategories = [...customCategories, categoryValue];
-                        setCustomCategories(updatedCategories);
                         onCategoriesChange?.(updatedCategories);
                         alert(`類別「${categoryValue}」已新增！`);
                       } else {
@@ -1107,7 +1118,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                 });
                                 // 更新自定義類別列表（如果商品類別不在列表中）
                                 if (product.category && !customCategories.includes(product.category)) {
-                                  setCustomCategories(prev => [...prev, product.category]);
+                                  onCategoriesChange?.(prev => [...prev, product.category]);
                                 }
                               }}
                               className="text-cute-secondary hover:text-cute-primary p-2 hover:bg-pink-50 rounded-lg transition-colors"
@@ -1187,7 +1198,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             });
                             // 更新自定義類別列表（如果商品類別不在列表中）
                             if (product.category && !customCategories.includes(product.category)) {
-                              setCustomCategories(prev => [...prev, product.category]);
+                              onCategoriesChange?.(prev => [...prev, product.category]);
                             }
                           }}
                           className="text-cute-secondary hover:text-cute-primary p-2 hover:bg-pink-50 rounded-lg transition-colors"
