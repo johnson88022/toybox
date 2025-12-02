@@ -93,7 +93,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
 
 
   return (
-    <div className="min-h-screen pt-16 sm:pt-20 px-4 pb-12 bg-cute-bg fixed inset-0 overflow-y-auto z-50" style={{ touchAction: 'pan-y' }}>
+    <div className="min-h-screen pt-14 sm:pt-20 px-4 pb-12 bg-cute-bg fixed inset-0 overflow-y-auto z-50" style={{ touchAction: 'pan-y' }}>
       <div className="max-w-7xl mx-auto">
         {/* 返回按鈕 - 手機版減少頂部間距 */}
         <button
