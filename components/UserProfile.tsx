@@ -38,12 +38,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onClose }) => {
         setProfile({
           ...existingProfile,
           name: existingProfile.name || user.name,
+          email: existingProfile.email || user.email, // 確保 email 被載入
         });
       } else {
         // 初始化新的資料
         setProfile({
           userId: user.id,
           name: user.name,
+          email: user.email, // 初始化時包含 email
           phone: '',
           address: '',
           city: '',
@@ -72,6 +74,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onClose }) => {
         ...profile,
         userId: user.id,
         name: profile.name || user.name,
+        email: user.email, // 確保 email 被儲存
         updatedAt: new Date(),
       } as UserProfileType);
       

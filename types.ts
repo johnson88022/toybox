@@ -39,6 +39,7 @@ export interface User {
 export interface UserProfile {
   userId: string;
   name: string;
+  email?: string; // 新增 email 欄位
   phone: string;
   address: string;
   city: string;
