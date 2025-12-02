@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { Package, Users, DollarSign, TrendingUp, Plus, Edit2, X, Save, Upload, Sparkles, Trash2, RotateCcw, ScrollText, CheckCircle2, Smile, ChevronDown, ChevronUp, Truck, LayoutDashboard } from 'lucide-react';
-import { Product, Order } from '../types';
+import { Product, Order, User } from '../types';
 import { compressImage } from '../utils/imageCompress';
-import { getMarqueeMessages, updateMarqueeMessages } from '../firestoreHelpers';
+import { getMarqueeMessages, updateMarqueeMessages, getUserProfile } from '../firestoreHelpers';
 
 interface AdminPanelProps {
   products: Product[];
@@ -16,10 +16,11 @@ interface AdminPanelProps {
   onDeleteWish?: (wishId: string) => Promise<void>;
   onResetData?: () => Promise<void>;
   onCategoriesChange?: (categories: string[]) => void; // 通知父組件類別變更
+  currentUser?: User | null;
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProduct, onAddProduct, onDeleteProduct, onUpdateOrderStatus, wishes = [], onDeleteWish, onResetData, onCategoriesChange }) => {
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'wishes' | 'marquee' | 'stats'>('orders');
+const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProduct, onAddProduct, onDeleteProduct, onUpdateOrderStatus, wishes = [], onDeleteWish, onResetData, onCategoriesChange, currentUser }) => {
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'wishes' | 'marquee' | 'stats' | 'users'>('orders');
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   const [completingOrderId, setCompletingOrderId] = useState<string | null>(null);
   const [isEditingMarquee, setIsEditingMarquee] = useState(false);
@@ -41,6 +42,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const [isResetting, setIsResetting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
+  // 新增 state 與 fx：監聽所有 userProfile、整理用戶資料
+  const [userList, setUserList] = useState<any[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
   // Debug: 確保wishes更新時重新渲染
   React.useEffect(() => {
@@ -350,6 +354,31 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
     setMarqueeMessages(newMessages);
   };
 
+  useEffect(() => {
+    // 蒐集 orders 之 userId（假設站內會員都會有訂單紀錄）
+    async function fetchAllUsers() {
+      setIsLoadingUsers(true);
+      try {
+        const userIds = Array.from(new Set(orders.map(o => o.userId)));
+        // 批量查詢 Firestore userProfiles
+        const userProfileSnaps = await Promise.all(userIds.map(id => getUserProfile(String(id))));
+        const userBasicDatas = userIds.map(id => {
+          // 可以根據作法自訂撈 User 基本資料，這裡直接簡略用 userId 當 id
+          return { id };
+        });
+        const usersData = userIds.map((id, idx) => ({
+          ...userBasicDatas[idx],
+          ...(userProfileSnaps[idx] || {})
+        }));
+        setUserList(usersData);
+      } catch (e) {
+        setUserList([]);
+      }
+      setIsLoadingUsers(false);
+    }
+    if (activeTab === 'users') fetchAllUsers();
+  }, [activeTab, orders]);
+
   return (
     <div className="min-h-screen pt-28 px-4 pb-12 bg-cute-bg">
       <div className="max-w-7xl mx-auto">
@@ -367,6 +396,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
               { id: 'wishes' as const, label: '許願池', icon: Sparkles, count: wishes.length },
               { id: 'marquee' as const, label: '跑馬燈', icon: ScrollText },
               { id: 'stats' as const, label: '數據統計', icon: BarChart },
+              { id: 'users' as const, label: '會員管理', icon: Users },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -1445,6 +1475,47 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                   </div>
                 )}
               </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'users' && (
+          <>
+            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-x-auto p-8 mt-6">
+              <h2 className="text-2xl font-black mb-6 text-cute-primary flex items-center gap-2">
+                <Users className="w-7 h-7 text-cute-primary" /> 會員管理
+              </h2>
+              {isLoadingUsers ? (
+                <div className="text-center text-gray-400">載入中...</div>
+              ) : (
+                <table className="w-full text-sm border rounded-xl overflow-hidden">
+                  <thead className="bg-pink-50 text-gray-500 text-xs uppercase font-bold tracking-wider">
+                    <tr>
+                      <th className="px-3 py-3">用戶ID</th>
+                      <th className="px-3 py-3">姓名</th>
+                      <th className="px-3 py-3">Email</th>
+                      <th className="px-3 py-3">電話</th>
+                      <th className="px-3 py-3">角色</th>
+                      <th className="px-3 py-3">上次更新/登入</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {userList.length === 0 && (
+                      <tr><td colSpan={6} className="text-center text-gray-400 py-6">尚無會員資料</td></tr>
+                    )}
+                    {userList.map((user) => (
+                      <tr key={user.userId || user.id} className="border-b hover:bg-pink-50/30">
+                        <td className="px-3 py-2 font-mono">{user.userId || user.id}</td>
+                        <td className="px-3 py-2">{user.name || '-'}</td>
+                        <td className="px-3 py-2">{user.email || '-'}</td>
+                        <td className="px-3 py-2">{user.phone || '-'}</td>
+                        <td className="px-3 py-2">{user.role || '-'}</td>
+                        <td className="px-3 py-2">{user.updatedAt ? (typeof user.updatedAt === 'string' ? user.updatedAt : new Date(user.updatedAt).toLocaleString()) : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </>
         )}

@@ -532,6 +532,7 @@ const App: React.FC = () => {
           onDeleteWish={handleDeleteWish}
           onResetData={handleResetData}
           onCategoriesChange={setCustomCategories}
+          currentUser={user}
         />
       );
     }
