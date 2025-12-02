@@ -606,23 +606,24 @@ const App: React.FC = () => {
 
     return (
       <main className="pt-28 pb-12">
-        {/* 廣告跑馬燈 - 全寬顯示，無限循環，從左邊開始 */}
+        {/* 廣告跑馬燈 - 全寬顯示，無限循環，從左邊開始，RWD適配 */}
         {marqueeMessages.length > 0 && marqueeMessages.some(msg => msg.trim() !== '') && (
-          <div className="mb-8 w-full overflow-hidden bg-gradient-to-r from-cute-primary to-cute-secondary shadow-lg">
-            <div className="py-4 relative">
-              <div className="flex items-center text-white font-bold text-lg md:text-xl whitespace-nowrap">
+          <div className="mb-8 w-full overflow-hidden bg-gradient-to-r from-cute-primary to-cute-secondary shadow-lg relative">
+            <div className="py-3 md:py-4 relative">
+              <div className="flex items-center text-white font-bold text-sm sm:text-base md:text-lg lg:text-xl whitespace-nowrap">
                 <div 
-                  className="flex items-center gap-8"
+                  className="flex items-center gap-4 sm:gap-6 md:gap-8"
                   style={{
                     animation: `scroll ${marqueeSpeed}s linear infinite`,
                     willChange: 'transform',
-                    display: 'inline-flex'
+                    display: 'inline-flex',
+                    width: 'max-content'
                   }}
                 >
-                  {/* 重複多次以確保無縫循環 */}
-                  {[...Array(6)].map((_, repeatIndex) => 
+                  {/* 重複多次以確保無縫循環，覆蓋整個頁面寬度 */}
+                  {[...Array(8)].map((_, repeatIndex) => 
                     marqueeMessages.filter(msg => msg.trim() !== '').map((msg, i) => (
-                      <span key={`${repeatIndex}-${i}`} className="inline-block px-4 flex-shrink-0">{msg}</span>
+                      <span key={`${repeatIndex}-${i}`} className="inline-block px-3 sm:px-4 md:px-6 flex-shrink-0">{msg}</span>
                     ))
                   )}
                 </div>

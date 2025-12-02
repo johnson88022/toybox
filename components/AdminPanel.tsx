@@ -518,18 +518,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             <div className="mb-5 p-4 bg-blue-50/80 rounded-xl border-2 border-blue-100">
                               <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">收貨人</span>
-                                  <span className="text-gray-900 font-medium">{order.shippingInfo.name}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">收貨人</span>
+                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.name}</span>
                                 </div>
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">電話</span>
-                                  <span className="text-gray-900 font-medium">{order.shippingInfo.phone}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">電話</span>
+                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.phone}</span>
                                 </div>
-                                <div className="bg-white p-3 rounded-lg md:col-span-2">
-                                  <span className="font-bold text-gray-600 block mb-1">地址</span>
-                                  <span className="text-gray-900 font-medium">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
-                                  <div className="text-gray-900 font-medium mt-1">{order.shippingInfo.address}</div>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200 md:col-span-2">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">地址</span>
+                                  <span className="text-gray-900 font-semibold text-base block">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
+                                  <div className="text-gray-900 font-semibold text-base mt-1">{order.shippingInfo.address}</div>
                                 </div>
                               </div>
                             </div>
@@ -540,13 +540,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
                               <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">持卡人</span>
-                                  <span className="text-gray-900 font-medium">{order.paymentInfo.cardholderName}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">持卡人</span>
+                                  <span className="text-gray-900 font-semibold text-base">{order.paymentInfo.cardholderName}</span>
                                 </div>
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">卡號</span>
-                                  <span className="text-gray-900 font-medium">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">卡號</span>
+                                  <span className="text-gray-900 font-semibold text-base font-mono">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
                                 </div>
                               </div>
                             </div>
@@ -691,18 +691,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             <div className="mb-5 p-4 bg-purple-50/80 rounded-xl border-2 border-purple-100">
                               <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">收貨人</span>
-                                  <span className="text-gray-900 font-medium">{order.shippingInfo.name}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">收貨人</span>
+                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.name}</span>
                                 </div>
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">電話</span>
-                                  <span className="text-gray-900 font-medium">{order.shippingInfo.phone}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">電話</span>
+                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.phone}</span>
                                 </div>
-                                <div className="bg-white p-3 rounded-lg md:col-span-2">
-                                  <span className="font-bold text-gray-600 block mb-1">地址</span>
-                                  <span className="text-gray-900 font-medium">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
-                                  <div className="text-gray-900 font-medium mt-1">{order.shippingInfo.address}</div>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200 md:col-span-2">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">地址</span>
+                                  <span className="text-gray-900 font-semibold text-base block">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
+                                  <div className="text-gray-900 font-semibold text-base mt-1">{order.shippingInfo.address}</div>
                                 </div>
                               </div>
                             </div>
@@ -713,13 +713,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
                               <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">持卡人</span>
-                                  <span className="text-gray-900 font-medium">{order.paymentInfo.cardholderName}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">持卡人</span>
+                                  <span className="text-gray-900 font-semibold text-base">{order.paymentInfo.cardholderName}</span>
                                 </div>
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">卡號</span>
-                                  <span className="text-gray-900 font-medium">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">卡號</span>
+                                  <span className="text-gray-900 font-semibold text-base font-mono">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
                                 </div>
                               </div>
                             </div>
@@ -836,18 +836,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
                               <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">收貨人</span>
-                                  <span className="text-gray-900 font-medium">{order.shippingInfo.name}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">收貨人</span>
+                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.name}</span>
                                 </div>
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">電話</span>
-                                  <span className="text-gray-900 font-medium">{order.shippingInfo.phone}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">電話</span>
+                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.phone}</span>
                                 </div>
-                                <div className="bg-white p-3 rounded-lg md:col-span-2">
-                                  <span className="font-bold text-gray-600 block mb-1">地址</span>
-                                  <span className="text-gray-900 font-medium">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
-                                  <div className="text-gray-900 font-medium mt-1">{order.shippingInfo.address}</div>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200 md:col-span-2">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">地址</span>
+                                  <span className="text-gray-900 font-semibold text-base block">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
+                                  <div className="text-gray-900 font-semibold text-base mt-1">{order.shippingInfo.address}</div>
                                 </div>
                               </div>
                             </div>
@@ -858,13 +858,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
                               <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">持卡人</span>
-                                  <span className="text-gray-900 font-medium">{order.paymentInfo.cardholderName}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">持卡人</span>
+                                  <span className="text-gray-900 font-semibold text-base">{order.paymentInfo.cardholderName}</span>
                                 </div>
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">卡號</span>
-                                  <span className="text-gray-900 font-medium">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">卡號</span>
+                                  <span className="text-gray-900 font-semibold text-base font-mono">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
                                 </div>
                               </div>
                             </div>
@@ -947,18 +947,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             <div className="mb-5 p-4 bg-gray-50/80 rounded-xl border-2 border-gray-100">
                               <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">收貨人</span>
-                                  <span className="text-gray-900 font-medium">{order.shippingInfo.name}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">收貨人</span>
+                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.name}</span>
                                 </div>
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">電話</span>
-                                  <span className="text-gray-900 font-medium">{order.shippingInfo.phone}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">電話</span>
+                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.phone}</span>
                                 </div>
-                                <div className="bg-white p-3 rounded-lg md:col-span-2">
-                                  <span className="font-bold text-gray-600 block mb-1">地址</span>
-                                  <span className="text-gray-900 font-medium">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
-                                  <div className="text-gray-900 font-medium mt-1">{order.shippingInfo.address}</div>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200 md:col-span-2">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">地址</span>
+                                  <span className="text-gray-900 font-semibold text-base block">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
+                                  <div className="text-gray-900 font-semibold text-base mt-1">{order.shippingInfo.address}</div>
                                 </div>
                               </div>
                             </div>
@@ -969,13 +969,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             <div className="mb-5 p-4 bg-gray-50/80 rounded-xl border-2 border-gray-100">
                               <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">持卡人</span>
-                                  <span className="text-gray-900 font-medium">{order.paymentInfo.cardholderName}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">持卡人</span>
+                                  <span className="text-gray-900 font-semibold text-base">{order.paymentInfo.cardholderName}</span>
                                 </div>
-                                <div className="bg-white p-3 rounded-lg">
-                                  <span className="font-bold text-gray-600 block mb-1">卡號</span>
-                                  <span className="text-gray-900 font-medium">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">卡號</span>
+                                  <span className="text-gray-900 font-semibold text-base font-mono">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
                                 </div>
                               </div>
                             </div>
@@ -1596,31 +1596,33 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                     <h3 className="text-lg font-bold text-gray-800 mb-4">詳細資料</h3>
                                     
                                     {/* 基本資訊 */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                      <div className="flex items-start">
-                                        <span className="text-sm font-bold text-gray-600 w-20 flex-shrink-0">姓名：</span>
-                                        <span className="text-sm text-gray-800">{user.name || '-'}</span>
-                                      </div>
-                                      <div className="flex items-start">
-                                        <span className="text-sm font-bold text-gray-600 w-20 flex-shrink-0">電話：</span>
-                                        <span className="text-sm text-gray-800">{user.phone || '-'}</span>
-                                      </div>
-                                      <div className="flex items-start">
-                                        <span className="text-sm font-bold text-gray-600 w-20 flex-shrink-0">生日：</span>
-                                        <span className="text-sm text-gray-800">{user.birthday || '-'}</span>
-                                      </div>
-                                      <div className="flex items-start">
-                                        <span className="text-sm font-bold text-gray-600 w-20 flex-shrink-0">性別：</span>
-                                        <span className="text-sm text-gray-800">
-                                          {user.gender === 'male' ? '男性' : user.gender === 'female' ? '女性' : user.gender === 'other' ? '其他' : '-'}
-                                        </span>
+                                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="flex items-center border-b border-gray-200 pb-2">
+                                          <span className="text-sm font-bold text-gray-700 w-24 flex-shrink-0">姓名：</span>
+                                          <span className="text-sm text-gray-900 font-medium">{user.name || '-'}</span>
+                                        </div>
+                                        <div className="flex items-center border-b border-gray-200 pb-2">
+                                          <span className="text-sm font-bold text-gray-700 w-24 flex-shrink-0">電話：</span>
+                                          <span className="text-sm text-gray-900 font-medium">{user.phone || '-'}</span>
+                                        </div>
+                                        <div className="flex items-center border-b border-gray-200 pb-2">
+                                          <span className="text-sm font-bold text-gray-700 w-24 flex-shrink-0">生日：</span>
+                                          <span className="text-sm text-gray-900 font-medium">{user.birthday || '-'}</span>
+                                        </div>
+                                        <div className="flex items-center border-b border-gray-200 pb-2">
+                                          <span className="text-sm font-bold text-gray-700 w-24 flex-shrink-0">性別：</span>
+                                          <span className="text-sm text-gray-900 font-medium">
+                                            {user.gender === 'male' ? '男性' : user.gender === 'female' ? '女性' : user.gender === 'other' ? '其他' : '-'}
+                                          </span>
+                                        </div>
                                       </div>
                                     </div>
 
                                     {/* 地址資訊 */}
-                                    <div className="mb-4">
-                                      <span className="text-sm font-bold text-gray-600 block mb-2">地址：</span>
-                                      <div className="text-sm text-gray-800 bg-white p-3 rounded-lg">
+                                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                                      <span className="text-sm font-bold text-gray-700 block mb-3">地址：</span>
+                                      <div className="text-sm text-gray-900 bg-white p-4 rounded-lg border border-gray-200 font-medium">
                                         {user.country || ''} {user.city || ''} {user.postalCode || ''}<br />
                                         {user.address || '-'}
                                       </div>
@@ -1628,9 +1630,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
                                     {/* 緊急聯絡人 */}
                                     {(user.emergencyContact || user.emergencyPhone) && (
-                                      <div className="mb-4">
-                                        <span className="text-sm font-bold text-gray-600 block mb-2">緊急聯絡人：</span>
-                                        <div className="text-sm text-gray-800 bg-white p-3 rounded-lg">
+                                      <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                                        <span className="text-sm font-bold text-gray-700 block mb-3">緊急聯絡人：</span>
+                                        <div className="text-sm text-gray-900 bg-white p-4 rounded-lg border border-gray-200 font-medium">
                                           {user.emergencyContact || '-'} / {user.emergencyPhone || '-'}
                                         </div>
                                       </div>
@@ -1638,57 +1640,68 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
                                     {/* 付款資訊（從訂單中取得） */}
                                     {user.orders && user.orders.length > 0 && (
-                                      <div className="mb-4">
-                                        <span className="text-sm font-bold text-gray-600 block mb-2">付款資訊（最近一筆訂單）：</span>
+                                      <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                                        <span className="text-sm font-bold text-gray-700 block mb-3">付款資訊（最近一筆訂單）：</span>
                                         {user.orders
                                           .filter(o => o.paymentInfo)
                                           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                                           .slice(0, 1)
                                           .map((order, idx) => (
-                                            <div key={idx} className="bg-white p-3 rounded-lg space-y-2">
-                                              <div className="flex items-start">
-                                                <span className="text-sm font-bold text-gray-600 w-24 flex-shrink-0">持卡人：</span>
-                                                <span className="text-sm text-gray-800">{order.paymentInfo?.cardholderName || '-'}</span>
+                                            <div key={idx} className="bg-white p-4 rounded-lg border border-gray-200 space-y-3">
+                                              <div className="flex items-center border-b border-gray-100 pb-2">
+                                                <span className="text-sm font-bold text-gray-700 w-28 flex-shrink-0">持卡人：</span>
+                                                <span className="text-sm text-gray-900 font-medium">{order.paymentInfo?.cardholderName || '-'}</span>
                                               </div>
-                                              <div className="flex items-start">
-                                                <span className="text-sm font-bold text-gray-600 w-24 flex-shrink-0">卡號：</span>
-                                                <span className="text-sm text-gray-800">
+                                              <div className="flex items-center border-b border-gray-100 pb-2">
+                                                <span className="text-sm font-bold text-gray-700 w-28 flex-shrink-0">卡號：</span>
+                                                <span className="text-sm text-gray-900 font-medium">
                                                   **** **** **** {order.paymentInfo?.cardNumber?.slice(-4) || '****'}
                                                 </span>
                                               </div>
-                                              <div className="flex items-start">
-                                                <span className="text-sm font-bold text-gray-600 w-24 flex-shrink-0">有效期限：</span>
-                                                <span className="text-sm text-gray-800">{order.paymentInfo?.expiryDate || '-'}</span>
+                                              <div className="flex items-center">
+                                                <span className="text-sm font-bold text-gray-700 w-28 flex-shrink-0">有效期限：</span>
+                                                <span className="text-sm text-gray-900 font-medium">{order.paymentInfo?.expiryDate || '-'}</span>
                                               </div>
                                             </div>
                                           ))}
                                         {user.orders.filter(o => o.paymentInfo).length === 0 && (
-                                          <div className="text-sm text-gray-500 bg-white p-3 rounded-lg">尚無付款資訊</div>
+                                          <div className="text-sm text-gray-500 bg-white p-4 rounded-lg border border-gray-200 text-center">尚無付款資訊</div>
                                         )}
                                       </div>
                                     )}
 
                                     {/* 訂單列表 */}
                                     {user.orders && user.orders.length > 0 && (
-                                      <div className="mb-4">
-                                        <span className="text-sm font-bold text-gray-600 block mb-3">訂單紀錄（共 {user.orders.length} 筆，總金額 ${user.orders.reduce((sum, o) => sum + (o.total || 0), 0).toFixed(2)}）：</span>
+                                      <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                                        <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-gray-300">
+                                          <span className="text-base font-bold text-gray-800">訂單紀錄</span>
+                                          <span className="text-sm font-bold text-gray-600">
+                                            共 {user.orders.length} 筆，總金額 <span className="text-cute-primary">${user.orders.reduce((sum, o) => sum + (o.total || 0), 0).toFixed(2)}</span>
+                                          </span>
+                                        </div>
                                         <div className="space-y-3 max-h-96 overflow-y-auto">
                                           {user.orders
                                             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                                             .map((order) => (
-                                              <div key={order.id} className="bg-white p-4 rounded-lg border border-gray-200">
-                                                <div className="flex justify-between items-start mb-2">
-                                                  <div>
-                                                    <span className="text-sm font-bold text-gray-800">訂單 #{order.id?.slice(-8) || 'N/A'}</span>
-                                                    <span className="text-xs text-gray-500 ml-2">
-                                                      {new Date(order.date).toLocaleString('zh-TW')}
+                                              <div key={order.id} className="bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-cute-primary transition-colors">
+                                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3 pb-3 border-b border-gray-200">
+                                                  <div className="flex flex-col gap-1">
+                                                    <span className="text-sm font-bold text-gray-900">訂單 #{order.id?.slice(-8) || 'N/A'}</span>
+                                                    <span className="text-xs text-gray-500">
+                                                      {new Date(order.date).toLocaleString('zh-TW', { 
+                                                        year: 'numeric', 
+                                                        month: '2-digit', 
+                                                        day: '2-digit', 
+                                                        hour: '2-digit', 
+                                                        minute: '2-digit' 
+                                                      })}
                                                     </span>
                                                   </div>
-                                                  <span className={`px-2 py-1 rounded text-xs font-bold ${
-                                                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                    order.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
-                                                    order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                    'bg-gray-100 text-gray-800'
+                                                  <span className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap ${
+                                                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' :
+                                                    order.status === 'shipped' ? 'bg-purple-100 text-purple-800 border border-purple-300' :
+                                                    order.status === 'completed' ? 'bg-green-100 text-green-800 border border-green-300' :
+                                                    'bg-gray-100 text-gray-800 border border-gray-300'
                                                   }`}>
                                                     {order.status === 'pending' ? '待處理' :
                                                      order.status === 'shipped' ? '已出貨' :
@@ -1696,9 +1709,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                                      order.status === 'cancelled' ? '已取消' : order.status}
                                                   </span>
                                                 </div>
-                                                <div className="text-sm text-gray-600">
-                                                  <div>商品數量：{order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0} 件</div>
-                                                  <div className="font-bold text-cute-primary mt-1">總金額：${order.total?.toFixed(2) || '0.00'}</div>
+                                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                                  <div>
+                                                    <span className="text-gray-600 font-medium">商品數量：</span>
+                                                    <span className="text-gray-900 font-bold ml-1">{order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0} 件</span>
+                                                  </div>
+                                                  <div className="text-right">
+                                                    <span className="text-gray-600 font-medium">總金額：</span>
+                                                    <span className="text-cute-primary font-bold text-base ml-1">${order.total?.toFixed(2) || '0.00'}</span>
+                                                  </div>
                                                 </div>
                                               </div>
                                             ))}
@@ -1706,7 +1725,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                       </div>
                                     )}
                                     {(!user.orders || user.orders.length === 0) && (
-                                      <div className="text-sm text-gray-500">尚無訂單紀錄</div>
+                                      <div className="bg-gray-50 rounded-lg p-4 text-center">
+                                        <span className="text-sm text-gray-500 font-medium">尚無訂單紀錄</span>
+                                      </div>
                                     )}
                                   </div>
                                 </td>
