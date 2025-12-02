@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Package, Users, DollarSign, TrendingUp, Plus, Edit2, X, Save, Upload, Sparkles, Trash2, RotateCcw, ScrollText, CheckCircle2, Smile, ChevronDown, ChevronUp, Truck, LayoutDashboard } from 'lucide-react';
 import { Product, Order, User } from '../types';
 import { compressImage } from '../utils/imageCompress';
-import { getMarqueeMessages, updateMarqueeMessages, getUserProfile } from '../firestoreHelpers';
+import { getMarqueeMessages, updateMarqueeMessages, getUserProfile, getAllUserProfiles } from '../firestoreHelpers';
 
 interface AdminPanelProps {
   products: Product[];
@@ -355,29 +355,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   };
 
   useEffect(() => {
-    // 蒐集 orders 之 userId（假設站內會員都會有訂單紀錄）
     async function fetchAllUsers() {
       setIsLoadingUsers(true);
       try {
-        const userIds = Array.from(new Set(orders.map(o => o.userId)));
-        // 批量查詢 Firestore userProfiles
-        const userProfileSnaps = await Promise.all(userIds.map(id => getUserProfile(String(id))));
-        const userBasicDatas = userIds.map(id => {
-          // 可以根據作法自訂撈 User 基本資料，這裡直接簡略用 userId 當 id
-          return { id };
-        });
-        const usersData = userIds.map((id, idx) => ({
-          ...userBasicDatas[idx],
-          ...(userProfileSnaps[idx] || {})
-        }));
-        setUserList(usersData);
+        const users = await getAllUserProfiles();
+        setUserList(users);
       } catch (e) {
         setUserList([]);
       }
       setIsLoadingUsers(false);
     }
     if (activeTab === 'users') fetchAllUsers();
-  }, [activeTab, orders]);
+  }, [activeTab]);
 
   const handleAddCategory = (newCategory: string) => {
     if (!customCategories.includes(newCategory)) {
@@ -1492,40 +1481,42 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
         {activeTab === 'users' && (
           <>
-            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-x-auto p-8 mt-6">
-              <h2 className="text-2xl font-black mb-6 text-cute-primary flex items-center gap-2">
-                <Users className="w-7 h-7 text-cute-primary" /> 會員管理
+            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-x-auto p-4 md:p-8 mt-4">
+              <h2 className="text-xl md:text-2xl font-black mb-4 md:mb-6 text-cute-primary flex items-center gap-2">
+                <Users className="w-6 h-6 md:w-7 md:h-7 text-cute-primary" /> 會員管理
               </h2>
               {isLoadingUsers ? (
-                <div className="text-center text-gray-400">載入中...</div>
+                <div className="text-center text-gray-400 py-12">載入中...</div>
               ) : (
-                <table className="w-full text-sm border rounded-xl overflow-hidden">
-                  <thead className="bg-pink-50 text-gray-500 text-xs uppercase font-bold tracking-wider">
-                    <tr>
-                      <th className="px-3 py-3">用戶ID</th>
-                      <th className="px-3 py-3">姓名</th>
-                      <th className="px-3 py-3">Email</th>
-                      <th className="px-3 py-3">電話</th>
-                      <th className="px-3 py-3">角色</th>
-                      <th className="px-3 py-3">上次更新/登入</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {userList.length === 0 && (
-                      <tr><td colSpan={6} className="text-center text-gray-400 py-6">尚無會員資料</td></tr>
-                    )}
-                    {userList.map((user) => (
-                      <tr key={user.userId || user.id} className="border-b hover:bg-pink-50/30">
-                        <td className="px-3 py-2 font-mono">{user.userId || user.id}</td>
-                        <td className="px-3 py-2">{user.name || '-'}</td>
-                        <td className="px-3 py-2">{user.email || '-'}</td>
-                        <td className="px-3 py-2">{user.phone || '-'}</td>
-                        <td className="px-3 py-2">{user.role || '-'}</td>
-                        <td className="px-3 py-2">{user.updatedAt ? (typeof user.updatedAt === 'string' ? user.updatedAt : new Date(user.updatedAt).toLocaleString()) : '-'}</td>
+                <div className="overflow-x-auto">
+                  <table className="min-w-[850px] w-full text-xs md:text-sm border rounded-xl overflow-hidden">
+                    <thead className="bg-pink-50 text-gray-500 text-[10px] md:text-xs uppercase font-bold tracking-wider whitespace-nowrap">
+                      <tr>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-40 break-all">用戶ID</th>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-32 break-all">姓名</th>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-40 break-all">Email</th>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-24 break-all">電話</th>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-16">角色</th>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-40 break-all">上次更新/登入</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="break-all">
+                      {userList.length === 0 && (
+                        <tr><td colSpan={6} className="text-center text-gray-400 py-6">尚無會員資料</td></tr>
+                      )}
+                      {userList.map((user) => (
+                        <tr key={user.userId || user.id} className="border-b hover:bg-pink-50/30">
+                          <td className="px-2 md:px-4 py-2 font-mono break-all">{user.userId || user.id}</td>
+                          <td className="px-2 md:px-4 py-2 break-all">{user.name || '-'}</td>
+                          <td className="px-2 md:px-4 py-2 break-all">{user.email || '-'}</td>
+                          <td className="px-2 md:px-4 py-2 break-all">{user.phone || '-'}</td>
+                          <td className="px-2 md:px-4 py-2">{user.role || '-'}</td>
+                          <td className="px-2 md:px-4 py-2 break-all">{user.updatedAt ? (typeof user.updatedAt === 'string' ? user.updatedAt : new Date(user.updatedAt).toLocaleString()) : '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </>

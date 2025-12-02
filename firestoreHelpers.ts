@@ -314,6 +314,18 @@ export const updateUserProfile = async (profile: any) => {
   }, { merge: true });
 };
 
+export const getAllUserProfiles = async (): Promise<any[]> => {
+  const usersSnap = await getDocs(collection(db, 'userProfiles'));
+  return usersSnap.docs.map(doc => {
+    const data = doc.data();
+    return {
+      userId: doc.id,
+      ...data,
+      updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : (data.updatedAt ? new Date(data.updatedAt) : undefined)
+    };
+  });
+};
+
 // MARQUEE MESSAGES
 export const getMarqueeMessages = async (): Promise<{ messages: string[]; speed: number }> => {
   const docRef = doc(db, 'settings', 'marquee');
