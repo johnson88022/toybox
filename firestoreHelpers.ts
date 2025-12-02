@@ -321,6 +321,7 @@ export const getAllUserProfiles = async (): Promise<any[]> => {
     return {
       userId: doc.id,
       ...data,
+      email: data.email || '', // 確保 email 欄位存在
       updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : (data.updatedAt ? new Date(data.updatedAt) : undefined)
     };
   });

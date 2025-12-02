@@ -46,6 +46,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   // 新增 state 與 fx：監聽所有 userProfile、整理用戶資料
   const [userList, setUserList] = useState<any[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
 
   // Debug: 確保wishes更新時重新渲染
   React.useEffect(() => {
@@ -359,14 +360,46 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
       setIsLoadingUsers(true);
       try {
         const users = await getAllUserProfiles();
-        setUserList(users);
+        // 為每個用戶補充 email 和登入時間資訊
+        const enrichedUsers = users.map(user => {
+          // 從訂單中找出該用戶的資訊
+          const userOrders = orders.filter(o => o.userId === user.userId);
+          const latestOrder = userOrders.length > 0 
+            ? userOrders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+            : null;
+          
+          // Email：優先使用 userProfiles 中的 email，如果沒有則顯示提示
+          // 注意：如果 userProfiles 中沒有 email，需要用戶在登入時將 email 寫入 userProfiles
+          const email = user.email || '-';
+          
+          // 登入時間：使用最後一筆訂單時間或 updatedAt（取較新的）
+          let lastLoginTime = null;
+          if (latestOrder?.date) {
+            lastLoginTime = new Date(latestOrder.date);
+          }
+          if (user.updatedAt) {
+            const updatedAtTime = typeof user.updatedAt === 'string' ? new Date(user.updatedAt) : user.updatedAt;
+            if (!lastLoginTime || updatedAtTime > lastLoginTime) {
+              lastLoginTime = updatedAtTime;
+            }
+          }
+          
+          return {
+            ...user,
+            email,
+            lastLoginTime,
+            orders: userOrders, // 保存該用戶的所有訂單以便展開顯示
+          };
+        });
+        setUserList(enrichedUsers);
       } catch (e) {
+        console.error('Failed to fetch users:', e);
         setUserList([]);
       }
       setIsLoadingUsers(false);
     }
     if (activeTab === 'users') fetchAllUsers();
-  }, [activeTab]);
+  }, [activeTab, orders]);
 
   const handleAddCategory = (newCategory: string) => {
     if (!customCategories.includes(newCategory)) {
@@ -1024,7 +1057,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
           <>
             <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-2xl font-black text-gray-800">商品管理</h2>
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-wrap">
                 <button 
                   onClick={(e) => {
                     e.preventDefault();
@@ -1045,6 +1078,39 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                 >
                   <Plus size={16} /> 新增類別
                 </button>
+                {customCategories.length > 0 && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-bold text-gray-600">類別列表：</span>
+                    {customCategories.map((cat) => (
+                      <div key={cat} className="flex items-center gap-1 bg-pink-50 px-3 py-1 rounded-lg border border-pink-200">
+                        <span className="text-sm font-medium text-gray-700">{cat}</span>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            // 檢查是否有商品使用此類別
+                            const productsUsingCategory = products.filter(p => p.category === cat);
+                            if (productsUsingCategory.length > 0) {
+                              if (!window.confirm(`類別「${cat}」目前有 ${productsUsingCategory.length} 個商品使用中，確定要刪除嗎？刪除後這些商品的類別將需要重新設定。`)) {
+                                return;
+                              }
+                            } else {
+                              if (!window.confirm(`確定要刪除類別「${cat}」嗎？`)) {
+                                return;
+                              }
+                            }
+                            handleDeleteCategory(cat);
+                            alert(`類別「${cat}」已刪除！`);
+                          }}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded p-1 transition-colors"
+                          aria-label={`刪除類別 ${cat}`}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <button 
                   onClick={(e) => {
                     e.preventDefault();
@@ -1489,31 +1555,146 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                 <div className="text-center text-gray-400 py-12">載入中...</div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-[850px] w-full text-xs md:text-sm border rounded-xl overflow-hidden">
+                  <table className="min-w-[600px] w-full text-xs md:text-sm border rounded-xl overflow-hidden">
                     <thead className="bg-pink-50 text-gray-500 text-[10px] md:text-xs uppercase font-bold tracking-wider whitespace-nowrap">
                       <tr>
-                        <th className="px-2 md:px-4 py-2 md:py-3 w-40 break-all">用戶ID</th>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-12"></th>
                         <th className="px-2 md:px-4 py-2 md:py-3 w-32 break-all">姓名</th>
-                        <th className="px-2 md:px-4 py-2 md:py-3 w-40 break-all">Email</th>
-                        <th className="px-2 md:px-4 py-2 md:py-3 w-24 break-all">電話</th>
-                        <th className="px-2 md:px-4 py-2 md:py-3 w-16">角色</th>
-                        <th className="px-2 md:px-4 py-2 md:py-3 w-40 break-all">上次更新/登入</th>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-48 break-all">Gmail</th>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-28 break-all">電話</th>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-40 break-all">登入時間</th>
                       </tr>
                     </thead>
                     <tbody className="break-all">
                       {userList.length === 0 && (
-                        <tr><td colSpan={6} className="text-center text-gray-400 py-6">尚無會員資料</td></tr>
+                        <tr><td colSpan={5} className="text-center text-gray-400 py-6">尚無會員資料</td></tr>
                       )}
-                      {userList.map((user) => (
-                        <tr key={user.userId || user.id} className="border-b hover:bg-pink-50/30">
-                          <td className="px-2 md:px-4 py-2 font-mono break-all">{user.userId || user.id}</td>
-                          <td className="px-2 md:px-4 py-2 break-all">{user.name || '-'}</td>
-                          <td className="px-2 md:px-4 py-2 break-all">{user.email || '-'}</td>
-                          <td className="px-2 md:px-4 py-2 break-all">{user.phone || '-'}</td>
-                          <td className="px-2 md:px-4 py-2">{user.role || '-'}</td>
-                          <td className="px-2 md:px-4 py-2 break-all">{user.updatedAt ? (typeof user.updatedAt === 'string' ? user.updatedAt : new Date(user.updatedAt).toLocaleString()) : '-'}</td>
-                        </tr>
-                      ))}
+                      {userList.map((user) => {
+                        const isExpanded = expandedUsers.has(user.userId);
+                        return (
+                          <React.Fragment key={user.userId || user.id}>
+                            <tr className="border-b hover:bg-pink-50/30 cursor-pointer" onClick={() => {
+                              const newExpanded = new Set(expandedUsers);
+                              if (isExpanded) {
+                                newExpanded.delete(user.userId);
+                              } else {
+                                newExpanded.add(user.userId);
+                              }
+                              setExpandedUsers(newExpanded);
+                            }}>
+                              <td className="px-2 md:px-4 py-2 text-center">
+                                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                              </td>
+                              <td className="px-2 md:px-4 py-2 break-all font-medium">{user.name || '-'}</td>
+                              <td className="px-2 md:px-4 py-2 break-all">{user.email || '-'}</td>
+                              <td className="px-2 md:px-4 py-2 break-all">{user.phone || '-'}</td>
+                              <td className="px-2 md:px-4 py-2 break-all">
+                                {user.lastLoginTime 
+                                  ? new Date(user.lastLoginTime).toLocaleString('zh-TW', { 
+                                      year: 'numeric', 
+                                      month: '2-digit', 
+                                      day: '2-digit', 
+                                      hour: '2-digit', 
+                                      minute: '2-digit' 
+                                    })
+                                  : '-'}
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr>
+                                <td colSpan={5} className="px-4 md:px-8 py-6 bg-gray-50">
+                                  <div className="space-y-4">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4">詳細資料</h3>
+                                    
+                                    {/* 基本資訊 */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                      <div>
+                                        <span className="text-sm font-bold text-gray-600">姓名：</span>
+                                        <span className="text-sm text-gray-800 ml-2">{user.name || '-'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-sm font-bold text-gray-600">電話：</span>
+                                        <span className="text-sm text-gray-800 ml-2">{user.phone || '-'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-sm font-bold text-gray-600">生日：</span>
+                                        <span className="text-sm text-gray-800 ml-2">{user.birthday || '-'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-sm font-bold text-gray-600">性別：</span>
+                                        <span className="text-sm text-gray-800 ml-2">
+                                          {user.gender === 'male' ? '男性' : user.gender === 'female' ? '女性' : user.gender === 'other' ? '其他' : '-'}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* 地址資訊 */}
+                                    <div className="mb-4">
+                                      <span className="text-sm font-bold text-gray-600 block mb-2">地址：</span>
+                                      <div className="text-sm text-gray-800 bg-white p-3 rounded-lg">
+                                        {user.country || ''} {user.city || ''} {user.postalCode || ''}<br />
+                                        {user.address || '-'}
+                                      </div>
+                                    </div>
+
+                                    {/* 緊急聯絡人 */}
+                                    {(user.emergencyContact || user.emergencyPhone) && (
+                                      <div className="mb-4">
+                                        <span className="text-sm font-bold text-gray-600 block mb-2">緊急聯絡人：</span>
+                                        <div className="text-sm text-gray-800 bg-white p-3 rounded-lg">
+                                          {user.emergencyContact || '-'} / {user.emergencyPhone || '-'}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* 付款資訊（從訂單中取得） */}
+                                    {user.orders && user.orders.length > 0 && (
+                                      <div className="mb-4">
+                                        <span className="text-sm font-bold text-gray-600 block mb-2">付款資訊（最近一筆訂單）：</span>
+                                        {user.orders
+                                          .filter(o => o.paymentInfo)
+                                          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                          .slice(0, 1)
+                                          .map((order, idx) => (
+                                            <div key={idx} className="bg-white p-3 rounded-lg space-y-2">
+                                              <div>
+                                                <span className="text-sm font-bold text-gray-600">持卡人：</span>
+                                                <span className="text-sm text-gray-800 ml-2">{order.paymentInfo?.cardholderName || '-'}</span>
+                                              </div>
+                                              <div>
+                                                <span className="text-sm font-bold text-gray-600">卡號：</span>
+                                                <span className="text-sm text-gray-800 ml-2">
+                                                  **** **** **** {order.paymentInfo?.cardNumber?.slice(-4) || '****'}
+                                                </span>
+                                              </div>
+                                              <div>
+                                                <span className="text-sm font-bold text-gray-600">有效期限：</span>
+                                                <span className="text-sm text-gray-800 ml-2">{order.paymentInfo?.expiryDate || '-'}</span>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        {user.orders.filter(o => o.paymentInfo).length === 0 && (
+                                          <div className="text-sm text-gray-500 bg-white p-3 rounded-lg">尚無付款資訊</div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* 訂單統計 */}
+                                    {user.orders && user.orders.length > 0 && (
+                                      <div>
+                                        <span className="text-sm font-bold text-gray-600">訂單統計：</span>
+                                        <span className="text-sm text-gray-800 ml-2">
+                                          共 {user.orders.length} 筆訂單，總金額 ${user.orders.reduce((sum, o) => sum + (o.total || 0), 0).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
