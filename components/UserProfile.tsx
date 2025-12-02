@@ -70,14 +70,27 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onClose }) => {
     setSaveSuccess(false);
     
     try {
-      await updateUserProfile({
-        ...profile,
+      // 確保所有欄位都被正確儲存到 Firestore
+      const profileToSave: UserProfileType = {
         userId: user.id,
-        name: profile.name || user.name,
-        email: user.email, // 確保 email 被儲存
+        name: profile.name || user.name || '',
+        email: user.email || '', // 確保 email 被儲存
+        phone: profile.phone || '',
+        address: profile.address || '',
+        city: profile.city || '',
+        postalCode: profile.postalCode || '',
+        country: profile.country || '台灣',
+        birthday: profile.birthday || '',
+        gender: profile.gender || undefined,
+        emergencyContact: profile.emergencyContact || '',
+        emergencyPhone: profile.emergencyPhone || '',
         updatedAt: new Date(),
-      } as UserProfileType);
+      };
       
+      console.log('Saving profile to Firestore:', profileToSave);
+      await updateUserProfile(profileToSave);
+      
+      console.log('Profile saved successfully');
       setSaveSuccess(true);
       setTimeout(() => {
         setSaveSuccess(false);

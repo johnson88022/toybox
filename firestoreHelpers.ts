@@ -316,7 +316,10 @@ export const updateUserProfile = async (profile: any) => {
     updateData.lastLoginTime = lastLoginTime instanceof Date ? lastLoginTime : serverTimestamp();
   }
   const docRef = doc(db, 'userProfiles', profile.userId);
+  // 使用 setDoc 而不是 updateDoc，確保即使文檔不存在也能創建
+  // merge: true 確保不會覆蓋現有欄位
   await setDoc(docRef, updateData, { merge: true });
+  console.log('UserProfile updated in Firestore:', profile.userId, updateData);
 };
 
 export const getAllUserProfiles = async (): Promise<any[]> => {

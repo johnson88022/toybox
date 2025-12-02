@@ -93,15 +93,16 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
 
 
   return (
-    <div className="min-h-screen pt-20 px-4 pb-12 bg-cute-bg fixed inset-0 overflow-y-auto z-50" style={{ touchAction: 'pan-y' }}>
+    <div className="min-h-screen pt-16 sm:pt-20 px-4 pb-12 bg-cute-bg fixed inset-0 overflow-y-auto z-50" style={{ touchAction: 'pan-y' }}>
       <div className="max-w-7xl mx-auto">
-        {/* 返回按鈕 */}
+        {/* 返回按鈕 - 手機版減少頂部間距 */}
         <button
           onClick={onClose}
-          className="mb-4 mt-2 flex items-center gap-2 text-gray-600 hover:text-gray-800 font-bold transition-colors"
+          className="mb-2 mt-0 sm:mb-4 sm:mt-2 flex items-center gap-2 text-gray-600 hover:text-gray-800 font-bold transition-colors text-sm sm:text-base"
         >
-          <ArrowLeft size={20} />
-          返回商品列表
+          <ArrowLeft size={18} className="sm:w-5 sm:h-5" />
+          <span className="hidden sm:inline">返回商品列表</span>
+          <span className="sm:hidden">返回</span>
         </button>
 
 
