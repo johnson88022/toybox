@@ -49,6 +49,7 @@ export interface UserProfile {
   gender?: 'male' | 'female' | 'other';
   emergencyContact?: string;
   emergencyPhone?: string;
+  lastLoginTime?: Date; // 新增登入時間欄位
   updatedAt?: Date;
 }
 

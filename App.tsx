@@ -13,7 +13,7 @@ import { Trash2, CreditCard, ShoppingBag, X, LogIn, Apple, Smartphone, Loader2, 
 import { auth, googleProvider, appleProvider, isFirebaseConfigured } from './firebaseConfig';
 import { signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import {
-  listenProducts, addProduct, updateProduct as updateProductFS, deleteProduct as deleteProductFS, listenWishes, addWish, deleteWish, listenOrders, addOrderAndUpdateStock, initializeProducts, resetAllData, getUserProfile, updateOrderStatus as updateOrderStatusFS, listenMarqueeMessages
+  listenProducts, addProduct, updateProduct as updateProductFS, deleteProduct as deleteProductFS, listenWishes, addWish, deleteWish, listenOrders, addOrderAndUpdateStock, initializeProducts, resetAllData, getUserProfile, updateUserProfile, updateOrderStatus as updateOrderStatusFS, listenMarqueeMessages
 } from './firestoreHelpers';
 
 // Main App Component
@@ -138,7 +138,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!isFirebaseConfigured) return;
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         // Check strict admin email
         const isAdmin = firebaseUser.email === 'johnson88022@gmail.com';
@@ -153,6 +153,29 @@ const App: React.FC = () => {
         
         setUser(appUser);
         setIsLoginModalOpen(false); // 確保登入後關閉視窗
+        
+        // 自動更新 userProfiles 的 email 和 lastLoginTime
+        try {
+          const existingProfile = await getUserProfile(firebaseUser.uid);
+          await updateUserProfile({
+            userId: firebaseUser.uid,
+            name: existingProfile?.name || appUser.name,
+            email: firebaseUser.email || '',
+            phone: existingProfile?.phone || '',
+            address: existingProfile?.address || '',
+            city: existingProfile?.city || '',
+            postalCode: existingProfile?.postalCode || '',
+            country: existingProfile?.country || '台灣',
+            birthday: existingProfile?.birthday || '',
+            gender: existingProfile?.gender || undefined,
+            emergencyContact: existingProfile?.emergencyContact || '',
+            emergencyPhone: existingProfile?.emergencyPhone || '',
+            lastLoginTime: new Date(), // 記錄登入時間
+            updatedAt: new Date(),
+          });
+        } catch (error) {
+          console.error('Failed to update user profile on login:', error);
+        }
       } else {
         setUser(null);
       }

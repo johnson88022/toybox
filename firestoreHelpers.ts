@@ -306,12 +306,17 @@ export const getUserProfile = async (userId: string): Promise<any> => {
 };
 
 export const updateUserProfile = async (profile: any) => {
-  const { updatedAt, ...profileData } = profile;
-  const docRef = doc(db, 'userProfiles', profile.userId);
-  await setDoc(docRef, {
+  const { updatedAt, lastLoginTime, ...profileData } = profile;
+  const updateData: any = {
     ...profileData,
     updatedAt: serverTimestamp()
-  }, { merge: true });
+  };
+  // 如果有 lastLoginTime，也記錄它
+  if (lastLoginTime) {
+    updateData.lastLoginTime = lastLoginTime instanceof Date ? lastLoginTime : serverTimestamp();
+  }
+  const docRef = doc(db, 'userProfiles', profile.userId);
+  await setDoc(docRef, updateData, { merge: true });
 };
 
 export const getAllUserProfiles = async (): Promise<any[]> => {
@@ -322,6 +327,7 @@ export const getAllUserProfiles = async (): Promise<any[]> => {
       userId: doc.id,
       ...data,
       email: data.email || '', // 確保 email 欄位存在
+      lastLoginTime: data.lastLoginTime?.toDate ? data.lastLoginTime.toDate() : (data.lastLoginTime ? new Date(data.lastLoginTime) : undefined),
       updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : (data.updatedAt ? new Date(data.updatedAt) : undefined)
     };
   });

@@ -47,6 +47,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const [userList, setUserList] = useState<any[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
+  // 新增類別 modal 狀態
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   // Debug: 確保wishes更新時重新渲染
   React.useEffect(() => {
@@ -368,20 +371,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
             ? userOrders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
             : null;
           
-          // Email：優先使用 userProfiles 中的 email，如果沒有則顯示提示
-          // 注意：如果 userProfiles 中沒有 email，需要用戶在登入時將 email 寫入 userProfiles
+          // Email：從 userProfiles 中的 email 欄位取得
           const email = user.email || '-';
           
-          // 登入時間：使用最後一筆訂單時間或 updatedAt（取較新的）
+          // 登入時間：優先使用 lastLoginTime，如果沒有則使用 updatedAt
           let lastLoginTime = null;
-          if (latestOrder?.date) {
-            lastLoginTime = new Date(latestOrder.date);
-          }
-          if (user.updatedAt) {
-            const updatedAtTime = typeof user.updatedAt === 'string' ? new Date(user.updatedAt) : user.updatedAt;
-            if (!lastLoginTime || updatedAtTime > lastLoginTime) {
-              lastLoginTime = updatedAtTime;
-            }
+          if (user.lastLoginTime) {
+            lastLoginTime = typeof user.lastLoginTime === 'string' ? new Date(user.lastLoginTime) : user.lastLoginTime;
+          } else if (user.updatedAt) {
+            lastLoginTime = typeof user.updatedAt === 'string' ? new Date(user.updatedAt) : user.updatedAt;
           }
           
           return {
@@ -1062,17 +1060,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    const newCategory = prompt('請輸入新類別名稱：');
-                    if (newCategory && newCategory.trim()) {
-                      const categoryValue = newCategory.trim();
-                      if (!customCategories.includes(categoryValue)) {
-                        const updatedCategories = [...customCategories, categoryValue];
-                        onCategoriesChange?.(updatedCategories);
-                        alert(`類別「${categoryValue}」已新增！`);
-                      } else {
-                        alert('此類別已存在！');
-                      }
-                    }
+                    setShowAddCategoryModal(true);
+                    setNewCategoryName('');
                   }}
                   className="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors shadow-sm"
                 >
@@ -2150,6 +2139,79 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                   <Save size={18} /> 儲存變更
                     </>
                   )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        )}
+
+      {/* 新增類別 Modal */}
+      {showAddCategoryModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="absolute inset-0" onClick={() => setShowAddCategoryModal(false)}></div>
+          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 md:p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
+                <Plus className="w-6 h-6 text-cute-primary" />
+                新增商品類別
+              </h2>
+              <button
+                onClick={() => setShowAddCategoryModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-pink-50 rounded-full transition-colors"
+                aria-label="關閉"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (newCategoryName && newCategoryName.trim()) {
+                const categoryValue = newCategoryName.trim();
+                if (!customCategories.includes(categoryValue)) {
+                  const updatedCategories = [...customCategories, categoryValue];
+                  onCategoriesChange?.(updatedCategories);
+                  setShowAddCategoryModal(false);
+                  setNewCategoryName('');
+                } else {
+                  alert('此類別已存在！');
+                }
+              }
+            }}>
+              <div className="mb-6">
+                <label htmlFor="new-category-input" className="block text-sm font-bold text-gray-600 mb-2">
+                  類別名稱
+                </label>
+                <input
+                  id="new-category-input"
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="請輸入新類別名稱"
+                  className="w-full bg-gray-50 border border-pink-100 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                  autoFocus
+                  required
+                />
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddCategoryModal(false);
+                    setNewCategoryName('');
+                  }}
+                  className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-cute-primary text-white font-bold py-3 rounded-xl hover:bg-pink-400 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Plus size={18} />
+                  新增
                 </button>
               </div>
             </form>
