@@ -302,10 +302,21 @@ const App: React.FC = () => {
 
   const handleLogout = async () => {
     try {
+      // 清除當前用戶的付款資訊（如果有的話）
+      if (user) {
+        const paymentKey = `toybox_payment_info_${user.id}`;
+        localStorage.removeItem(paymentKey);
+      }
       await signOut(auth);
       setCart([]); // Clear cart on logout
       setSelectedCartItems(new Set()); // Clear selected items
       localStorage.removeItem('toybox_cart'); // Clear localStorage
+      setPaymentInfo({ // 清除付款資訊
+        cardNumber: '',
+        expiryDate: '',
+        cvv: '',
+        cardholderName: ''
+      });
       setCurrentPage('/');
     } catch (error) {
       console.error("Logout Error:", error);
@@ -320,9 +331,10 @@ const App: React.FC = () => {
       return;
     }
     
-    // 載入儲存的付款資訊
+    // 載入儲存的付款資訊（使用 userId 區分不同用戶）
     try {
-      const savedPayment = localStorage.getItem('toybox_payment_info');
+      const paymentKey = `toybox_payment_info_${user.id}`;
+      const savedPayment = localStorage.getItem(paymentKey);
       if (savedPayment) {
         const parsedPayment = JSON.parse(savedPayment);
         setPaymentInfo(parsedPayment);
@@ -415,10 +427,11 @@ const App: React.FC = () => {
     try {
       await addOrderAndUpdateStock(order, selectedItems);
       
-      // 如果用戶選擇儲存付款資訊為預設
+      // 如果用戶選擇儲存付款資訊為預設（使用 userId 區分不同用戶）
       if (savePaymentAsDefault && user) {
         try {
-          localStorage.setItem('toybox_payment_info', JSON.stringify(paymentInfo));
+          const paymentKey = `toybox_payment_info_${user.id}`;
+          localStorage.setItem(paymentKey, JSON.stringify(paymentInfo));
         } catch (error) {
           console.error('Failed to save payment info to localStorage:', error);
         }
@@ -597,19 +610,22 @@ const App: React.FC = () => {
         {marqueeMessages.length > 0 && marqueeMessages.some(msg => msg.trim() !== '') && (
           <div className="mb-8 w-full overflow-hidden bg-gradient-to-r from-cute-primary to-cute-secondary shadow-lg">
             <div className="py-4 relative">
-              <div 
-                className="flex items-center gap-8 text-white font-bold text-lg md:text-xl whitespace-nowrap"
-                style={{
-                  animation: `scroll ${marqueeSpeed}s linear infinite`,
-                  willChange: 'transform'
-                }}
-              >
-                {/* 重複多次以確保無縫循環 */}
-                {[...Array(4)].map((_, repeatIndex) => 
-                  marqueeMessages.filter(msg => msg.trim() !== '').map((msg, i) => (
-                    <span key={`${repeatIndex}-${i}`} className="inline-block px-4 flex-shrink-0">{msg}</span>
-                  ))
-                )}
+              <div className="flex items-center text-white font-bold text-lg md:text-xl whitespace-nowrap">
+                <div 
+                  className="flex items-center gap-8"
+                  style={{
+                    animation: `scroll ${marqueeSpeed}s linear infinite`,
+                    willChange: 'transform',
+                    display: 'inline-flex'
+                  }}
+                >
+                  {/* 重複多次以確保無縫循環 */}
+                  {[...Array(6)].map((_, repeatIndex) => 
+                    marqueeMessages.filter(msg => msg.trim() !== '').map((msg, i) => (
+                      <span key={`${repeatIndex}-${i}`} className="inline-block px-4 flex-shrink-0">{msg}</span>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>

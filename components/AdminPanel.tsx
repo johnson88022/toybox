@@ -1597,21 +1597,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                     
                                     {/* 基本資訊 */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                      <div>
-                                        <span className="text-sm font-bold text-gray-600">姓名：</span>
-                                        <span className="text-sm text-gray-800 ml-2">{user.name || '-'}</span>
+                                      <div className="flex items-start">
+                                        <span className="text-sm font-bold text-gray-600 w-20 flex-shrink-0">姓名：</span>
+                                        <span className="text-sm text-gray-800">{user.name || '-'}</span>
                                       </div>
-                                      <div>
-                                        <span className="text-sm font-bold text-gray-600">電話：</span>
-                                        <span className="text-sm text-gray-800 ml-2">{user.phone || '-'}</span>
+                                      <div className="flex items-start">
+                                        <span className="text-sm font-bold text-gray-600 w-20 flex-shrink-0">電話：</span>
+                                        <span className="text-sm text-gray-800">{user.phone || '-'}</span>
                                       </div>
-                                      <div>
-                                        <span className="text-sm font-bold text-gray-600">生日：</span>
-                                        <span className="text-sm text-gray-800 ml-2">{user.birthday || '-'}</span>
+                                      <div className="flex items-start">
+                                        <span className="text-sm font-bold text-gray-600 w-20 flex-shrink-0">生日：</span>
+                                        <span className="text-sm text-gray-800">{user.birthday || '-'}</span>
                                       </div>
-                                      <div>
-                                        <span className="text-sm font-bold text-gray-600">性別：</span>
-                                        <span className="text-sm text-gray-800 ml-2">
+                                      <div className="flex items-start">
+                                        <span className="text-sm font-bold text-gray-600 w-20 flex-shrink-0">性別：</span>
+                                        <span className="text-sm text-gray-800">
                                           {user.gender === 'male' ? '男性' : user.gender === 'female' ? '女性' : user.gender === 'other' ? '其他' : '-'}
                                         </span>
                                       </div>
@@ -1646,19 +1646,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                           .slice(0, 1)
                                           .map((order, idx) => (
                                             <div key={idx} className="bg-white p-3 rounded-lg space-y-2">
-                                              <div>
-                                                <span className="text-sm font-bold text-gray-600">持卡人：</span>
-                                                <span className="text-sm text-gray-800 ml-2">{order.paymentInfo?.cardholderName || '-'}</span>
+                                              <div className="flex items-start">
+                                                <span className="text-sm font-bold text-gray-600 w-24 flex-shrink-0">持卡人：</span>
+                                                <span className="text-sm text-gray-800">{order.paymentInfo?.cardholderName || '-'}</span>
                                               </div>
-                                              <div>
-                                                <span className="text-sm font-bold text-gray-600">卡號：</span>
-                                                <span className="text-sm text-gray-800 ml-2">
+                                              <div className="flex items-start">
+                                                <span className="text-sm font-bold text-gray-600 w-24 flex-shrink-0">卡號：</span>
+                                                <span className="text-sm text-gray-800">
                                                   **** **** **** {order.paymentInfo?.cardNumber?.slice(-4) || '****'}
                                                 </span>
                                               </div>
-                                              <div>
-                                                <span className="text-sm font-bold text-gray-600">有效期限：</span>
-                                                <span className="text-sm text-gray-800 ml-2">{order.paymentInfo?.expiryDate || '-'}</span>
+                                              <div className="flex items-start">
+                                                <span className="text-sm font-bold text-gray-600 w-24 flex-shrink-0">有效期限：</span>
+                                                <span className="text-sm text-gray-800">{order.paymentInfo?.expiryDate || '-'}</span>
                                               </div>
                                             </div>
                                           ))}
@@ -1668,14 +1668,45 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                       </div>
                                     )}
 
-                                    {/* 訂單統計 */}
+                                    {/* 訂單列表 */}
                                     {user.orders && user.orders.length > 0 && (
-                                      <div>
-                                        <span className="text-sm font-bold text-gray-600">訂單統計：</span>
-                                        <span className="text-sm text-gray-800 ml-2">
-                                          共 {user.orders.length} 筆訂單，總金額 ${user.orders.reduce((sum, o) => sum + (o.total || 0), 0).toFixed(2)}
-                                        </span>
+                                      <div className="mb-4">
+                                        <span className="text-sm font-bold text-gray-600 block mb-3">訂單紀錄（共 {user.orders.length} 筆，總金額 ${user.orders.reduce((sum, o) => sum + (o.total || 0), 0).toFixed(2)}）：</span>
+                                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                                          {user.orders
+                                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                            .map((order) => (
+                                              <div key={order.id} className="bg-white p-4 rounded-lg border border-gray-200">
+                                                <div className="flex justify-between items-start mb-2">
+                                                  <div>
+                                                    <span className="text-sm font-bold text-gray-800">訂單 #{order.id?.slice(-8) || 'N/A'}</span>
+                                                    <span className="text-xs text-gray-500 ml-2">
+                                                      {new Date(order.date).toLocaleString('zh-TW')}
+                                                    </span>
+                                                  </div>
+                                                  <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                    order.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
+                                                    order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                    'bg-gray-100 text-gray-800'
+                                                  }`}>
+                                                    {order.status === 'pending' ? '待處理' :
+                                                     order.status === 'shipped' ? '已出貨' :
+                                                     order.status === 'completed' ? '已完成' :
+                                                     order.status === 'cancelled' ? '已取消' : order.status}
+                                                  </span>
+                                                </div>
+                                                <div className="text-sm text-gray-600">
+                                                  <div>商品數量：{order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0} 件</div>
+                                                  <div className="font-bold text-cute-primary mt-1">總金額：${order.total?.toFixed(2) || '0.00'}</div>
+                                                </div>
+                                              </div>
+                                            ))}
+                                        </div>
                                       </div>
+                                    )}
+                                    {(!user.orders || user.orders.length === 0) && (
+                                      <div className="text-sm text-gray-500">尚無訂單紀錄</div>
                                     )}
                                   </div>
                                 </td>
