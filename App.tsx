@@ -88,13 +88,12 @@ const App: React.FC = () => {
       const now = new Date();
 
       // 直接查詢用戶現有的優惠券（不使用監聽器，避免異步問題）
-      const { query: firestoreQuery, collection: firestoreCollection, where: firestoreWhere } = await import('firebase/firestore');
-      const existingUserCouponsQuery = firestoreQuery(
-        firestoreCollection(db, 'userCoupons'),
-        firestoreWhere('userId', '==', userId),
-        firestoreWhere('isUsed', '==', false)
+      const existingUserCouponsQuery = query(
+        collection(db, 'userCoupons'),
+        where('userId', '==', userId),
+        where('isUsed', '==', false)
       );
-      const existingSnap = await getDocsQuery(existingUserCouponsQuery);
+      const existingSnap = await getDocs(existingUserCouponsQuery);
       const existingCouponIds = new Set(
         existingSnap.docs.map(doc => doc.data().couponId).filter(Boolean)
       );
