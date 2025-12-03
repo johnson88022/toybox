@@ -153,7 +153,20 @@ const MyCoupons: React.FC<MyCouponsProps> = ({ userId }) => {
               const coupon = userCoupon.coupon;
               const color = getCouponColor(coupon);
               const icon = getCouponIcon(coupon);
-              const isExpired = !userCoupon.isUsed && new Date(coupon.validUntil) < now;
+              
+              // 正確解析日期
+              const parseDateForCheck = (dateValue: any): Date | null => {
+                if (!dateValue) return null;
+                if (dateValue instanceof Date) return dateValue;
+                if (dateValue.toDate) return dateValue.toDate();
+                if (typeof dateValue === 'string' || typeof dateValue === 'number') {
+                  return new Date(dateValue);
+                }
+                return null;
+              };
+              
+              const validUntilDate = parseDateForCheck(coupon.validUntil);
+              const isExpired = !userCoupon.isUsed && validUntilDate !== null && validUntilDate < now;
               const isValid = !userCoupon.isUsed && !isExpired;
 
               return (
