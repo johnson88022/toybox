@@ -101,6 +101,17 @@ const App: React.FC = () => {
       const userProfile = await getUserProfile(userId);
       const now = new Date();
 
+      // 如果傳入了 orderData，將其加入到 userOrders 中（用於條件檢查）
+      let ordersForCheck = [...userOrders];
+      if (orderData && triggerType === 'order') {
+        // 檢查當前訂單是否已在列表中
+        const orderExists = userOrders.some(o => o.id === orderData.id);
+        if (!orderExists) {
+          ordersForCheck.push(orderData);
+          console.log(`📦 Added current order to orders list for checking (total: ${ordersForCheck.length})`);
+        }
+      }
+
       // 直接查詢用戶現有的優惠券（不使用監聽器，避免異步問題）
       const existingUserCouponsQuery = query(
         collection(db, 'userCoupons'),
@@ -112,7 +123,7 @@ const App: React.FC = () => {
         existingSnap.docs.map(doc => doc.data().couponId).filter(Boolean)
       );
 
-      console.log(`📋 User has ${existingCouponIds.size} unused coupons`);
+      console.log(`📋 User has ${existingCouponIds.size} unused coupons, total orders: ${ordersForCheck.length}`);
 
       for (const coupon of allCoupons) {
         if (!coupon.isActive) {
@@ -176,9 +187,11 @@ const App: React.FC = () => {
             }
             break;
           case 'firstOrder':
-            if (triggerType === 'order' && userOrders.length === 1) {
+            if (triggerType === 'order' && ordersForCheck.length === 1) {
               shouldGrant = true;
-              console.log(`🎯 First order trigger matched for "${coupon.name}"`);
+              console.log(`🎯 First order trigger matched for "${coupon.name}" (orders: ${ordersForCheck.length})`);
+            } else {
+              console.log(`❌ First order condition not met: orders=${ordersForCheck.length}, triggerType=${triggerType}`);
             }
             break;
           case 'orderAmount':
@@ -197,16 +210,25 @@ const App: React.FC = () => {
             }
             break;
           case 'orderCount':
-            if (triggerType === 'order' && userOrders.length >= (condition.value || 0)) {
+            const orderCount = ordersForCheck.length;
+            const requiredCount = Number(condition.value) || 0;
+            console.log(`🔍 Checking orderCount condition for "${coupon.name}": orderCount=${orderCount}, required=${requiredCount}`);
+            if (triggerType === 'order' && orderCount >= requiredCount && requiredCount > 0) {
               shouldGrant = true;
-              console.log(`🎯 Order count trigger matched for "${coupon.name}" (orders: ${userOrders.length}, required: ${condition.value})`);
+              console.log(`✅ Order count trigger matched for "${coupon.name}" (orders: ${orderCount}, required: ${requiredCount})`);
+            } else {
+              console.log(`❌ Order count not met for "${coupon.name}" (orders: ${orderCount}, required: ${requiredCount})`);
             }
             break;
           case 'totalSpent':
-            const totalSpent = userOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-            if (totalSpent >= (condition.value || 0)) {
+            const totalSpent = ordersForCheck.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+            const requiredSpent = Number(condition.value) || 0;
+            console.log(`🔍 Checking totalSpent condition for "${coupon.name}": totalSpent=${totalSpent}, required=${requiredSpent}`);
+            if (totalSpent >= requiredSpent && requiredSpent > 0) {
               shouldGrant = true;
-              console.log(`🎯 Total spent trigger matched for "${coupon.name}" (total: ${totalSpent}, required: ${condition.value})`);
+              console.log(`✅ Total spent trigger matched for "${coupon.name}" (total: ${totalSpent}, required: ${requiredSpent})`);
+            } else {
+              console.log(`❌ Total spent not met for "${coupon.name}" (total: ${totalSpent}, required: ${requiredSpent})`);
             }
             break;
           case 'birthday':
@@ -658,12 +680,31 @@ const App: React.FC = () => {
       ...(discount > 0 && { discountAmount: discount })
     };
 
-    // 如果使用了優惠券，標記為已使用
-    if (selectedCoupon && !selectedCoupon.isUsed) {
+    // 如果使用了優惠券，先標記為已使用（在訂單創建之前）
+    if (selectedCoupon) {
+      // 再次檢查優惠券是否已被使用（防止重複使用）
+      const currentCoupon = userCoupons.find(uc => uc.id === selectedCoupon.id);
+      if (!currentCoupon || currentCoupon.isUsed) {
+        console.warn('⚠️ Attempted to use an already used coupon:', selectedCoupon.id);
+        alert('此優惠券已被使用，請選擇其他優惠券');
+        setSelectedCoupon(null);
+        setCheckoutStep(1);
+        return;
+      }
       try {
+        console.log(`🎫 Marking coupon ${selectedCoupon.id} as used for order ${order.id}`);
         await useCoupon(selectedCoupon.id, order.id);
+        // 立即更新本地狀態，標記優惠券為已使用
+        setUserCoupons(prev => prev.map(uc => 
+          uc.id === selectedCoupon.id ? { ...uc, isUsed: true } : uc
+        ));
+        console.log(`✅ Coupon ${selectedCoupon.id} marked as used`);
       } catch (error) {
-        console.error('Failed to mark coupon as used:', error);
+        console.error('❌ Failed to mark coupon as used:', error);
+        alert('優惠券使用失敗，請重試');
+        setSelectedCoupon(null);
+        setCheckoutStep(1);
+        return;
       }
     }
 
