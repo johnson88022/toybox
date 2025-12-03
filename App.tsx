@@ -75,23 +75,33 @@ const App: React.FC = () => {
 
   // 檢查並自動發放優惠券
   const checkAndGrantAutoCoupons = async (userId: string, triggerType: 'register' | 'order', orderData?: Order) => {
-    if (!userId) return;
+    if (!userId || allCoupons.length === 0) return;
 
     try {
       const userOrders = await getUserOrders(userId);
       const userProfile = await getUserProfile(userId);
       const now = new Date();
 
+      // 重新獲取用戶優惠券列表（確保是最新的）
+      const currentUserCoupons: UserCoupon[] = [];
+      const unsubscribe = listenUserCoupons(userId, (coupons) => {
+        currentUserCoupons.splice(0, currentUserCoupons.length, ...coupons);
+      });
+
+      // 等待一小段時間讓監聽器更新
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       for (const coupon of allCoupons) {
         if (!coupon.isActive || !coupon.autoGrant?.enabled) continue;
 
+        const validFrom = new Date(coupon.validFrom);
         const validUntil = new Date(coupon.validUntil);
-        if (validUntil < now) continue; // 已過期
+        if (validUntil < now || validFrom > now) continue; // 已過期或尚未生效
 
         const condition = coupon.autoGrant;
 
         // 檢查是否已擁有此優惠券且未使用
-        const existingCoupons = userCoupons.filter(
+        const existingCoupons = currentUserCoupons.filter(
           (uc) => uc.couponId === coupon.id && !uc.isUsed
         );
         if (existingCoupons.length > 0) continue; // 已擁有
@@ -129,7 +139,6 @@ const App: React.FC = () => {
             if (userProfile?.birthday) {
               const birthday = new Date(userProfile.birthday);
               const currentMonth = now.getMonth();
-              const currentYear = now.getFullYear();
               const birthdayMonth = birthday.getMonth();
               if (currentMonth === birthdayMonth) {
                 shouldGrant = true;
@@ -141,14 +150,21 @@ const App: React.FC = () => {
         if (shouldGrant) {
           try {
             await grantCouponToUser(userId, coupon.id, coupon);
-            console.log(`Auto-granted coupon ${coupon.name} to user ${userId}`);
+            console.log(`✅ Auto-granted coupon "${coupon.name}" to user ${userId}`);
+            // 觸發優惠券列表更新
+            setTimeout(() => {
+              const event = new CustomEvent('couponGranted');
+              window.dispatchEvent(event);
+            }, 500);
           } catch (error: any) {
             if (error.message !== '用戶已經擁有此優惠券') {
-              console.error(`Failed to grant coupon ${coupon.name}:`, error);
+              console.error(`❌ Failed to grant coupon "${coupon.name}":`, error);
             }
           }
         }
       }
+
+      unsubscribe();
     } catch (error) {
       console.error('Failed to check auto-grant coupons:', error);
     }
