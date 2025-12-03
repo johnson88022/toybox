@@ -607,6 +607,18 @@ const App: React.FC = () => {
           console.error('Failed to save payment info to localStorage:', error);
         }
       }
+
+      // 檢查並自動發放優惠券（訂單完成後）
+      if (user) {
+        // 使用 setTimeout 確保訂單已寫入 Firestore
+        setTimeout(async () => {
+          try {
+            await checkAndGrantAutoCoupons(user.id, 'order', order);
+          } catch (error) {
+            console.error('Failed to check auto-grant coupons after order:', error);
+          }
+        }, 2000);
+      }
     } catch (error: any) {
       alert(error.message || '結帳失敗，請重試');
       setCheckoutStep(1);
