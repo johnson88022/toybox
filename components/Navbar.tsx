@@ -67,7 +67,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onCartClick, user, onLoginCl
                 className={`flex items-center gap-1 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 border ${
                   currentPage === '/dream-factory'
                     ? 'border-cute-primary bg-white text-cute-primary shadow-sm'
-                    : 'border-gray-200 text-gray-600 hover:border-cute-primary hover:text-cute-primary hover:bg-pink-50/40'
+                    : 'border-gray-200 text-gray-600 hover:border-cute-primary hover:text-cute-primary hover:bg-pink-200'
                 }`}
               >
                 <Sparkles className="w-4 h-4" />
@@ -81,7 +81,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onCartClick, user, onLoginCl
                   className={`flex items-center gap-1 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 border ${
                     currentPage === '/admin'
                       ? 'border-purple-500 bg-white text-purple-700 shadow-sm'
-                      : 'border-gray-200 text-gray-600 hover:border-purple-400 hover:text-purple-700 hover:bg-purple-50/40'
+                      : 'border-gray-200 text-gray-600 hover:border-purple-400 hover:text-purple-700 hover:bg-purple-200'
                   }`}
                 >
                   <LayoutDashboard className="w-4 h-4" />
@@ -95,7 +95,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onCartClick, user, onLoginCl
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-gray-500 hover:text-cute-primary hover:bg-pink-50 rounded-full transition-all"
+              className="lg:hidden p-2 text-gray-500 hover:text-cute-primary hover:bg-pink-200 rounded-full transition-all"
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -194,7 +194,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onCartClick, user, onLoginCl
                   className={`flex items-center gap-2 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-300 border ${
                     currentPage === '/dream-factory'
                       ? 'border-cute-primary bg-white text-cute-primary shadow-sm'
-                      : 'border-gray-200 text-gray-600 hover:border-cute-primary hover:text-cute-primary hover:bg-pink-50/40'
+                      : 'border-gray-200 text-gray-600 hover:border-cute-primary hover:text-cute-primary hover:bg-pink-200'
                   }`}
                 >
                   <Sparkles className="w-5 h-5" />
@@ -208,7 +208,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onCartClick, user, onLoginCl
                     className={`flex items-center gap-2 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-300 border ${
                       currentPage === '/admin'
                         ? 'border-purple-500 bg-white text-purple-700 shadow-sm'
-                        : 'border-gray-200 text-gray-600 hover:border-purple-400 hover:text-purple-700 hover:bg-purple-50/40'
+                        : 'border-gray-200 text-gray-600 hover:border-purple-400 hover:text-purple-700 hover:bg-purple-200'
                     }`}
                   >
                     <LayoutDashboard className="w-5 h-5" />

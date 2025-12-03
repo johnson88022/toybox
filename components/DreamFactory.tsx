@@ -78,7 +78,7 @@ const DreamFactory: React.FC<DreamFactoryProps> = ({ onAddToCart, onSubmitWish }
                     value={wish}
                     onChange={(e) => setWish(e.target.value)}
                     placeholder="範例：想要《咒術迴戰》狗卷學長 1/7 比例公仔，動作帥一點、底座有咒言特效。"
-                    className="w-full min-h-[140px] bg-gray-50 text-gray-800 rounded-2xl p-4 border border-gray-200 focus:border-cute-primary focus:ring-2 focus:ring-pink-100 focus:outline-none resize-none transition-all text-sm md:text-base"
+                    className="w-full min-h-[140px] bg-white text-gray-800 rounded-2xl p-4 border-2 border-gray-400 focus:border-cute-primary focus:ring-2 focus:ring-pink-300 focus:outline-none resize-none transition-all text-sm md:text-base"
                   />
                   <div className="flex items-center justify-between text-[11px] md:text-xs">
                     <span className={`font-medium ${remaining < 0 ? 'text-red-500' : 'text-gray-500'}`}>
@@ -113,7 +113,7 @@ const DreamFactory: React.FC<DreamFactoryProps> = ({ onAddToCart, onSubmitWish }
                 <li>・如果是原創概念，可以描述顏色風格、氛圍感</li>
               </ul>
             </div>
-            <div className="bg-gray-50 rounded-3xl border border-gray-100 p-4 text-xs md:text-sm text-gray-700">
+            <div className="bg-white rounded-3xl border-2 border-gray-400 p-4 text-xs md:text-sm text-gray-700">
               <p className="font-bold mb-1">小提醒</p>
               <p>許願內容僅作為商品開發與進貨參考，不會直接視為訂單。若真的開發出來，我們會在首頁與社群公告！</p>
             </div>
