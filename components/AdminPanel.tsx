@@ -440,6 +440,41 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
     }
   }, [activeTab]);
 
+  // 當打開優惠券編輯 modal 且為手動發放時，載入用戶列表
+  useEffect(() => {
+    const fetchUsersForCoupon = async () => {
+      if ((isAddingCoupon || editingCoupon) && grantMode === 'manual') {
+        try {
+          // 如果用戶列表為空，重新載入
+          if (userList.length === 0) {
+            const users = await getAllUserProfiles();
+            // 為每個用戶補充 email 和登入時間資訊
+            const enrichedUsers = users.map(user => {
+              const userOrders = orders.filter(o => o.userId === user.userId);
+              const email = user.email || '-';
+              let lastLoginTime = null;
+              if (user.lastLoginTime) {
+                lastLoginTime = typeof user.lastLoginTime === 'string' ? new Date(user.lastLoginTime) : user.lastLoginTime;
+              } else if (user.updatedAt) {
+                lastLoginTime = typeof user.updatedAt === 'string' ? new Date(user.updatedAt) : user.updatedAt;
+              }
+              return {
+                ...user,
+                email,
+                lastLoginTime,
+                orders: userOrders,
+              };
+            });
+            setUserList(enrichedUsers);
+          }
+        } catch (error) {
+          console.error('Failed to fetch users for coupon grant:', error);
+        }
+      }
+    };
+    fetchUsersForCoupon();
+  }, [isAddingCoupon, editingCoupon, grantMode, orders]);
+
   const handleAddCategory = (newCategory: string) => {
     if (!customCategories.includes(newCategory)) {
       const updated = [...customCategories, newCategory];
