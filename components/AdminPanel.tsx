@@ -1959,12 +1959,66 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                       )}
                     </div>
 
+                    {/* 手動發放按鈕（僅在編輯模式且為手動發放時顯示） */}
+                    {editingCoupon && grantMode === 'manual' && selectedUsersForGrant.size > 0 && (
+                      <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+                          <div>
+                            <span className="text-sm font-bold text-gray-700 block">
+                              已選擇 {selectedUsersForGrant.size} 位用戶
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              點擊下方按鈕立即發放優惠券給選中的用戶
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (window.confirm(`確定要發放優惠券「${editingCoupon.name}」給 ${selectedUsersForGrant.size} 位用戶嗎？`)) {
+                                let successCount = 0;
+                                let failCount = 0;
+                                const errors: string[] = [];
+                                
+                                for (const userId of selectedUsersForGrant) {
+                                  try {
+                                    await grantCouponToUser(userId, editingCoupon.id, editingCoupon);
+                                    successCount++;
+                                  } catch (error: any) {
+                                    if (error.message !== '用戶已經擁有此優惠券') {
+                                      failCount++;
+                                      errors.push(error.message || '未知錯誤');
+                                      console.error(`Failed to grant coupon to user ${userId}:`, error);
+                                    } else {
+                                      successCount++; // 已經擁有也算成功
+                                    }
+                                  }
+                                }
+                                
+                                if (failCount === 0) {
+                                  alert(`✅ 優惠券發放成功！\n已發放給 ${successCount} 位用戶`);
+                                } else {
+                                  alert(`⚠️ 優惠券發放完成\n✅ 成功：${successCount} 位\n❌ 失敗：${failCount} 位\n\n錯誤：${errors.join(', ')}`);
+                                }
+                                
+                                // 清空選擇
+                                setSelectedUsersForGrant(new Set());
+                              }
+                            }}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors whitespace-nowrap"
+                          >
+                            立即發放給選中用戶
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t-2 border-gray-300">
                       <button
                         type="button"
                         onClick={() => {
                           setIsAddingCoupon(false);
                           setEditingCoupon(null);
+                          setSelectedUsersForGrant(new Set());
                         }}
                         className="px-6 py-2 border-2 border-gray-400 text-gray-700 rounded-xl font-bold hover:bg-gray-100 transition-colors"
                       >
