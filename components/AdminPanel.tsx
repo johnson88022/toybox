@@ -1415,6 +1415,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                         setEditingCoupon(null);
                       }}
                       className="text-gray-400 hover:text-gray-600"
+                      aria-label="關閉優惠券編輯視窗"
+                      title="關閉"
                     >
                       <X size={24} />
                     </button>
@@ -1470,36 +1472,42 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                     className="p-6 space-y-6"
                   >
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                      <label htmlFor="coupon-name" className="block text-sm font-bold text-gray-700 mb-2">
                         優惠券名稱 <span className="text-red-500">*</span>
                       </label>
                       <input
+                        id="coupon-name"
                         type="text"
                         value={couponForm.name}
                         onChange={(e) => setCouponForm({ ...couponForm, name: e.target.value })}
                         className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                        placeholder="輸入優惠券名稱"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">描述</label>
+                      <label htmlFor="coupon-description" className="block text-sm font-bold text-gray-700 mb-2">描述</label>
                       <textarea
+                        id="coupon-description"
                         value={couponForm.description}
                         onChange={(e) => setCouponForm({ ...couponForm, description: e.target.value })}
                         className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary resize-none"
                         rows={2}
+                        placeholder="輸入優惠券描述（選填）"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                      <label htmlFor="coupon-type" className="block text-sm font-bold text-gray-700 mb-2">
                         優惠券類型 <span className="text-red-500">*</span>
                       </label>
                       <select
+                        id="coupon-type"
                         value={couponForm.type}
                         onChange={(e) => setCouponForm({ ...couponForm, type: e.target.value as CouponType })}
                         className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                        title="選擇優惠券類型"
                       >
                         <option value="discount">折扣優惠券（百分比）</option>
                         <option value="freeShipping">免運券</option>
@@ -1510,27 +1518,31 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                     {couponForm.type === 'discount' && (
                       <>
                         <div>
-                          <label className="block text-sm font-bold text-gray-700 mb-2">
+                          <label htmlFor="coupon-discount" className="block text-sm font-bold text-gray-700 mb-2">
                             折扣百分比 <span className="text-red-500">*</span>
                           </label>
                           <input
+                            id="coupon-discount"
                             type="number"
                             min="1"
                             max="100"
                             value={couponForm.discount}
                             onChange={(e) => setCouponForm({ ...couponForm, discount: Number(e.target.value) })}
                             className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                            placeholder="輸入折扣百分比（1-100）"
                             required
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-bold text-gray-700 mb-2">最高折扣金額（0 = 無限制）</label>
+                          <label htmlFor="coupon-max-discount" className="block text-sm font-bold text-gray-700 mb-2">最高折扣金額（0 = 無限制）</label>
                           <input
+                            id="coupon-max-discount"
                             type="number"
                             min="0"
                             value={couponForm.maxDiscountAmount}
                             onChange={(e) => setCouponForm({ ...couponForm, maxDiscountAmount: Number(e.target.value) })}
                             className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                            placeholder="輸入最高折扣金額"
                           />
                         </div>
                       </>
@@ -1538,53 +1550,61 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
                     {couponForm.type === 'fixedAmount' && (
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                        <label htmlFor="coupon-fixed-amount" className="block text-sm font-bold text-gray-700 mb-2">
                           折抵金額 <span className="text-red-500">*</span>
                         </label>
                         <input
+                          id="coupon-fixed-amount"
                           type="number"
                           min="1"
                           value={couponForm.fixedAmount}
                           onChange={(e) => setCouponForm({ ...couponForm, fixedAmount: Number(e.target.value) })}
                           className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                          placeholder="輸入折抵金額"
                           required
                         />
                       </div>
                     )}
 
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">最低消費金額（0 = 無限制）</label>
+                      <label htmlFor="coupon-min-purchase" className="block text-sm font-bold text-gray-700 mb-2">最低消費金額（0 = 無限制）</label>
                       <input
+                        id="coupon-min-purchase"
                         type="number"
                         min="0"
                         value={couponForm.minPurchaseAmount}
                         onChange={(e) => setCouponForm({ ...couponForm, minPurchaseAmount: Number(e.target.value) })}
                         className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                        placeholder="輸入最低消費金額"
                       />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                        <label htmlFor="coupon-valid-from" className="block text-sm font-bold text-gray-700 mb-2">
                           有效開始日期 <span className="text-red-500">*</span>
                         </label>
                         <input
+                          id="coupon-valid-from"
                           type="date"
                           value={couponForm.validFrom}
                           onChange={(e) => setCouponForm({ ...couponForm, validFrom: e.target.value })}
                           className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                          title="選擇優惠券有效開始日期"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                        <label htmlFor="coupon-valid-until" className="block text-sm font-bold text-gray-700 mb-2">
                           有效結束日期 <span className="text-red-500">*</span>
                         </label>
                         <input
+                          id="coupon-valid-until"
                           type="date"
                           value={couponForm.validUntil}
                           onChange={(e) => setCouponForm({ ...couponForm, validUntil: e.target.value })}
                           className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                          title="選擇優惠券有效結束日期"
                           required
                         />
                       </div>
@@ -1592,23 +1612,27 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">總使用次數限制（0 = 無限制）</label>
+                        <label htmlFor="coupon-usage-limit" className="block text-sm font-bold text-gray-700 mb-2">總使用次數限制（0 = 無限制）</label>
                         <input
+                          id="coupon-usage-limit"
                           type="number"
                           min="0"
                           value={couponForm.usageLimit}
                           onChange={(e) => setCouponForm({ ...couponForm, usageLimit: Number(e.target.value) })}
                           className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                          placeholder="輸入總使用次數限制"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">每用戶使用次數限制</label>
+                        <label htmlFor="coupon-user-usage-limit" className="block text-sm font-bold text-gray-700 mb-2">每用戶使用次數限制</label>
                         <input
+                          id="coupon-user-usage-limit"
                           type="number"
                           min="1"
                           value={couponForm.userUsageLimit}
                           onChange={(e) => setCouponForm({ ...couponForm, userUsageLimit: Number(e.target.value) })}
                           className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                          placeholder="輸入每用戶使用次數限制"
                         />
                       </div>
                     </div>
@@ -1674,8 +1698,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
                     {grantMode === 'auto' && (
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">自動發放條件</label>
+                        <label htmlFor="coupon-auto-grant-type" className="block text-sm font-bold text-gray-700 mb-2">自動發放條件</label>
                         <select
+                          id="coupon-auto-grant-type"
                           value={couponForm.autoGrant.type}
                           onChange={(e) =>
                             setCouponForm({
@@ -1687,6 +1712,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             })
                           }
                           className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary mb-3"
+                          title="選擇自動發放條件類型"
                         >
                           <option value="register">註冊會員</option>
                           <option value="firstOrder">首次下單</option>
@@ -1699,6 +1725,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                           couponForm.autoGrant.type === 'orderCount' ||
                           couponForm.autoGrant.type === 'totalSpent') && (
                           <input
+                            id="coupon-auto-grant-value"
                             type="number"
                             min="1"
                             value={couponForm.autoGrant.value || 0}
@@ -1713,6 +1740,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             }
                             placeholder="輸入數值"
                             className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                            title="輸入自動發放條件的數值"
                           />
                         )}
                       </div>
