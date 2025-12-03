@@ -380,7 +380,7 @@ export const getMarqueeSpeed = async (): Promise<number> => {
   return 30;
 };
 
-export const listenMarqueeMessages = (cb: (messages: string[], speed?: number) => void) => {
+export const listenMarqueeMessages = (cb: (messages: string[], speed?: number, repeatCount?: number) => void) => {
   const docRef = doc(db, 'settings', 'marquee');
   return onSnapshot(docRef, 
     (docSnap) => {

@@ -225,7 +225,7 @@ const App: React.FC = () => {
     // 初始化選中商品的數量
     setCartItemQuantities(prev => {
       const newMap = new Map(prev);
-      const existing = newMap.get(product.id) || 0;
+      const existing = (newMap.get(product.id) as number | undefined) || 0;
       newMap.set(product.id, existing + quantity);
       return newMap;
     });
@@ -608,6 +608,15 @@ const App: React.FC = () => {
       }
     });
 
+    // 跑馬燈邏輯：
+    // - marqueeSpeed 表示「基準重複次數（12 次時）整輪跑完需要的秒數」
+    // - 實際動畫秒數會依照目前的 repeatCount 等比例放大或縮小，
+    //   讓「文字在畫面中的移動速度」在不同重複次數下保持一致，不會因為重複次數變多就跑得超快
+    const effectiveRepeatCount = Math.max(2, marqueeRepeatCount || 2);
+    const baseRepeatForSpeed = 12;
+    const repeatFactor = effectiveRepeatCount / baseRepeatForSpeed;
+    const effectiveMarqueeDuration = marqueeSpeed * repeatFactor;
+
     return (
       <main className="pt-28 pb-12">
         {/* 廣告跑馬燈 - 全寬顯示，無限循環，從左邊開始，RWD適配 */}
@@ -618,14 +627,14 @@ const App: React.FC = () => {
                 <div 
                   className="flex items-center gap-4 sm:gap-6 md:gap-8"
                   style={{
-                    animation: `scroll ${marqueeSpeed}s linear infinite`,
+                    animation: `scroll ${effectiveMarqueeDuration}s linear infinite`,
                     willChange: 'transform',
                     display: 'inline-flex',
                     width: 'max-content'
                   }}
                 >
                   {/* 重複多次以確保無縫循環，覆蓋整個頁面寬度 */}
-                  {[...Array(Math.max(2, marqueeRepeatCount || 2))].map((_, repeatIndex) => 
+                  {[...Array(effectiveRepeatCount)].map((_, repeatIndex) => 
                     marqueeMessages.filter(msg => msg.trim() !== '').map((msg, i) => (
                       <span key={`${repeatIndex}-${i}`} className="inline-block px-3 sm:px-4 md:px-6 flex-shrink-0">{msg}</span>
                     ))
@@ -718,7 +727,9 @@ const App: React.FC = () => {
                 </button>
                 {sortExpanded && (
                   <div className="mt-3 px-3">
+                    <label htmlFor="sort-select" className="sr-only">排序方式</label>
                     <select
+                      id="sort-select"
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
                       className="w-full bg-white border-2 border-pink-200 rounded-xl px-4 py-3 text-sm text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-cute-primary focus:border-cute-primary transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23FF90BC%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_1rem_center] bg-no-repeat"
@@ -785,7 +796,7 @@ const App: React.FC = () => {
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-gray-800">如何取得設定？</h2>
               <ol className="list-decimal list-inside space-y-3 text-gray-600 ml-2">
-                <li>前往 <a href="https://console.firebase.google.com/" target="_blank" className="text-cute-primary font-bold hover:underline">Firebase Console</a> 並建立一個新專案。</li>
+                <li>前往 <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-cute-primary font-bold hover:underline">Firebase Console</a> 並建立一個新專案。</li>
                 <li>點選 <strong>Project settings (專案設定)</strong> (齒輪圖示)。</li>
                 <li>在 <strong>General (一般)</strong> 頁面下方，找到 <strong>Your apps (您的應用程式)</strong>。</li>
                 <li>點選 <strong>&lt;/&gt; (Web)</strong> 圖示來註冊應用程式。</li>
@@ -835,7 +846,7 @@ const App: React.FC = () => {
               <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <ShoppingBag className="text-cute-primary" /> 您的購物車
               </h2>
-              <button onClick={() => setIsCartOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setIsCartOpen(false)} className="text-gray-400 hover:text-gray-600" aria-label="關閉購物車">
                 <X size={24} />
               </button>
             </div>
@@ -858,6 +869,7 @@ const App: React.FC = () => {
                     <button 
                       onClick={() => removeFromCart(item.id)}
                       className="text-gray-400 hover:text-red-400 transition-colors p-2 hover:bg-red-50 rounded-full"
+                      aria-label={`移除 ${item.name}`}
                     >
                       <Trash2 size={18} />
                     </button>
@@ -1035,7 +1047,9 @@ const App: React.FC = () => {
                           return (
                             <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-4 bg-gray-50 rounded-xl">
                               <div className="flex items-center gap-3 w-full sm:w-auto">
+                                <label className="sr-only" htmlFor={`checkout-select-${item.id}`}>選擇此商品進行結帳</label>
                                 <input
+                                  id={`checkout-select-${item.id}`}
                                   type="checkbox"
                                   checked={isSelected}
                                   onChange={(e) => {
@@ -1090,7 +1104,9 @@ const App: React.FC = () => {
                                       >
                                         -
                                       </button>
+                                      <label className="sr-only" htmlFor={`checkout-qty-${item.id}`}>調整結帳數量</label>
                                       <input
+                                        id={`checkout-qty-${item.id}`}
                                         type="number"
                                         min={1}
                                         max={item.quantity}
@@ -1174,9 +1190,10 @@ const App: React.FC = () => {
                   <h2 className="text-3xl font-black text-gray-800 mb-6">收貨資訊</h2>
                   <div className="space-y-4 mb-6">
                     <div>
-                      <label className="block text-sm font-bold text-gray-600 mb-2">收貨人姓名 *</label>
+                      <label htmlFor="shipping-name" className="block text-sm font-bold text-gray-600 mb-2">收貨人姓名 *</label>
                       <input 
                         type="text" 
+                        id="shipping-name"
                         value={shippingInfo.name}
                         onChange={(e) => setShippingInfo({...shippingInfo, name: e.target.value})}
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-cute-primary focus:outline-none"
@@ -1184,9 +1201,10 @@ const App: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-gray-600 mb-2">聯絡電話 *</label>
+                      <label htmlFor="shipping-phone" className="block text-sm font-bold text-gray-600 mb-2">聯絡電話 *</label>
                       <input 
                         type="tel" 
+                        id="shipping-phone"
                         value={shippingInfo.phone}
                         onChange={(e) => setShippingInfo({...shippingInfo, phone: e.target.value})}
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-cute-primary focus:outline-none"
@@ -1195,9 +1213,10 @@ const App: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-bold text-gray-600 mb-2">國家/地區 *</label>
+                        <label htmlFor="shipping-country" className="block text-sm font-bold text-gray-600 mb-2">國家/地區 *</label>
                         <input 
                           type="text" 
+                          id="shipping-country"
                           value={shippingInfo.country}
                           onChange={(e) => setShippingInfo({...shippingInfo, country: e.target.value})}
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-cute-primary focus:outline-none"
@@ -1205,9 +1224,10 @@ const App: React.FC = () => {
                         />
                     </div>
                       <div>
-                        <label className="block text-sm font-bold text-gray-600 mb-2">縣市 *</label>
+                        <label htmlFor="shipping-city" className="block text-sm font-bold text-gray-600 mb-2">縣市 *</label>
                         <input 
                           type="text" 
+                          id="shipping-city"
                           value={shippingInfo.city}
                           onChange={(e) => setShippingInfo({...shippingInfo, city: e.target.value})}
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-cute-primary focus:outline-none"
@@ -1216,9 +1236,10 @@ const App: React.FC = () => {
                   </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-gray-600 mb-2">郵遞區號 *</label>
+                      <label htmlFor="shipping-postal" className="block text-sm font-bold text-gray-600 mb-2">郵遞區號 *</label>
                       <input 
                         type="text" 
+                        id="shipping-postal"
                         value={shippingInfo.postalCode}
                         onChange={(e) => setShippingInfo({...shippingInfo, postalCode: e.target.value})}
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-cute-primary focus:outline-none"
@@ -1226,8 +1247,9 @@ const App: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-gray-600 mb-2">詳細地址 *</label>
+                      <label htmlFor="shipping-address" className="block text-sm font-bold text-gray-600 mb-2">詳細地址 *</label>
                       <textarea 
+                        id="shipping-address"
                         value={shippingInfo.address}
                         onChange={(e) => setShippingInfo({...shippingInfo, address: e.target.value})}
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-cute-primary focus:outline-none h-24 resize-none"
