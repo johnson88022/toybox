@@ -1684,15 +1684,96 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
         {activeTab === 'users' && (
           <>
-            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-x-auto p-4 md:p-8 mt-4">
+            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm p-4 md:p-8 mt-4">
               <h2 className="text-xl md:text-2xl font-black mb-4 md:mb-6 text-cute-primary flex items-center gap-2">
                 <Users className="w-6 h-6 md:w-7 md:h-7 text-cute-primary" /> 會員管理
               </h2>
               {isLoadingUsers ? (
                 <div className="text-center text-gray-400 py-12">載入中...</div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-[700px] w-full text-xs md:text-sm border rounded-xl overflow-hidden table-fixed">
+                <>
+                  {/* Mobile 卡片版：避免手機橫向滑動 */}
+                  <div className="space-y-3 md:hidden">
+                    {userList.length === 0 && (
+                      <p className="text-center text-gray-400 py-6 text-xs">尚無會員資料</p>
+                    )}
+                    {userList.map((user) => {
+                      const isExpanded = expandedUsers.has(user.userId);
+                      return (
+                        <div
+                          key={user.userId || user.id}
+                          className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4"
+                        >
+                          <div
+                            className="flex items-start justify-between gap-2"
+                            onClick={() => {
+                              const newExpanded = new Set(expandedUsers);
+                              if (isExpanded) newExpanded.delete(user.userId);
+                              else newExpanded.add(user.userId);
+                              setExpandedUsers(newExpanded);
+                            }}
+                          >
+                            <div className="space-y-1">
+                              <p className="text-sm font-bold text-gray-900">
+                                {user.name || '-'}
+                              </p>
+                              <p className="text-[11px] text-gray-500 break-all">
+                                {user.email || '-'}
+                              </p>
+                              <p className="text-[11px] text-gray-500">
+                                {user.phone || '-'}
+                              </p>
+                              <p className="text-[11px] text-gray-400">
+                                最後登入：
+                                {user.lastLoginTime
+                                  ? new Date(user.lastLoginTime).toLocaleString('zh-TW', {
+                                      month: '2-digit',
+                                      day: '2-digit',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })
+                                  : '-'}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              className="text-gray-400"
+                            >
+                              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            </button>
+                          </div>
+
+                          {isExpanded && (
+                            <div className="mt-4 border-t border-gray-100 pt-3 space-y-2 text-[11px] text-gray-600">
+                              <div>
+                                <span className="font-bold text-gray-700">地址：</span>
+                                <span className="whitespace-pre-line">
+                                  {`${user.country || ''} ${user.city || ''} ${user.postalCode || ''}\n${user.address || '-'}`}
+                                </span>
+                              </div>
+                              {user.orders && user.orders.length > 0 && (
+                                <div className="flex items-center justify-between">
+                                  <span>
+                                    訂單數：<span className="font-bold">{user.orders.length}</span> 筆
+                                  </span>
+                                  <span>
+                                    總金額：
+                                    <span className="font-bold text-cute-primary">
+                                      ${user.orders.reduce((sum, o) => sum + (o.total || 0), 0).toFixed(2)}
+                                    </span>
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* 桌機表格版 */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="min-w-[700px] w-full text-xs md:text-sm border rounded-xl overflow-hidden table-fixed">
                     <thead className="bg-pink-50 text-gray-500 text-[10px] md:text-xs uppercase font-bold tracking-wider">
                       <tr>
                         <th className="px-2 md:px-4 py-2 md:py-3 w-10 text-center align-middle"></th>
@@ -1909,7 +1990,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                       })}
                     </tbody>
                   </table>
-                </div>
+                  </div>
+                </>
               )}
             </div>
           </>

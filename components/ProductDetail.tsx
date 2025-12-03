@@ -91,6 +91,58 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
     }
   };
 
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!user) {
+      alert('請先登入');
+      return;
+    }
+    const existingReviews = currentProduct.reviews || [];
+    const target = existingReviews.find(r => r.id === reviewId);
+    if (!target) return;
+    if (target.userId !== user.id) {
+      alert('您只能刪除自己留下的評論');
+      return;
+    }
+    if (!window.confirm('確定要刪除此評論嗎？')) return;
+
+    try {
+      const updatedReviews = existingReviews.filter(r => r.id !== reviewId);
+      const newRating = updatedReviews.length > 0
+        ? updatedReviews.reduce((sum, r) => sum + r.rating, 0) / updatedReviews.length
+        : 0;
+
+      const updatedProduct = {
+        ...currentProduct,
+        reviews: updatedReviews,
+        rating: newRating,
+      };
+
+      await updateProduct(currentProduct.id, updatedProduct);
+    } catch (error) {
+      console.error('Failed to delete review:', error);
+      alert('刪除失敗，請重試');
+    }
+  };
+
+  const normalizeReviewDate = (date: any): Date | null => {
+    if (!date) return null;
+    if (date instanceof Date) return date;
+    if (typeof date === 'string' || typeof date === 'number') {
+      const d = new Date(date);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    // Firestore Timestamp 物件
+    if ((date as any).toDate) {
+      try {
+        const d = (date as any).toDate();
+        return d instanceof Date && !isNaN(d.getTime()) ? d : null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
 
   return (
     <div className="min-h-screen pt-14 sm:pt-20 px-4 pb-12 bg-cute-bg fixed inset-0 overflow-y-auto z-50" style={{ touchAction: 'pan-y' }}>
@@ -365,27 +417,53 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddTo
               {/* 評價列表 */}
               {currentProduct.reviews && currentProduct.reviews.length > 0 ? (
                 <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {currentProduct.reviews.map((review) => (
-                    <div key={review.id} className="p-4 bg-gray-50 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-bold text-gray-800">{review.userName}</span>
-                        <div className="flex items-center gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              size={14}
-                              fill={i < review.rating ? 'currentColor' : 'none'}
-                              className="text-yellow-400"
-                            />
-                          ))}
+                  {currentProduct.reviews.map((review) => {
+                    const reviewDate = normalizeReviewDate(review.date);
+                    const canDelete = user && review.userId === user.id;
+                    return (
+                      <div key={review.id} className="p-4 bg-gray-50 rounded-xl">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-gray-800">{review.userName}</span>
+                            {reviewDate && (
+                              <span className="text-gray-400 text-xs">
+                                {reviewDate.toLocaleString('zh-TW', {
+                                  year: 'numeric',
+                                  month: '2-digit',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  size={14}
+                                  fill={i < review.rating ? 'currentColor' : 'none'}
+                                  className="text-yellow-400"
+                                />
+                              ))}
+                            </div>
+                            {canDelete && (
+                              <button
+                                onClick={() => handleDeleteReview(review.id)}
+                                className="text-xs text-red-500 hover:text-red-600 font-bold underline-offset-2 hover:underline"
+                              >
+                                刪除
+                              </button>
+                            )}
+                          </div>
                         </div>
+                        <p className="text-gray-600 text-sm whitespace-pre-wrap break-words">
+                          {review.comment}
+                        </p>
                       </div>
-                      <p className="text-gray-600 text-sm">{review.comment}</p>
-                      <p className="text-gray-400 text-xs mt-2">
-                        {new Date(review.date).toLocaleDateString('zh-TW')}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-gray-400 text-center py-8">目前還沒有評價</p>
