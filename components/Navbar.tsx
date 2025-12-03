@@ -56,32 +56,32 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onCartClick, user, onLoginCl
               <a
                 href="#"
                 onClick={handleNav('/')}
-                className={`${isActive('/')} px-4 py-2 rounded-full text-sm font-bold transition-all duration-300`}
+                className={`${isActive('/')} px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300`}
               >
                 商店
               </a>
-              {/* 買家許願池：主動感更強的漸層膠囊按鈕 */}
+              {/* 買家許願池：改為較成熟的描邊按鈕 */}
               <a
                 href="#"
                 onClick={handleNav('/dream-factory')}
-                className={`flex items-center gap-1 px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 shadow-sm ${
+                className={`flex items-center gap-1 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 border ${
                   currentPage === '/dream-factory'
-                    ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-pink-200/80 shadow-lg'
-                    : 'bg-white text-cute-primary border border-pink-100 hover:bg-pink-50 hover:border-cute-primary/60'
+                    ? 'border-cute-primary bg-white text-cute-primary shadow-sm'
+                    : 'border-gray-200 text-gray-600 hover:border-cute-primary hover:text-cute-primary hover:bg-pink-50/40'
                 }`}
               >
                 <Sparkles className="w-4 h-4" />
                 買家許願池
               </a>
-              {/* 賣家後台：僅 Admin 顯示，改成更精緻的紫色 badge 風格 */}
+              {/* 賣家後台：僅 Admin 顯示，使用低飽和紫色描邊 */}
               {user?.role === 'admin' && (
                 <a
                   href="#"
                   onClick={handleNav('/admin')}
-                  className={`flex items-center gap-1 px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 ${
+                  className={`flex items-center gap-1 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 border ${
                     currentPage === '/admin'
-                      ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg shadow-purple-200'
-                      : 'bg-purple-50 text-purple-700 border border-purple-100 hover:bg-purple-100'
+                      ? 'border-purple-500 bg-white text-purple-700 shadow-sm'
+                      : 'border-gray-200 text-gray-600 hover:border-purple-400 hover:text-purple-700 hover:bg-purple-50/40'
                   }`}
                 >
                   <LayoutDashboard className="w-4 h-4" />
@@ -187,28 +187,28 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onCartClick, user, onLoginCl
                 >
                   商店
                 </a>
-                {/* Mobile 買家許願池：漸層背景更突出 */}
+                {/* Mobile 買家許願池：低飽和描邊按鈕 */}
                 <a 
                   href="#" 
                   onClick={handleNav('/dream-factory')} 
-                  className={`flex items-center gap-2 px-4 py-3 rounded-xl text-base font-bold transition-all duration-300 ${
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-300 border ${
                     currentPage === '/dream-factory'
-                      ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-md'
-                      : 'bg-white text-cute-primary border border-pink-100 hover:bg-pink-50'
+                      ? 'border-cute-primary bg-white text-cute-primary shadow-sm'
+                      : 'border-gray-200 text-gray-600 hover:border-cute-primary hover:text-cute-primary hover:bg-pink-50/40'
                   }`}
                 >
                   <Sparkles className="w-5 h-5" />
                   買家許願池
                 </a>
-                {/* Mobile 賣家後台：柔和紫色按鈕 */}
+                {/* Mobile 賣家後台：柔和紫色描邊按鈕 */}
                 {user?.role === 'admin' && (
                   <a 
                     href="#" 
                     onClick={handleNav('/admin')} 
-                    className={`flex items-center gap-2 px-4 py-3 rounded-xl text-base font-bold transition-all duration-300 ${
+                    className={`flex items-center gap-2 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-300 border ${
                       currentPage === '/admin'
-                        ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md'
-                        : 'bg-purple-50 text-purple-700 border border-purple-100 hover:bg-purple-100'
+                        ? 'border-purple-500 bg-white text-purple-700 shadow-sm'
+                        : 'border-gray-200 text-gray-600 hover:border-purple-400 hover:text-purple-700 hover:bg-purple-50/40'
                     }`}
                   >
                     <LayoutDashboard className="w-5 h-5" />
