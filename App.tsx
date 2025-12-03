@@ -101,10 +101,44 @@ const App: React.FC = () => {
       console.log(`📋 User has ${existingCouponIds.size} unused coupons`);
 
       for (const coupon of allCoupons) {
-        if (!coupon.isActive || !coupon.autoGrant?.enabled) continue;
+        if (!coupon.isActive) {
+          console.log(`⏸️ Coupon "${coupon.name}" is not active`);
+          continue;
+        }
+        
+        if (!coupon.autoGrant || !coupon.autoGrant.enabled) {
+          console.log(`⏸️ Coupon "${coupon.name}" has no auto-grant enabled`);
+          continue;
+        }
 
-        const validFrom = new Date(coupon.validFrom);
-        const validUntil = new Date(coupon.validUntil);
+        // 處理日期轉換
+        let validFrom: Date;
+        let validUntil: Date;
+        
+        if (coupon.validFrom) {
+          if (coupon.validFrom instanceof Date) {
+            validFrom = coupon.validFrom;
+          } else if (coupon.validFrom.toDate) {
+            validFrom = coupon.validFrom.toDate();
+          } else {
+            validFrom = new Date(coupon.validFrom);
+          }
+        } else {
+          validFrom = new Date();
+        }
+        
+        if (coupon.validUntil) {
+          if (coupon.validUntil instanceof Date) {
+            validUntil = coupon.validUntil;
+          } else if (coupon.validUntil.toDate) {
+            validUntil = coupon.validUntil.toDate();
+          } else {
+            validUntil = new Date(coupon.validUntil);
+          }
+        } else {
+          validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 默認30天後
+        }
+        
         if (validUntil < now || validFrom > now) {
           console.log(`⏰ Coupon "${coupon.name}" is not valid (${validFrom.toLocaleDateString()} - ${validUntil.toLocaleDateString()})`);
           continue;
@@ -134,9 +168,18 @@ const App: React.FC = () => {
             }
             break;
           case 'orderAmount':
-            if (triggerType === 'order' && orderData && orderData.total >= (condition.value || 0)) {
-              shouldGrant = true;
-              console.log(`🎯 Order amount trigger matched for "${coupon.name}" (order total: ${orderData.total}, required: ${condition.value})`);
+            if (triggerType === 'order' && orderData) {
+              const orderTotal = orderData.total || 0;
+              const requiredAmount = Number(condition.value) || 0;
+              console.log(`🔍 Checking orderAmount condition for "${coupon.name}": orderTotal=${orderTotal}, required=${requiredAmount}`);
+              if (orderTotal >= requiredAmount) {
+                shouldGrant = true;
+                console.log(`✅ Order amount trigger matched for "${coupon.name}" (order total: ${orderTotal}, required: ${requiredAmount})`);
+              } else {
+                console.log(`❌ Order amount not met for "${coupon.name}" (order total: ${orderTotal}, required: ${requiredAmount})`);
+              }
+            } else {
+              console.log(`⚠️ Order amount condition skipped: triggerType=${triggerType}, orderData=${!!orderData}`);
             }
             break;
           case 'orderCount':
@@ -625,14 +668,21 @@ const App: React.FC = () => {
 
       // 檢查並自動發放優惠券（訂單完成後）
       if (user) {
-        // 使用 setTimeout 確保訂單已寫入 Firestore
-        setTimeout(async () => {
-          try {
-            await checkAndGrantAutoCoupons(user.id, 'order', order);
-          } catch (error) {
-            console.error('Failed to check auto-grant coupons after order:', error);
-          }
-        }, 2000);
+        // 立即檢查，使用傳入的 order 數據，不依賴 Firestore 查詢
+        try {
+          console.log(`🔄 Checking auto-grant coupons for order ${order.id}, total: ${order.total}`);
+          await checkAndGrantAutoCoupons(user.id, 'order', order);
+        } catch (error) {
+          console.error('Failed to check auto-grant coupons after order:', error);
+          // 如果立即檢查失敗，再嘗試延遲檢查
+          setTimeout(async () => {
+            try {
+              await checkAndGrantAutoCoupons(user.id, 'order', order);
+            } catch (retryError) {
+              console.error('Failed to check auto-grant coupons after order (retry):', retryError);
+            }
+          }, 2000);
+        }
       }
     } catch (error: any) {
       alert(error.message || '結帳失敗，請重試');

@@ -476,13 +476,43 @@ export const listenUserCoupons = (userId: string, cb: (userCoupons: any[]) => vo
     (snapshot) => {
       const userCoupons = snapshot.docs.map(doc => {
         const data = doc.data();
+        const couponData = data.coupon || {};
+        
+        // 確保 coupon 的日期字段正確轉換
+        let couponValidFrom = null;
+        let couponValidUntil = null;
+        
+        if (couponData.validFrom) {
+          if (couponData.validFrom.toDate) {
+            couponValidFrom = couponData.validFrom.toDate();
+          } else if (couponData.validFrom instanceof Date) {
+            couponValidFrom = couponData.validFrom;
+          } else {
+            couponValidFrom = new Date(couponData.validFrom);
+          }
+        }
+        
+        if (couponData.validUntil) {
+          if (couponData.validUntil.toDate) {
+            couponValidUntil = couponData.validUntil.toDate();
+          } else if (couponData.validUntil instanceof Date) {
+            couponValidUntil = couponData.validUntil;
+          } else {
+            couponValidUntil = new Date(couponData.validUntil);
+          }
+        }
+        
         return {
           id: doc.id,
           ...data,
           obtainedAt: data.obtainedAt?.toDate?.() || data.obtainedAt,
           usedAt: data.usedAt?.toDate?.() || data.usedAt,
-          // 確保 coupon 欄位存在
-          coupon: data.coupon || {},
+          // 確保 coupon 欄位存在且日期正確轉換
+          coupon: {
+            ...couponData,
+            validFrom: couponValidFrom,
+            validUntil: couponValidUntil,
+          },
         };
       });
       // 如果沒有使用 orderBy，在客戶端排序
@@ -548,10 +578,60 @@ export const grantCouponToUser = async (userId: string, couponId: string, coupon
     throw new Error('用戶已經擁有此優惠券');
   }
 
+  // 確保 validFrom 和 validUntil 正確轉換為 Timestamp
+  let validFrom: Timestamp;
+  let validUntil: Timestamp;
+  
+  if (coupon.validFrom) {
+    if (coupon.validFrom instanceof Date) {
+      validFrom = Timestamp.fromDate(coupon.validFrom);
+    } else if (typeof coupon.validFrom === 'string') {
+      // 處理 YYYY-MM-DD 格式
+      const date = new Date(coupon.validFrom);
+      validFrom = Timestamp.fromDate(date);
+    } else if (coupon.validFrom.toDate) {
+      // 已經是 Timestamp
+      validFrom = coupon.validFrom;
+    } else {
+      validFrom = Timestamp.fromDate(new Date(coupon.validFrom));
+    }
+  } else {
+    validFrom = Timestamp.fromDate(new Date());
+  }
+
+  if (coupon.validUntil) {
+    if (coupon.validUntil instanceof Date) {
+      validUntil = Timestamp.fromDate(coupon.validUntil);
+    } else if (typeof coupon.validUntil === 'string') {
+      // 處理 YYYY-MM-DD 格式，設置為當天結束時間
+      const date = new Date(coupon.validUntil + 'T23:59:59');
+      validUntil = Timestamp.fromDate(date);
+    } else if (coupon.validUntil.toDate) {
+      // 已經是 Timestamp
+      validUntil = coupon.validUntil;
+    } else {
+      validUntil = Timestamp.fromDate(new Date(coupon.validUntil));
+    }
+  } else {
+    // 如果沒有設置，默認30天後過期
+    const defaultExpiry = new Date();
+    defaultExpiry.setDate(defaultExpiry.getDate() + 30);
+    validUntil = Timestamp.fromDate(defaultExpiry);
+  }
+
+  // 構建完整的 coupon 對象，確保所有字段都正確
+  const couponData = {
+    ...coupon,
+    validFrom,
+    validUntil,
+    // 確保日期字段被正確處理
+    createdAt: coupon.createdAt ? (coupon.createdAt.toDate ? coupon.createdAt : Timestamp.fromDate(new Date(coupon.createdAt))) : serverTimestamp(),
+  };
+
   await addDoc(collection(db, 'userCoupons'), {
     userId,
     couponId,
-    coupon,
+    coupon: couponData, // 保存完整的 coupon 對象，包含正確的日期
     obtainedAt: serverTimestamp(),
     isUsed: false,
   });
