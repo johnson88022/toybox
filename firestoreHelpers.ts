@@ -597,7 +597,9 @@ export const grantCouponToUser = async (userId: string, couponId: string, coupon
   const existingSnap = await getDocs(existingQuery);
   
   if (!existingSnap.empty) {
-    throw new Error('用戶已經擁有此優惠券');
+    // 改為返回 false 而不是 throw，讓調用方可以繼續處理其他優惠券
+    console.log(`ℹ️ User ${userId} already has unused coupon ${couponId}, skipping grant`);
+    return false;
   }
 
   // 確保 validFrom 和 validUntil 正確轉換為 Timestamp
@@ -657,6 +659,9 @@ export const grantCouponToUser = async (userId: string, couponId: string, coupon
     obtainedAt: serverTimestamp(),
     isUsed: false,
   });
+  
+  console.log(`✅ Successfully granted coupon ${couponId} to user ${userId}`);
+  return true;
 };
 
 export const useCoupon = async (userCouponId: string, orderId: string) => {

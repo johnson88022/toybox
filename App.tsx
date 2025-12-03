@@ -12,7 +12,7 @@ import { Product, CartItem, User, Order, ShippingInfo, PaymentInfo, UserCoupon, 
 // 不再使用預設商品
 import { Trash2, CreditCard, ShoppingBag, X, LogIn, Apple, Smartphone, Loader2, LogOut, Settings, AlertTriangle, Copy, ChevronDown, ChevronUp, Ticket, CheckCircle2 } from 'lucide-react';
 import { auth, googleProvider, appleProvider, isFirebaseConfigured, db } from './firebaseConfig';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import {
   listenProducts, addProduct, updateProduct as updateProductFS, deleteProduct as deleteProductFS, listenWishes, addWish, deleteWish, listenOrders, addOrderAndUpdateStock, initializeProducts, resetAllData, getUserProfile, updateUserProfile, updateOrderStatus as updateOrderStatusFS, listenMarqueeMessages, listenUserCoupons, useCoupon, grantCouponToUser, getUserOrders, listenCoupons
@@ -246,17 +246,21 @@ const App: React.FC = () => {
 
         if (shouldGrant) {
           try {
-            await grantCouponToUser(userId, coupon.id, coupon);
-            console.log(`✅ Successfully granted coupon "${coupon.name}" to user ${userId}`);
-            // 更新現有優惠券 ID 集合，避免重複發放
-            existingCouponIds.add(coupon.id);
-          } catch (error: any) {
-            if (error.message !== '用戶已經擁有此優惠券') {
-              console.error(`❌ Failed to grant coupon "${coupon.name}":`, error);
+            const granted = await grantCouponToUser(userId, coupon.id, coupon);
+            if (granted) {
+              console.log(`✅ Successfully granted coupon "${coupon.name}" to user ${userId}`);
+              // 更新現有優惠券 ID 集合，避免重複發放
+              existingCouponIds.add(coupon.id);
             } else {
-              console.log(`ℹ️ User already has coupon "${coupon.name}"`);
+              console.log(`ℹ️ Coupon "${coupon.name}" already exists for user, skipped`);
+              existingCouponIds.add(coupon.id);
             }
+          } catch (error: any) {
+            console.error(`❌ Failed to grant coupon "${coupon.name}":`, error);
+            // 即使失敗也繼續處理其他優惠券
           }
+        } else {
+          console.log(`⏸️ Condition not met for coupon "${coupon.name}", skipping grant`);
         }
       }
     } catch (error) {
@@ -682,22 +686,41 @@ const App: React.FC = () => {
 
     // 如果使用了優惠券，先標記為已使用（在訂單創建之前）
     if (selectedCoupon) {
-      // 再次檢查優惠券是否已被使用（防止重複使用）
-      const currentCoupon = userCoupons.find(uc => uc.id === selectedCoupon.id);
-      if (!currentCoupon || currentCoupon.isUsed) {
-        console.warn('⚠️ Attempted to use an already used coupon:', selectedCoupon.id);
-        alert('此優惠券已被使用，請選擇其他優惠券');
-        setSelectedCoupon(null);
-        setCheckoutStep(1);
-        return;
-      }
+      // 嚴格檢查：從 Firestore 重新查詢最新狀態，確保優惠券未被使用
       try {
+        const couponDocRef = doc(db, 'userCoupons', selectedCoupon.id);
+        const latestCouponSnap = await getDoc(couponDocRef);
+        
+        if (!latestCouponSnap.exists()) {
+          console.warn('⚠️ Coupon not found:', selectedCoupon.id);
+          alert('優惠券不存在，請選擇其他優惠券');
+          setSelectedCoupon(null);
+          setCheckoutStep(1);
+          return;
+        }
+        
+        const latestCouponData = latestCouponSnap.data();
+        if (latestCouponData.isUsed) {
+          console.warn('⚠️ Attempted to use an already used coupon:', selectedCoupon.id);
+          alert('此優惠券已被使用，請選擇其他優惠券');
+          // 立即更新本地狀態
+          setUserCoupons(prev => prev.map(uc => 
+            uc.id === selectedCoupon.id ? { ...uc, isUsed: true } : uc
+          ));
+          setSelectedCoupon(null);
+          setCheckoutStep(1);
+          return;
+        }
+        
+        // 標記為已使用
         console.log(`🎫 Marking coupon ${selectedCoupon.id} as used for order ${order.id}`);
         await useCoupon(selectedCoupon.id, order.id);
-        // 立即更新本地狀態，標記優惠券為已使用
+        
+        // 立即更新本地狀態，標記優惠券為已使用並清除選擇
         setUserCoupons(prev => prev.map(uc => 
           uc.id === selectedCoupon.id ? { ...uc, isUsed: true } : uc
         ));
+        setSelectedCoupon(null); // 清除選擇，防止重複使用
         console.log(`✅ Coupon ${selectedCoupon.id} marked as used`);
       } catch (error) {
         console.error('❌ Failed to mark coupon as used:', error);
@@ -1542,12 +1565,24 @@ const App: React.FC = () => {
                                 
                                 return availableCoupons.map((uc) => {
                                   if (!uc.coupon) return null;
+                                  // 再次嚴格檢查：確保優惠券未被使用
+                                  if (uc.isUsed) {
+                                    console.warn(`⚠️ Coupon ${uc.id} is marked as used, should not appear in available list`);
+                                    return null;
+                                  }
                                   const { subtotal } = calculateTotal();
                                   const canUse = !uc.coupon.minPurchaseAmount || subtotal >= uc.coupon.minPurchaseAmount;
                                   return (
                                     <button
                                       key={uc.id}
                                       onClick={() => {
+                                        // 點擊時再次檢查狀態
+                                        const latestCoupon = userCoupons.find(c => c.id === uc.id);
+                                        if (!latestCoupon || latestCoupon.isUsed) {
+                                          alert('此優惠券已被使用，請選擇其他優惠券');
+                                          setSelectedCoupon(null);
+                                          return;
+                                        }
                                         if (canUse) {
                                           setSelectedCoupon(uc);
                                         } else {
