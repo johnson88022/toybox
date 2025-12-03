@@ -74,6 +74,20 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // 監聽用戶優惠券
+  useEffect(() => {
+    if (user?.id) {
+      console.log(`📋 Loading coupons for user ${user.id}`);
+      const unsubscribe = listenUserCoupons(user.id, (coupons) => {
+        console.log(`✅ Loaded ${coupons.length} coupons for user ${user.id}`, coupons);
+        setUserCoupons(coupons);
+      });
+      return () => unsubscribe();
+    } else {
+      setUserCoupons([]);
+    }
+  }, [user?.id]);
+
   // 檢查並自動發放優惠券
   const checkAndGrantAutoCoupons = async (userId: string, triggerType: 'register' | 'order', orderData?: Order) => {
     if (!userId || allCoupons.length === 0) {
