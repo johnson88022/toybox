@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Package, Users, DollarSign, TrendingUp, Plus, Edit2, X, Save, Upload, Sparkles, Trash2, RotateCcw, ScrollText, CheckCircle2, Smile, ChevronDown, ChevronUp, Truck, LayoutDashboard } from 'lucide-react';
-import { Product, Order, User } from '../types';
+import { Package, Users, DollarSign, TrendingUp, Plus, Edit2, X, Save, Upload, Sparkles, Trash2, RotateCcw, ScrollText, CheckCircle2, Smile, ChevronDown, ChevronUp, Truck, LayoutDashboard, Ticket, Gift } from 'lucide-react';
+import { Product, Order, User, Coupon, CouponType, AutoGrantConditionType } from '../types';
 import { compressImage } from '../utils/imageCompress';
-import { getMarqueeMessages, updateMarqueeMessages, getUserProfile, getAllUserProfiles } from '../firestoreHelpers';
+import { getMarqueeMessages, updateMarqueeMessages, getUserProfile, getAllUserProfiles, listenCoupons, addCoupon, updateCoupon, deleteCoupon, grantCouponToUser } from '../firestoreHelpers';
 
 interface AdminPanelProps {
   products: Product[];
@@ -21,7 +21,7 @@ interface AdminPanelProps {
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProduct, onAddProduct, onDeleteProduct, onUpdateOrderStatus, wishes = [], onDeleteWish, onResetData, onCategoriesChange, currentUser, customCategories }) => {
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'wishes' | 'marquee' | 'stats' | 'users'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'wishes' | 'marquee' | 'stats' | 'users' | 'coupons'>('orders');
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   const [completingOrderId, setCompletingOrderId] = useState<string | null>(null);
   const [isEditingMarquee, setIsEditingMarquee] = useState(false);
@@ -53,6 +53,33 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   // 新增類別 modal 狀態
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  
+  // 優惠券管理狀態
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [isAddingCoupon, setIsAddingCoupon] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
+  const [couponForm, setCouponForm] = useState({
+    name: '',
+    description: '',
+    type: 'discount' as CouponType,
+    discount: 10,
+    fixedAmount: 50,
+    minPurchaseAmount: 0,
+    maxDiscountAmount: 0,
+    validFrom: new Date().toISOString().split('T')[0],
+    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    usageLimit: 0,
+    userUsageLimit: 1,
+    targetUsers: [] as string[],
+    autoGrant: {
+      type: 'register' as AutoGrantConditionType,
+      value: 0,
+      enabled: false,
+    },
+    isActive: true,
+  });
+  const [grantMode, setGrantMode] = useState<'manual' | 'auto'>('manual');
+  const [selectedUsersForGrant, setSelectedUsersForGrant] = useState<Set<string>>(new Set());
 
   // Debug: 確保wishes更新時重新渲染
   React.useEffect(() => {
@@ -403,6 +430,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
     if (activeTab === 'users') fetchAllUsers();
   }, [activeTab, orders]);
 
+  // 監聽優惠券
+  useEffect(() => {
+    if (activeTab === 'coupons') {
+      const unsubscribe = listenCoupons((couponsList) => {
+        setCoupons(couponsList);
+      });
+      return () => unsubscribe();
+    }
+  }, [activeTab]);
+
   const handleAddCategory = (newCategory: string) => {
     if (!customCategories.includes(newCategory)) {
       const updated = [...customCategories, newCategory];
@@ -430,6 +467,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
               { id: 'orders' as const, label: '訂單管理', icon: Package, count: orders.length },
               { id: 'products' as const, label: '商品管理', icon: Edit2, count: products.length },
               { id: 'wishes' as const, label: '許願池', icon: Sparkles, count: wishes.length },
+              { id: 'coupons' as const, label: '優惠券', icon: Ticket, count: coupons.length },
               { id: 'marquee' as const, label: '跑馬燈', icon: ScrollText },
               { id: 'stats' as const, label: '數據統計', icon: BarChart },
               { id: 'users' as const, label: '會員管理', icon: Users },
@@ -1178,6 +1216,545 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
           </>
         )}
 
+        {activeTab === 'coupons' && (
+          <>
+            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm overflow-hidden mb-8">
+              <div className="p-6 border-b border-pink-50 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <Ticket className="w-5 h-5 text-cute-primary" />
+                  優惠券管理
+                </h3>
+                <button
+                  onClick={() => {
+                    setIsAddingCoupon(true);
+                    setEditingCoupon(null);
+                    setCouponForm({
+                      name: '',
+                      description: '',
+                      type: 'discount',
+                      discount: 10,
+                      fixedAmount: 50,
+                      minPurchaseAmount: 0,
+                      maxDiscountAmount: 0,
+                      validFrom: new Date().toISOString().split('T')[0],
+                      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                      usageLimit: 0,
+                      userUsageLimit: 1,
+                      targetUsers: [],
+                      autoGrant: {
+                        type: 'register',
+                        value: 0,
+                        enabled: false,
+                      },
+                      isActive: true,
+                    });
+                    setGrantMode('manual');
+                    setSelectedUsersForGrant(new Set());
+                  }}
+                  className="bg-cute-primary text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-pink-400 transition-colors"
+                >
+                  <Plus size={18} /> 新增優惠券
+                </button>
+              </div>
+              <div className="p-6">
+                {coupons.length === 0 ? (
+                  <p className="text-gray-400 text-center py-8">目前還沒有優惠券，點擊上方按鈕新增</p>
+                ) : (
+                  <div className="space-y-4">
+                    {coupons.map((coupon) => (
+                      <div
+                        key={coupon.id}
+                        className={`p-6 rounded-2xl border-2 ${
+                          coupon.isActive
+                            ? coupon.type === 'discount'
+                              ? 'border-blue-400 bg-white'
+                              : coupon.type === 'freeShipping'
+                              ? 'border-green-400 bg-white'
+                              : 'border-purple-400 bg-white'
+                            : 'border-gray-300 bg-gray-50'
+                        } shadow-sm hover:shadow-md transition-shadow`}
+                      >
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h4 className="text-xl font-black text-gray-900">{coupon.name}</h4>
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                  coupon.type === 'discount'
+                                    ? 'bg-blue-600 text-white'
+                                    : coupon.type === 'freeShipping'
+                                    ? 'bg-green-600 text-white'
+                                    : 'bg-purple-600 text-white'
+                                }`}
+                              >
+                                {coupon.type === 'discount'
+                                  ? `折扣 ${coupon.discount}%`
+                                  : coupon.type === 'freeShipping'
+                                  ? '免運券'
+                                  : `折抵 $${coupon.fixedAmount}`}
+                              </span>
+                              {!coupon.isActive && (
+                                <span className="px-3 py-1 bg-gray-500 text-white rounded-full text-xs font-bold">
+                                  已停用
+                                </span>
+                              )}
+                            </div>
+                            {coupon.description && (
+                              <p className="text-gray-600 text-sm mb-2">{coupon.description}</p>
+                            )}
+                            <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+                              <span>
+                                有效期：{new Date(coupon.validFrom).toLocaleDateString('zh-TW')} -{' '}
+                                {new Date(coupon.validUntil).toLocaleDateString('zh-TW')}
+                              </span>
+                              {coupon.minPurchaseAmount > 0 && (
+                                <span>• 最低消費 ${coupon.minPurchaseAmount}</span>
+                              )}
+                              {coupon.autoGrant?.enabled && (
+                                <span className="text-cute-primary font-bold">
+                                  • 自動發放：{coupon.autoGrant.type === 'firstOrder'
+                                    ? '首次下單'
+                                    : coupon.autoGrant.type === 'orderAmount'
+                                    ? `訂單滿 $${coupon.autoGrant.value}`
+                                    : coupon.autoGrant.type === 'orderCount'
+                                    ? `下單 ${coupon.autoGrant.value} 次`
+                                    : coupon.autoGrant.type === 'birthday'
+                                    ? '生日當月'
+                                    : coupon.autoGrant.type === 'register'
+                                    ? '註冊會員'
+                                    : `累積消費 $${coupon.autoGrant.value}`}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                setEditingCoupon(coupon);
+                                setIsAddingCoupon(false);
+                                setCouponForm({
+                                  name: coupon.name,
+                                  description: coupon.description || '',
+                                  type: coupon.type,
+                                  discount: coupon.discount || 10,
+                                  fixedAmount: coupon.fixedAmount || 50,
+                                  minPurchaseAmount: coupon.minPurchaseAmount || 0,
+                                  maxDiscountAmount: coupon.maxDiscountAmount || 0,
+                                  validFrom: new Date(coupon.validFrom).toISOString().split('T')[0],
+                                  validUntil: new Date(coupon.validUntil).toISOString().split('T')[0],
+                                  usageLimit: coupon.usageLimit || 0,
+                                  userUsageLimit: coupon.userUsageLimit || 1,
+                                  targetUsers: coupon.targetUsers || [],
+                                  autoGrant: coupon.autoGrant || {
+                                    type: 'register',
+                                    value: 0,
+                                    enabled: false,
+                                  },
+                                  isActive: coupon.isActive,
+                                });
+                                setGrantMode(coupon.autoGrant?.enabled ? 'auto' : 'manual');
+                                setSelectedUsersForGrant(new Set(coupon.targetUsers || []));
+                              }}
+                              className="text-blue-600 hover:text-blue-700 p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                              aria-label="編輯優惠券"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (window.confirm('確定要刪除此優惠券嗎？')) {
+                                  try {
+                                    await deleteCoupon(coupon.id);
+                                  } catch (error) {
+                                    alert('刪除失敗，請重試');
+                                  }
+                                }
+                              }}
+                              className="text-red-600 hover:text-red-700 p-2 hover:bg-red-100 rounded-lg transition-colors"
+                              aria-label="刪除優惠券"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </div>
+                        {grantMode === 'manual' && !coupon.autoGrant?.enabled && (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-sm font-bold text-gray-700">手動發放給用戶</span>
+                              <button
+                                onClick={() => {
+                                  setEditingCoupon(coupon);
+                                  setIsAddingCoupon(false);
+                                  setGrantMode('manual');
+                                }}
+                                className="text-xs text-cute-primary hover:underline"
+                              >
+                                選擇用戶
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 新增/編輯優惠券 Modal */}
+            {(isAddingCoupon || editingCoupon) && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+                  <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+                    <h3 className="text-2xl font-black text-gray-900">
+                      {isAddingCoupon ? '新增優惠券' : '編輯優惠券'}
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setIsAddingCoupon(false);
+                        setEditingCoupon(null);
+                      }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X size={24} />
+                    </button>
+                  </div>
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      try {
+                        const couponData: any = {
+                          name: couponForm.name,
+                          description: couponForm.description,
+                          type: couponForm.type,
+                          minPurchaseAmount: couponForm.minPurchaseAmount || 0,
+                          validFrom: new Date(couponForm.validFrom),
+                          validUntil: new Date(couponForm.validUntil),
+                          usageLimit: couponForm.usageLimit || 0,
+                          userUsageLimit: couponForm.userUsageLimit || 1,
+                          isActive: couponForm.isActive,
+                        };
+
+                        if (couponForm.type === 'discount') {
+                          couponData.discount = couponForm.discount;
+                          couponData.maxDiscountAmount = couponForm.maxDiscountAmount || 0;
+                        } else if (couponForm.type === 'fixedAmount') {
+                          couponData.fixedAmount = couponForm.fixedAmount;
+                        }
+
+                        if (grantMode === 'auto') {
+                          couponData.autoGrant = {
+                            type: couponForm.autoGrant.type,
+                            value: couponForm.autoGrant.value || 0,
+                            enabled: true,
+                          };
+                        } else {
+                          couponData.targetUsers = Array.from(selectedUsersForGrant);
+                          couponData.autoGrant = { enabled: false };
+                        }
+
+                        if (isAddingCoupon) {
+                          await addCoupon(couponData);
+                          alert('優惠券新增成功！');
+                        } else if (editingCoupon) {
+                          await updateCoupon(editingCoupon.id, couponData);
+                          alert('優惠券更新成功！');
+                        }
+
+                        setIsAddingCoupon(false);
+                        setEditingCoupon(null);
+                      } catch (error: any) {
+                        alert(`操作失敗：${error.message || '請重試'}`);
+                      }
+                    }}
+                    className="p-6 space-y-6"
+                  >
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        優惠券名稱 <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={couponForm.name}
+                        onChange={(e) => setCouponForm({ ...couponForm, name: e.target.value })}
+                        className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">描述</label>
+                      <textarea
+                        value={couponForm.description}
+                        onChange={(e) => setCouponForm({ ...couponForm, description: e.target.value })}
+                        className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary resize-none"
+                        rows={2}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        優惠券類型 <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={couponForm.type}
+                        onChange={(e) => setCouponForm({ ...couponForm, type: e.target.value as CouponType })}
+                        className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                      >
+                        <option value="discount">折扣優惠券（百分比）</option>
+                        <option value="freeShipping">免運券</option>
+                        <option value="fixedAmount">固定金額折抵</option>
+                      </select>
+                    </div>
+
+                    {couponForm.type === 'discount' && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">
+                            折扣百分比 <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="100"
+                            value={couponForm.discount}
+                            onChange={(e) => setCouponForm({ ...couponForm, discount: Number(e.target.value) })}
+                            className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">最高折扣金額（0 = 無限制）</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={couponForm.maxDiscountAmount}
+                            onChange={(e) => setCouponForm({ ...couponForm, maxDiscountAmount: Number(e.target.value) })}
+                            className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {couponForm.type === 'fixedAmount' && (
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                          折抵金額 <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={couponForm.fixedAmount}
+                          onChange={(e) => setCouponForm({ ...couponForm, fixedAmount: Number(e.target.value) })}
+                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                          required
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">最低消費金額（0 = 無限制）</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={couponForm.minPurchaseAmount}
+                        onChange={(e) => setCouponForm({ ...couponForm, minPurchaseAmount: Number(e.target.value) })}
+                        className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                          有效開始日期 <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          value={couponForm.validFrom}
+                          onChange={(e) => setCouponForm({ ...couponForm, validFrom: e.target.value })}
+                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                          有效結束日期 <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          value={couponForm.validUntil}
+                          onChange={(e) => setCouponForm({ ...couponForm, validUntil: e.target.value })}
+                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">總使用次數限制（0 = 無限制）</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={couponForm.usageLimit}
+                          onChange={(e) => setCouponForm({ ...couponForm, usageLimit: Number(e.target.value) })}
+                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">每用戶使用次數限制</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={couponForm.userUsageLimit}
+                          onChange={(e) => setCouponForm({ ...couponForm, userUsageLimit: Number(e.target.value) })}
+                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-3">發放方式</label>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            value="manual"
+                            checked={grantMode === 'manual'}
+                            onChange={(e) => setGrantMode(e.target.value as 'manual' | 'auto')}
+                            className="w-4 h-4 text-cute-primary"
+                          />
+                          <span>手動發放</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            value="auto"
+                            checked={grantMode === 'auto'}
+                            onChange={(e) => setGrantMode(e.target.value as 'manual' | 'auto')}
+                            className="w-4 h-4 text-cute-primary"
+                          />
+                          <span>自動發放</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {grantMode === 'manual' && (
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">選擇發放用戶（留空則所有用戶可用）</label>
+                        <div className="max-h-40 overflow-y-auto border-2 border-gray-300 rounded-xl p-3 space-y-2">
+                          {userList.length === 0 ? (
+                            <p className="text-gray-400 text-sm">載入用戶中...</p>
+                          ) : (
+                            userList.map((user) => (
+                              <label key={user.userId || user.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedUsersForGrant.has(user.userId || user.id)}
+                                  onChange={(e) => {
+                                    const newSet = new Set(selectedUsersForGrant);
+                                    if (e.target.checked) {
+                                      newSet.add(user.userId || user.id);
+                                    } else {
+                                      newSet.delete(user.userId || user.id);
+                                    }
+                                    setSelectedUsersForGrant(newSet);
+                                  }}
+                                  className="w-4 h-4 text-cute-primary"
+                                />
+                                <span className="text-sm text-gray-700">
+                                  {user.name || user.email || '未知用戶'}
+                                </span>
+                              </label>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {grantMode === 'auto' && (
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">自動發放條件</label>
+                        <select
+                          value={couponForm.autoGrant.type}
+                          onChange={(e) =>
+                            setCouponForm({
+                              ...couponForm,
+                              autoGrant: {
+                                ...couponForm.autoGrant,
+                                type: e.target.value as AutoGrantConditionType,
+                              },
+                            })
+                          }
+                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary mb-3"
+                        >
+                          <option value="register">註冊會員</option>
+                          <option value="firstOrder">首次下單</option>
+                          <option value="orderAmount">訂單金額達到</option>
+                          <option value="orderCount">訂單數量達到</option>
+                          <option value="totalSpent">累積消費達到</option>
+                          <option value="birthday">生日當月</option>
+                        </select>
+                        {(couponForm.autoGrant.type === 'orderAmount' ||
+                          couponForm.autoGrant.type === 'orderCount' ||
+                          couponForm.autoGrant.type === 'totalSpent') && (
+                          <input
+                            type="number"
+                            min="1"
+                            value={couponForm.autoGrant.value || 0}
+                            onChange={(e) =>
+                              setCouponForm({
+                                ...couponForm,
+                                autoGrant: {
+                                  ...couponForm.autoGrant,
+                                  value: Number(e.target.value),
+                                },
+                              })
+                            }
+                            placeholder="輸入數值"
+                            className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={couponForm.isActive}
+                        onChange={(e) => setCouponForm({ ...couponForm, isActive: e.target.checked })}
+                        className="w-4 h-4 text-cute-primary"
+                        id="coupon-active"
+                      />
+                      <label htmlFor="coupon-active" className="text-sm font-bold text-gray-700 cursor-pointer">
+                        啟用此優惠券
+                      </label>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAddingCoupon(false);
+                          setEditingCoupon(null);
+                        }}
+                        className="px-6 py-2 border-2 border-gray-400 text-gray-700 rounded-xl font-bold hover:bg-gray-100 transition-colors"
+                      >
+                        取消
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-6 py-2 bg-cute-primary text-white rounded-xl font-bold hover:bg-pink-400 transition-colors"
+                      >
+                        {isAddingCoupon ? '新增' : '更新'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+          </>
+        )}
 
         {activeTab === 'products' && (
           <>

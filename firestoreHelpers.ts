@@ -409,3 +409,110 @@ export const listenMarqueeMessages = (cb: (messages: string[], speed?: number, r
 
 // 圖片壓縮功能已移至 utils/imageCompress.ts
 // 此處不再需要 Storage 上傳功能
+
+// COUPONS
+export const listenCoupons = (cb: (coupons: any[]) => void) => {
+  const q = query(collection(db, 'coupons'), orderBy('createdAt', 'desc'));
+  return onSnapshot(q, 
+    (snapshot) => {
+      const coupons = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        validFrom: doc.data().validFrom?.toDate?.() || doc.data().validFrom,
+        validUntil: doc.data().validUntil?.toDate?.() || doc.data().validUntil,
+        createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
+      }));
+      cb(coupons);
+    },
+    (error) => {
+      console.error('Firestore listenCoupons error:', error);
+      cb([]);
+    }
+  );
+};
+
+export const addCoupon = async (coupon: any) => {
+  const docRef = await addDoc(collection(db, 'coupons'), {
+    ...coupon,
+    createdAt: serverTimestamp(),
+  });
+  return docRef.id;
+};
+
+export const updateCoupon = async (couponId: string, updates: any) => {
+  await updateDoc(doc(db, 'coupons', couponId), updates);
+};
+
+export const deleteCoupon = async (couponId: string) => {
+  await deleteDoc(doc(db, 'coupons', couponId));
+};
+
+// USER COUPONS
+export const listenUserCoupons = (userId: string, cb: (userCoupons: any[]) => void) => {
+  const q = query(
+    collection(db, 'userCoupons'),
+    where('userId', '==', userId),
+    orderBy('obtainedAt', 'desc')
+  );
+  return onSnapshot(q,
+    (snapshot) => {
+      const userCoupons = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        obtainedAt: doc.data().obtainedAt?.toDate?.() || doc.data().obtainedAt,
+        usedAt: doc.data().usedAt?.toDate?.() || doc.data().usedAt,
+      }));
+      cb(userCoupons);
+    },
+    (error) => {
+      console.error('Firestore listenUserCoupons error:', error);
+      cb([]);
+    }
+  );
+};
+
+export const grantCouponToUser = async (userId: string, couponId: string, coupon: any) => {
+  // 檢查用戶是否已經擁有此優惠券且未使用
+  const existingQuery = query(
+    collection(db, 'userCoupons'),
+    where('userId', '==', userId),
+    where('couponId', '==', couponId),
+    where('isUsed', '==', false)
+  );
+  const existingSnap = await getDocs(existingQuery);
+  
+  if (!existingSnap.empty) {
+    throw new Error('用戶已經擁有此優惠券');
+  }
+
+  await addDoc(collection(db, 'userCoupons'), {
+    userId,
+    couponId,
+    coupon,
+    obtainedAt: serverTimestamp(),
+    isUsed: false,
+  });
+};
+
+export const useCoupon = async (userCouponId: string, orderId: string) => {
+  await updateDoc(doc(db, 'userCoupons', userCouponId), {
+    isUsed: true,
+    usedAt: serverTimestamp(),
+    orderId,
+  });
+};
+
+// 獲取所有用戶的優惠券（用於檢查自動發放條件）
+export const getUserOrders = async (userId: string) => {
+  const q = query(
+    collection(db, 'orders'),
+    where('userId', '==', userId),
+    orderBy('date', 'desc')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    date: doc.data().date?.toDate?.() || doc.data().date,
+  }));
+};

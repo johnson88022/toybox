@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ShoppingCart, Sparkles, User as UserIcon, LayoutDashboard, Gift, Menu, X } from 'lucide-react';
+import { ShoppingCart, Sparkles, User as UserIcon, LayoutDashboard, Gift, Menu, X, Ticket } from 'lucide-react';
 import { User } from '../types';
 
 interface NavbarProps {
@@ -147,6 +147,16 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onCartClick, user, onLoginCl
                         className="w-full text-left py-2 px-4 rounded-lg hover:bg-pink-50 text-gray-800 font-bold transition-colors"
                       >
                         我的訂單
+                      </button>
+                      <button
+                        onClick={() => {
+                          setAccountMenuOpen(false);
+                          onNavigate('/my-coupons');
+                        }}
+                        className="w-full text-left py-2 px-4 rounded-lg hover:bg-pink-50 text-gray-800 font-bold transition-colors flex items-center gap-2"
+                      >
+                        <Ticket size={16} />
+                        我的優惠券
                       </button>
                     </>
                   )}

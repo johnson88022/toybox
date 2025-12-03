@@ -78,6 +78,59 @@ export interface Order {
   status: 'pending' | 'shipped' | 'completed' | 'cancelled';
   shippingInfo?: ShippingInfo;
   paymentInfo?: PaymentInfo;
+  couponId?: string; // 使用的優惠券 ID
+  discountAmount?: number; // 優惠金額
+}
+
+// 優惠券類型
+export type CouponType = 'discount' | 'freeShipping' | 'fixedAmount';
+
+// 自動發放條件類型
+export type AutoGrantConditionType = 
+  | 'firstOrder' // 首次下單
+  | 'orderAmount' // 訂單金額達到
+  | 'orderCount' // 訂單數量達到
+  | 'birthday' // 生日當月
+  | 'register' // 註冊會員
+  | 'totalSpent'; // 累積消費達到
+
+// 自動發放條件
+export interface AutoGrantCondition {
+  type: AutoGrantConditionType;
+  value?: number; // 用於 orderAmount, orderCount, totalSpent
+  enabled: boolean;
+}
+
+// 優惠券
+export interface Coupon {
+  id: string;
+  name: string; // 優惠券名稱
+  description?: string; // 描述
+  type: CouponType; // 類型
+  discount?: number; // 折扣百分比（discount 類型用）
+  fixedAmount?: number; // 固定金額（fixedAmount 類型用）
+  minPurchaseAmount?: number; // 最低消費金額
+  maxDiscountAmount?: number; // 最高折扣金額（discount 類型用）
+  validFrom: Date | any; // 有效開始日期
+  validUntil: Date | any; // 有效結束日期
+  usageLimit?: number; // 總使用次數限制
+  userUsageLimit?: number; // 每個用戶使用次數限制（預設 1）
+  targetUsers?: string[]; // 指定用戶 ID 列表（空則表示所有用戶）
+  autoGrant?: AutoGrantCondition; // 自動發放條件
+  createdAt: Date | any;
+  isActive: boolean; // 是否啟用
+}
+
+// 用戶擁有的優惠券
+export interface UserCoupon {
+  id: string;
+  userId: string;
+  couponId: string;
+  coupon: Coupon; // 優惠券詳細資訊
+  obtainedAt: Date | any; // 獲得時間
+  usedAt?: Date | any; // 使用時間
+  isUsed: boolean; // 是否已使用
+  orderId?: string; // 使用的訂單 ID
 }
 
 export interface ChatMessage {

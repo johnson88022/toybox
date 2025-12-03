@@ -51,14 +51,14 @@
         color: #4A4A4A;
         font-family: 'Nunito', 'Microsoft JhengHei', sans-serif;
       }
-      /* Marquee Animation - 無縫循環，從視窗最右側進入，往左滾動覆蓋整個頁面寬度（起點固定在螢幕右邊） */
+      /* Marquee Animation - 無縫循環，從畫面最右側進入，往左滾動覆蓋整個頁面寬度 */
       @keyframes scroll {
         0% {
-          /* 從 viewport 右側之外開始進場，與內容寬度無關，確保起點一致 */
-          transform: translateX(100vw);
+          /* 從容器右側之外開始進場 */
+          transform: translateX(100%);
         }
         100% {
-          /* 滾動至完全離開左側畫面之外（相對於內容本身寬度） */
+          /* 滾動至完全離開左側畫面之外（實際位移量會由重複次數控制） */
           transform: translateX(-100%);
         }
       }
