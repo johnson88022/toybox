@@ -10,8 +10,9 @@ import MyOrders from './components/MyOrders';
 import MyCoupons from './components/MyCoupons';
 import { Product, CartItem, User, Order, ShippingInfo, PaymentInfo, UserCoupon, Coupon } from './types';
 // 不再使用預設商品
-import { Trash2, CreditCard, ShoppingBag, X, LogIn, Apple, Smartphone, Loader2, LogOut, Settings, AlertTriangle, Copy, ChevronDown, ChevronUp } from 'lucide-react';
-import { auth, googleProvider, appleProvider, isFirebaseConfigured } from './firebaseConfig';
+import { Trash2, CreditCard, ShoppingBag, X, LogIn, Apple, Smartphone, Loader2, LogOut, Settings, AlertTriangle, Copy, ChevronDown, ChevronUp, Ticket, CheckCircle2 } from 'lucide-react';
+import { auth, googleProvider, appleProvider, isFirebaseConfigured, db } from './firebaseConfig';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import {
   listenProducts, addProduct, updateProduct as updateProductFS, deleteProduct as deleteProductFS, listenWishes, addWish, deleteWish, listenOrders, addOrderAndUpdateStock, initializeProducts, resetAllData, getUserProfile, updateUserProfile, updateOrderStatus as updateOrderStatusFS, listenMarqueeMessages, listenUserCoupons, useCoupon, grantCouponToUser, getUserOrders, listenCoupons
@@ -75,36 +76,48 @@ const App: React.FC = () => {
 
   // 檢查並自動發放優惠券
   const checkAndGrantAutoCoupons = async (userId: string, triggerType: 'register' | 'order', orderData?: Order) => {
-    if (!userId || allCoupons.length === 0) return;
+    if (!userId || allCoupons.length === 0) {
+      console.log('⚠️ Auto-grant check skipped: no userId or no coupons');
+      return;
+    }
 
     try {
+      console.log(`🔍 Checking auto-grant coupons for user ${userId}, trigger: ${triggerType}`);
       const userOrders = await getUserOrders(userId);
       const userProfile = await getUserProfile(userId);
       const now = new Date();
 
-      // 重新獲取用戶優惠券列表（確保是最新的）
-      const currentUserCoupons: UserCoupon[] = [];
-      const unsubscribe = listenUserCoupons(userId, (coupons) => {
-        currentUserCoupons.splice(0, currentUserCoupons.length, ...coupons);
-      });
+      // 直接查詢用戶現有的優惠券（不使用監聽器，避免異步問題）
+      const { query: firestoreQuery, collection: firestoreCollection, where: firestoreWhere } = await import('firebase/firestore');
+      const existingUserCouponsQuery = firestoreQuery(
+        firestoreCollection(db, 'userCoupons'),
+        firestoreWhere('userId', '==', userId),
+        firestoreWhere('isUsed', '==', false)
+      );
+      const existingSnap = await getDocsQuery(existingUserCouponsQuery);
+      const existingCouponIds = new Set(
+        existingSnap.docs.map(doc => doc.data().couponId).filter(Boolean)
+      );
 
-      // 等待一小段時間讓監聽器更新
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log(`📋 User has ${existingCouponIds.size} unused coupons`);
 
       for (const coupon of allCoupons) {
         if (!coupon.isActive || !coupon.autoGrant?.enabled) continue;
 
         const validFrom = new Date(coupon.validFrom);
         const validUntil = new Date(coupon.validUntil);
-        if (validUntil < now || validFrom > now) continue; // 已過期或尚未生效
+        if (validUntil < now || validFrom > now) {
+          console.log(`⏰ Coupon "${coupon.name}" is not valid (${validFrom.toLocaleDateString()} - ${validUntil.toLocaleDateString()})`);
+          continue;
+        }
 
         const condition = coupon.autoGrant;
 
         // 檢查是否已擁有此優惠券且未使用
-        const existingCoupons = currentUserCoupons.filter(
-          (uc) => uc.couponId === coupon.id && !uc.isUsed
-        );
-        if (existingCoupons.length > 0) continue; // 已擁有
+        if (existingCouponIds.has(coupon.id)) {
+          console.log(`✅ User already has coupon "${coupon.name}"`);
+          continue;
+        }
 
         let shouldGrant = false;
 
@@ -112,27 +125,32 @@ const App: React.FC = () => {
           case 'register':
             if (triggerType === 'register') {
               shouldGrant = true;
+              console.log(`🎯 Register trigger matched for "${coupon.name}"`);
             }
             break;
           case 'firstOrder':
             if (triggerType === 'order' && userOrders.length === 1) {
               shouldGrant = true;
+              console.log(`🎯 First order trigger matched for "${coupon.name}"`);
             }
             break;
           case 'orderAmount':
             if (triggerType === 'order' && orderData && orderData.total >= (condition.value || 0)) {
               shouldGrant = true;
+              console.log(`🎯 Order amount trigger matched for "${coupon.name}" (order total: ${orderData.total}, required: ${condition.value})`);
             }
             break;
           case 'orderCount':
             if (triggerType === 'order' && userOrders.length >= (condition.value || 0)) {
               shouldGrant = true;
+              console.log(`🎯 Order count trigger matched for "${coupon.name}" (orders: ${userOrders.length}, required: ${condition.value})`);
             }
             break;
           case 'totalSpent':
             const totalSpent = userOrders.reduce((sum, o) => sum + (o.total || 0), 0);
             if (totalSpent >= (condition.value || 0)) {
               shouldGrant = true;
+              console.log(`🎯 Total spent trigger matched for "${coupon.name}" (total: ${totalSpent}, required: ${condition.value})`);
             }
             break;
           case 'birthday':
@@ -142,6 +160,7 @@ const App: React.FC = () => {
               const birthdayMonth = birthday.getMonth();
               if (currentMonth === birthdayMonth) {
                 shouldGrant = true;
+                console.log(`🎯 Birthday trigger matched for "${coupon.name}"`);
               }
             }
             break;
@@ -150,23 +169,20 @@ const App: React.FC = () => {
         if (shouldGrant) {
           try {
             await grantCouponToUser(userId, coupon.id, coupon);
-            console.log(`✅ Auto-granted coupon "${coupon.name}" to user ${userId}`);
-            // 觸發優惠券列表更新
-            setTimeout(() => {
-              const event = new CustomEvent('couponGranted');
-              window.dispatchEvent(event);
-            }, 500);
+            console.log(`✅ Successfully granted coupon "${coupon.name}" to user ${userId}`);
+            // 更新現有優惠券 ID 集合，避免重複發放
+            existingCouponIds.add(coupon.id);
           } catch (error: any) {
             if (error.message !== '用戶已經擁有此優惠券') {
               console.error(`❌ Failed to grant coupon "${coupon.name}":`, error);
+            } else {
+              console.log(`ℹ️ User already has coupon "${coupon.name}"`);
             }
           }
         }
       }
-
-      unsubscribe();
     } catch (error) {
-      console.error('Failed to check auto-grant coupons:', error);
+      console.error('❌ Failed to check auto-grant coupons:', error);
     }
   };
   
@@ -1345,7 +1361,7 @@ const App: React.FC = () => {
                         })}
                       </div>
                       {/* 優惠券選擇 */}
-                      {user && userCoupons.length > 0 && (
+                      {user && (
                         <div className="mb-6 p-4 bg-white border-2 border-pink-300 rounded-2xl">
                           <div className="flex items-center justify-between mb-3">
                             <span className="text-sm font-bold text-gray-700 flex items-center gap-2">
@@ -1355,63 +1371,88 @@ const App: React.FC = () => {
                             {selectedCoupon && (
                               <button
                                 onClick={() => setSelectedCoupon(null)}
-                                className="text-xs text-gray-500 hover:text-red-500"
+                                className="text-xs text-gray-500 hover:text-red-500 font-bold"
+                                type="button"
                               >
                                 取消選擇
                               </button>
                             )}
                           </div>
-                          <div className="space-y-2 max-h-40 overflow-y-auto">
-                            {userCoupons
-                              .filter((uc) => {
+                          {userCoupons.length === 0 ? (
+                            <div className="text-center py-6">
+                              <Ticket className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                              <p className="text-sm text-gray-500">您目前沒有可用的優惠券</p>
+                              <p className="text-xs text-gray-400 mt-1">完成訂單或達成條件後即可獲得優惠券</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                              {userCoupons
+                                .filter((uc) => {
+                                  if (!uc.coupon) return false;
+                                  if (uc.isUsed) return false;
+                                  const now = new Date();
+                                  const validUntil = uc.coupon.validUntil ? new Date(uc.coupon.validUntil) : null;
+                                  if (!validUntil) return false;
+                                  return validUntil >= now;
+                                })
+                                .map((uc) => {
+                                  if (!uc.coupon) return null;
+                                  const { subtotal } = calculateTotal();
+                                  const canUse = !uc.coupon.minPurchaseAmount || subtotal >= uc.coupon.minPurchaseAmount;
+                                  return (
+                                    <button
+                                      key={uc.id}
+                                      onClick={() => {
+                                        if (canUse) {
+                                          setSelectedCoupon(uc);
+                                        } else {
+                                          alert(`此優惠券需滿 $${uc.coupon.minPurchaseAmount} 才能使用`);
+                                        }
+                                      }}
+                                      type="button"
+                                      className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
+                                        selectedCoupon?.id === uc.id
+                                          ? 'border-cute-primary bg-pink-50'
+                                          : canUse
+                                          ? 'border-gray-300 hover:border-cute-primary'
+                                          : 'border-gray-200 opacity-50 cursor-not-allowed'
+                                      }`}
+                                      disabled={!canUse}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <div>
+                                          <div className="font-bold text-gray-900">{uc.coupon.name || '優惠券'}</div>
+                                          <div className="text-xs text-gray-500">
+                                            {uc.coupon.type === 'discount'
+                                              ? `折扣 ${uc.coupon.discount || 0}%`
+                                              : uc.coupon.type === 'freeShipping'
+                                              ? '免運'
+                                              : `折抵 $${uc.coupon.fixedAmount || 0}`}
+                                            {uc.coupon.minPurchaseAmount > 0 &&
+                                              ` • 滿 $${uc.coupon.minPurchaseAmount} 可用`}
+                                          </div>
+                                        </div>
+                                        {selectedCoupon?.id === uc.id && (
+                                          <CheckCircle2 size={20} className="text-cute-primary" />
+                                        )}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              {userCoupons.filter(uc => {
+                                if (!uc.coupon) return false;
                                 if (uc.isUsed) return false;
                                 const now = new Date();
-                                const validUntil = new Date(uc.coupon.validUntil);
-                                return validUntil >= now;
-                              })
-                              .map((uc) => {
-                                const { subtotal } = calculateTotal();
-                                const canUse = !uc.coupon.minPurchaseAmount || subtotal >= uc.coupon.minPurchaseAmount;
-                                return (
-                                  <button
-                                    key={uc.id}
-                                    onClick={() => {
-                                      if (canUse) {
-                                        setSelectedCoupon(uc);
-                                      } else {
-                                        alert(`此優惠券需滿 $${uc.coupon.minPurchaseAmount} 才能使用`);
-                                      }
-                                    }}
-                                    className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
-                                      selectedCoupon?.id === uc.id
-                                        ? 'border-cute-primary bg-pink-50'
-                                        : canUse
-                                        ? 'border-gray-300 hover:border-cute-primary'
-                                        : 'border-gray-200 opacity-50 cursor-not-allowed'
-                                    }`}
-                                    disabled={!canUse}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <div className="font-bold text-gray-900">{uc.coupon.name}</div>
-                                        <div className="text-xs text-gray-500">
-                                          {uc.coupon.type === 'discount'
-                                            ? `折扣 ${uc.coupon.discount}%`
-                                            : uc.coupon.type === 'freeShipping'
-                                            ? '免運'
-                                            : `折抵 $${uc.coupon.fixedAmount}`}
-                                          {uc.coupon.minPurchaseAmount > 0 &&
-                                            ` • 滿 $${uc.coupon.minPurchaseAmount} 可用`}
-                                        </div>
-                                      </div>
-                                      {selectedCoupon?.id === uc.id && (
-                                        <CheckCircle2 size={20} className="text-cute-primary" />
-                                      )}
-                                    </div>
-                                  </button>
-                                );
-                              })}
-                          </div>
+                                const validUntil = uc.coupon.validUntil ? new Date(uc.coupon.validUntil) : null;
+                                return validUntil && validUntil >= now;
+                              }).length === 0 && (
+                                <div className="text-center py-4">
+                                  <p className="text-sm text-gray-500">沒有可用的優惠券</p>
+                                  <p className="text-xs text-gray-400 mt-1">所有優惠券已使用或已過期</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
 

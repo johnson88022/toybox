@@ -1417,14 +1417,62 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             <div className="flex items-center justify-between mb-3">
                               <span className="text-sm font-bold text-gray-700">手動發放給用戶</span>
                               <button
-                                onClick={() => {
+                                onClick={async () => {
+                                  // 打開編輯 modal 並切換到手動發放模式
                                   setEditingCoupon(coupon);
                                   setIsAddingCoupon(false);
                                   setGrantMode('manual');
+                                  setCouponForm({
+                                    name: coupon.name,
+                                    description: coupon.description || '',
+                                    type: coupon.type,
+                                    discount: coupon.discount || 10,
+                                    fixedAmount: coupon.fixedAmount || 50,
+                                    minPurchaseAmount: coupon.minPurchaseAmount || 0,
+                                    maxDiscountAmount: coupon.maxDiscountAmount || 0,
+                                    validFrom: new Date(coupon.validFrom).toISOString().split('T')[0],
+                                    validUntil: new Date(coupon.validUntil).toISOString().split('T')[0],
+                                    usageLimit: coupon.usageLimit || 0,
+                                    userUsageLimit: coupon.userUsageLimit || 1,
+                                    targetUsers: coupon.targetUsers || [],
+                                    autoGrant: coupon.autoGrant || {
+                                      type: 'register',
+                                      value: 0,
+                                      enabled: false,
+                                    },
+                                    isActive: coupon.isActive,
+                                  });
+                                  setSelectedUsersForGrant(new Set(coupon.targetUsers || []));
+                                  // 確保用戶列表已載入
+                                  if (userList.length === 0) {
+                                    try {
+                                      const users = await getAllUserProfiles();
+                                      const enrichedUsers = users.map(user => {
+                                        const userOrders = orders.filter(o => o.userId === user.userId);
+                                        const email = user.email || '-';
+                                        let lastLoginTime = null;
+                                        if (user.lastLoginTime) {
+                                          lastLoginTime = typeof user.lastLoginTime === 'string' ? new Date(user.lastLoginTime) : user.lastLoginTime;
+                                        } else if (user.updatedAt) {
+                                          lastLoginTime = typeof user.updatedAt === 'string' ? new Date(user.updatedAt) : user.updatedAt;
+                                        }
+                                        return {
+                                          ...user,
+                                          email,
+                                          lastLoginTime,
+                                          orders: userOrders,
+                                        };
+                                      });
+                                      setUserList(enrichedUsers);
+                                    } catch (error) {
+                                      console.error('Failed to load users:', error);
+                                    }
+                                  }
                                 }}
-                                className="text-xs text-cute-primary hover:underline"
+                                className="text-xs text-cute-primary hover:underline font-bold"
+                                type="button"
                               >
-                                選擇用戶
+                                選擇用戶發放
                               </button>
                             </div>
                           </div>

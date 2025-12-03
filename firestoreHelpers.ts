@@ -449,23 +449,86 @@ export const deleteCoupon = async (couponId: string) => {
 
 // USER COUPONS
 export const listenUserCoupons = (userId: string, cb: (userCoupons: any[]) => void) => {
-  const q = query(
-    collection(db, 'userCoupons'),
-    where('userId', '==', userId),
-    orderBy('obtainedAt', 'desc')
-  );
+  // 如果沒有 userId，直接返回空數組
+  if (!userId) {
+    cb([]);
+    return () => {};
+  }
+  
+  // 嘗試使用 orderBy，如果失敗則不使用排序
+  let q;
+  try {
+    q = query(
+      collection(db, 'userCoupons'),
+      where('userId', '==', userId),
+      orderBy('obtainedAt', 'desc')
+    );
+  } catch (error) {
+    // 如果索引不存在，只使用 where 查詢
+    console.warn('Firestore index may not exist, using query without orderBy:', error);
+    q = query(
+      collection(db, 'userCoupons'),
+      where('userId', '==', userId)
+    );
+  }
+  
   return onSnapshot(q,
     (snapshot) => {
-      const userCoupons = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        obtainedAt: doc.data().obtainedAt?.toDate?.() || doc.data().obtainedAt,
-        usedAt: doc.data().usedAt?.toDate?.() || doc.data().usedAt,
-      }));
+      const userCoupons = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          obtainedAt: data.obtainedAt?.toDate?.() || data.obtainedAt,
+          usedAt: data.usedAt?.toDate?.() || data.usedAt,
+          // 確保 coupon 欄位存在
+          coupon: data.coupon || {},
+        };
+      });
+      // 如果沒有使用 orderBy，在客戶端排序
+      if (!userCoupons[0]?.obtainedAt || userCoupons.length <= 1) {
+        userCoupons.sort((a, b) => {
+          const aTime = a.obtainedAt ? new Date(a.obtainedAt).getTime() : 0;
+          const bTime = b.obtainedAt ? new Date(b.obtainedAt).getTime() : 0;
+          return bTime - aTime;
+        });
+      }
       cb(userCoupons);
     },
     (error) => {
       console.error('Firestore listenUserCoupons error:', error);
+      // 如果 orderBy 失敗，嘗試不使用排序
+      if (error.code === 'failed-precondition') {
+        const simpleQ = query(
+          collection(db, 'userCoupons'),
+          where('userId', '==', userId)
+        );
+        return onSnapshot(simpleQ,
+          (snapshot) => {
+            const userCoupons = snapshot.docs.map(doc => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                ...data,
+                obtainedAt: data.obtainedAt?.toDate?.() || data.obtainedAt,
+                usedAt: data.usedAt?.toDate?.() || data.usedAt,
+                coupon: data.coupon || {},
+              };
+            });
+            // 客戶端排序
+            userCoupons.sort((a, b) => {
+              const aTime = a.obtainedAt ? new Date(a.obtainedAt).getTime() : 0;
+              const bTime = b.obtainedAt ? new Date(b.obtainedAt).getTime() : 0;
+              return bTime - aTime;
+            });
+            cb(userCoupons);
+          },
+          (err) => {
+            console.error('Firestore listenUserCoupons fallback error:', err);
+            cb([]);
+          }
+        );
+      }
       cb([]);
     }
   );
