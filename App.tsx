@@ -1449,16 +1449,53 @@ const App: React.FC = () => {
                             </div>
                           ) : (
                             <div className="space-y-2 max-h-40 overflow-y-auto">
-                              {userCoupons
-                                .filter((uc) => {
-                                  if (!uc.coupon) return false;
-                                  if (uc.isUsed) return false;
+                              {(() => {
+                                const availableCoupons = userCoupons.filter((uc) => {
+                                  if (!uc || !uc.coupon) {
+                                    console.log('❌ Invalid coupon:', uc);
+                                    return false;
+                                  }
+                                  if (uc.isUsed) {
+                                    console.log('❌ Coupon already used:', uc.id);
+                                    return false;
+                                  }
                                   const now = new Date();
-                                  const validUntil = uc.coupon.validUntil ? new Date(uc.coupon.validUntil) : null;
-                                  if (!validUntil) return false;
-                                  return validUntil >= now;
-                                })
-                                .map((uc) => {
+                                  let validUntil: Date | null = null;
+                                  
+                                  if (uc.coupon.validUntil) {
+                                    if (uc.coupon.validUntil instanceof Date) {
+                                      validUntil = uc.coupon.validUntil;
+                                    } else if (uc.coupon.validUntil.toDate) {
+                                      validUntil = uc.coupon.validUntil.toDate();
+                                    } else {
+                                      validUntil = new Date(uc.coupon.validUntil);
+                                    }
+                                  }
+                                  
+                                  if (!validUntil) {
+                                    console.log('❌ No validUntil for coupon:', uc.id, uc.coupon);
+                                    return false;
+                                  }
+                                  
+                                  const isValid = validUntil >= now;
+                                  if (!isValid) {
+                                    console.log('❌ Coupon expired:', uc.id, 'validUntil:', validUntil, 'now:', now);
+                                  }
+                                  return isValid;
+                                });
+                                
+                                console.log(`📊 Available coupons: ${availableCoupons.length} out of ${userCoupons.length}`, availableCoupons);
+                                
+                                if (availableCoupons.length === 0) {
+                                  return (
+                                    <div className="text-center py-4">
+                                      <p className="text-sm text-gray-500">沒有可用的優惠券</p>
+                                      <p className="text-xs text-gray-400 mt-1">所有優惠券已使用或已過期</p>
+                                    </div>
+                                  );
+                                }
+                                
+                                return availableCoupons.map((uc) => {
                                   if (!uc.coupon) return null;
                                   const { subtotal } = calculateTotal();
                                   const canUse = !uc.coupon.minPurchaseAmount || subtotal >= uc.coupon.minPurchaseAmount;
@@ -1501,19 +1538,8 @@ const App: React.FC = () => {
                                       </div>
                                     </button>
                                   );
-                                })}
-                              {userCoupons.filter(uc => {
-                                if (!uc.coupon) return false;
-                                if (uc.isUsed) return false;
-                                const now = new Date();
-                                const validUntil = uc.coupon.validUntil ? new Date(uc.coupon.validUntil) : null;
-                                return validUntil && validUntil >= now;
-                              }).length === 0 && (
-                                <div className="text-center py-4">
-                                  <p className="text-sm text-gray-500">沒有可用的優惠券</p>
-                                  <p className="text-xs text-gray-400 mt-1">所有優惠券已使用或已過期</p>
-                                </div>
-                              )}
+                                });
+                              })()}
                             </div>
                           )}
                         </div>

@@ -440,7 +440,29 @@ export const addCoupon = async (coupon: any) => {
 };
 
 export const updateCoupon = async (couponId: string, updates: any) => {
-  await updateDoc(doc(db, 'coupons', couponId), updates);
+  // 過濾掉 undefined 值，Firestore 不接受 undefined
+  const cleanUpdates: any = {};
+  for (const key in updates) {
+    if (updates[key] !== undefined) {
+      if (typeof updates[key] === 'object' && updates[key] !== null && !(updates[key] instanceof Date) && !(updates[key] instanceof Timestamp)) {
+        // 遞歸處理嵌套對象
+        const cleanNested: any = {};
+        let hasValidFields = false;
+        for (const nestedKey in updates[key]) {
+          if (updates[key][nestedKey] !== undefined) {
+            cleanNested[nestedKey] = updates[key][nestedKey];
+            hasValidFields = true;
+          }
+        }
+        if (hasValidFields) {
+          cleanUpdates[key] = cleanNested;
+        }
+      } else {
+        cleanUpdates[key] = updates[key];
+      }
+    }
+  }
+  await updateDoc(doc(db, 'coupons', couponId), cleanUpdates);
 };
 
 export const deleteCoupon = async (couponId: string) => {

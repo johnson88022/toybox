@@ -1528,14 +1528,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                         }
 
                         if (grantMode === 'auto') {
+                          // 確保 autoGrant 的所有字段都有值
                           couponData.autoGrant = {
-                            type: couponForm.autoGrant.type,
-                            value: couponForm.autoGrant.value || 0,
+                            type: couponForm.autoGrant?.type || 'register',
+                            value: couponForm.autoGrant?.value !== undefined ? couponForm.autoGrant.value : 0,
                             enabled: true,
                           };
+                          // 清除手動發放的字段
+                          delete couponData.targetUsers;
                         } else {
                           couponData.targetUsers = Array.from(selectedUsersForGrant);
                           couponData.autoGrant = { enabled: false };
+                          // 清除自動發放的字段
+                          delete couponData.autoGrant.type;
+                          delete couponData.autoGrant.value;
                         }
 
                         if (isAddingCoupon) {
