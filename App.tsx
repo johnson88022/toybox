@@ -183,17 +183,17 @@ const App: React.FC = () => {
             break;
           case 'orderAmount':
             if (triggerType === 'order' && orderData) {
-              const orderTotal = orderData.total || 0;
+              const orderTotal = Number(orderData.total) || 0;
               const requiredAmount = Number(condition.value) || 0;
-              console.log(`🔍 Checking orderAmount condition for "${coupon.name}": orderTotal=${orderTotal}, required=${requiredAmount}`);
-              if (orderTotal >= requiredAmount) {
+              console.log(`🔍 Checking orderAmount condition for "${coupon.name}": orderTotal=${orderTotal}, required=${requiredAmount}, condition=`, condition);
+              if (orderTotal >= requiredAmount && requiredAmount > 0) {
                 shouldGrant = true;
                 console.log(`✅ Order amount trigger matched for "${coupon.name}" (order total: ${orderTotal}, required: ${requiredAmount})`);
               } else {
                 console.log(`❌ Order amount not met for "${coupon.name}" (order total: ${orderTotal}, required: ${requiredAmount})`);
               }
             } else {
-              console.log(`⚠️ Order amount condition skipped: triggerType=${triggerType}, orderData=${!!orderData}`);
+              console.log(`⚠️ Order amount condition skipped: triggerType=${triggerType}, orderData=${!!orderData}, orderData.total=${orderData?.total}`);
             }
             break;
           case 'orderCount':
@@ -684,19 +684,23 @@ const App: React.FC = () => {
       if (user) {
         // 立即檢查，使用傳入的 order 數據，不依賴 Firestore 查詢
         try {
-          console.log(`🔄 Checking auto-grant coupons for order ${order.id}, total: ${order.total}`);
+          console.log(`🔄 Checking auto-grant coupons for order ${order.id}, total: ${order.total}, user: ${user.id}`);
+          console.log(`📦 Order details:`, JSON.stringify(order, null, 2));
           await checkAndGrantAutoCoupons(user.id, 'order', order);
         } catch (error) {
-          console.error('Failed to check auto-grant coupons after order:', error);
+          console.error('❌ Failed to check auto-grant coupons after order:', error);
           // 如果立即檢查失敗，再嘗試延遲檢查
           setTimeout(async () => {
             try {
+              console.log(`🔄 Retrying auto-grant check for order ${order.id}`);
               await checkAndGrantAutoCoupons(user.id, 'order', order);
             } catch (retryError) {
-              console.error('Failed to check auto-grant coupons after order (retry):', retryError);
+              console.error('❌ Failed to check auto-grant coupons after order (retry):', retryError);
             }
           }, 2000);
         }
+      } else {
+        console.log('⚠️ No user found, skipping auto-grant check');
       }
     } catch (error: any) {
       alert(error.message || '結帳失敗，請重試');

@@ -20,16 +20,34 @@ const MyCoupons: React.FC<MyCouponsProps> = ({ userId }) => {
   }, [userId]);
 
   const now = new Date();
+  
+  // 輔助函數：正確轉換日期
+  const parseDate = (dateValue: any): Date | null => {
+    if (!dateValue) return null;
+    if (dateValue instanceof Date) return dateValue;
+    if (dateValue.toDate) return dateValue.toDate();
+    if (typeof dateValue === 'string' || typeof dateValue === 'number') {
+      return new Date(dateValue);
+    }
+    return null;
+  };
+
   const availableCoupons = userCoupons.filter((uc) => {
+    if (!uc || !uc.coupon) return false;
     if (uc.isUsed) return false;
-    const validUntil = new Date(uc.coupon.validUntil);
-    return validUntil >= now;
+    const validUntil = parseDate(uc.coupon.validUntil);
+    if (!validUntil) return false;
+    const validFrom = parseDate(uc.coupon.validFrom);
+    // 檢查是否在有效期內
+    return validUntil >= now && (!validFrom || validFrom <= now);
   });
 
   const usedCoupons = userCoupons.filter((uc) => uc.isUsed);
   const expiredCoupons = userCoupons.filter((uc) => {
+    if (!uc || !uc.coupon) return false;
     if (uc.isUsed) return false;
-    const validUntil = new Date(uc.coupon.validUntil);
+    const validUntil = parseDate(uc.coupon.validUntil);
+    if (!validUntil) return false;
     return validUntil < now;
   });
 
@@ -247,7 +265,19 @@ const MyCoupons: React.FC<MyCouponsProps> = ({ userId }) => {
                     <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
                       <Calendar size={14} />
                       <span>
-                        有效期至 {new Date(coupon.validUntil).toLocaleDateString('zh-TW')}
+                        有效期至 {(() => {
+                          let validUntilDate: Date | null = null;
+                          if (coupon.validUntil) {
+                            if (coupon.validUntil instanceof Date) {
+                              validUntilDate = coupon.validUntil;
+                            } else if (coupon.validUntil.toDate) {
+                              validUntilDate = coupon.validUntil.toDate();
+                            } else {
+                              validUntilDate = new Date(coupon.validUntil);
+                            }
+                          }
+                          return validUntilDate ? validUntilDate.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '未知';
+                        })()}
                       </span>
                     </div>
 
