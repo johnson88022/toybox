@@ -1469,209 +1469,280 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                         alert(`操作失敗：${error.message || '請重試'}`);
                       }
                     }}
-                    className="p-6 space-y-6"
+                    className="p-4 md:p-6 space-y-4 md:space-y-6"
                   >
-                    <div>
-                      <label htmlFor="coupon-name" className="block text-sm font-bold text-gray-700 mb-2">
-                        優惠券名稱 <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        id="coupon-name"
-                        type="text"
-                        value={couponForm.name}
-                        onChange={(e) => setCouponForm({ ...couponForm, name: e.target.value })}
-                        className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                        placeholder="輸入優惠券名稱"
-                        required
-                      />
+                    {/* 基本資訊區塊 */}
+                    <div className="bg-gray-50 rounded-2xl p-4 md:p-5 border-2 border-gray-200 space-y-4">
+                      <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-cute-primary rounded-full"></span>
+                        基本資訊
+                      </h4>
+                      
+                      <div>
+                        <label htmlFor="coupon-name" className="block text-sm font-bold text-gray-700 mb-2">
+                          優惠券名稱 <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="coupon-name"
+                          type="text"
+                          value={couponForm.name}
+                          onChange={(e) => setCouponForm({ ...couponForm, name: e.target.value })}
+                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                          placeholder="例如：新會員專屬優惠"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="coupon-description" className="block text-sm font-bold text-gray-700 mb-2">描述（選填）</label>
+                        <textarea
+                          id="coupon-description"
+                          value={couponForm.description}
+                          onChange={(e) => setCouponForm({ ...couponForm, description: e.target.value })}
+                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary resize-none"
+                          rows={2}
+                          placeholder="說明此優惠券的用途或適用場景"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="coupon-type" className="block text-sm font-bold text-gray-700 mb-2">
+                          優惠券類型 <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          id="coupon-type"
+                          value={couponForm.type}
+                          onChange={(e) => setCouponForm({ ...couponForm, type: e.target.value as CouponType })}
+                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                          title="選擇優惠券類型"
+                        >
+                          <option value="discount">💰 折扣優惠券（百分比折扣）</option>
+                          <option value="freeShipping">🚚 免運券（免除運費）</option>
+                          <option value="fixedAmount">💵 固定金額折抵</option>
+                        </select>
+                      </div>
                     </div>
 
-                    <div>
-                      <label htmlFor="coupon-description" className="block text-sm font-bold text-gray-700 mb-2">描述</label>
-                      <textarea
-                        id="coupon-description"
-                        value={couponForm.description}
-                        onChange={(e) => setCouponForm({ ...couponForm, description: e.target.value })}
-                        className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary resize-none"
-                        rows={2}
-                        placeholder="輸入優惠券描述（選填）"
-                      />
-                    </div>
+                    {/* 優惠內容區塊 */}
+                    <div className="bg-blue-50 rounded-2xl p-4 md:p-5 border-2 border-blue-200 space-y-4">
+                      <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
+                        優惠內容
+                      </h4>
 
-                    <div>
-                      <label htmlFor="coupon-type" className="block text-sm font-bold text-gray-700 mb-2">
-                        優惠券類型 <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        id="coupon-type"
-                        value={couponForm.type}
-                        onChange={(e) => setCouponForm({ ...couponForm, type: e.target.value as CouponType })}
-                        className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                        title="選擇優惠券類型"
-                      >
-                        <option value="discount">折扣優惠券（百分比）</option>
-                        <option value="freeShipping">免運券</option>
-                        <option value="fixedAmount">固定金額折抵</option>
-                      </select>
-                    </div>
+                      {couponForm.type === 'discount' && (
+                        <>
+                          <div>
+                            <label htmlFor="coupon-discount" className="block text-sm font-bold text-gray-700 mb-2">
+                              折扣百分比 <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                              <input
+                                id="coupon-discount"
+                                type="number"
+                                min="1"
+                                max="100"
+                                value={couponForm.discount}
+                                onChange={(e) => setCouponForm({ ...couponForm, discount: Number(e.target.value) })}
+                                className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 pr-12 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                                placeholder="例如：10"
+                                required
+                              />
+                              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">%</span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">輸入 1-100 之間的數字</p>
+                          </div>
+                          <div>
+                            <label htmlFor="coupon-max-discount" className="block text-sm font-bold text-gray-700 mb-2">
+                              最高折扣金額限制
+                            </label>
+                            <div className="relative">
+                              <input
+                                id="coupon-max-discount"
+                                type="number"
+                                min="0"
+                                value={couponForm.maxDiscountAmount}
+                                onChange={(e) => setCouponForm({ ...couponForm, maxDiscountAmount: Number(e.target.value) })}
+                                className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 pr-12 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                                placeholder="例如：500"
+                              />
+                              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">元</span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">設為 0 表示無限制</p>
+                          </div>
+                        </>
+                      )}
 
-                    {couponForm.type === 'discount' && (
-                      <>
+                      {couponForm.type === 'fixedAmount' && (
                         <div>
-                          <label htmlFor="coupon-discount" className="block text-sm font-bold text-gray-700 mb-2">
-                            折扣百分比 <span className="text-red-500">*</span>
+                          <label htmlFor="coupon-fixed-amount" className="block text-sm font-bold text-gray-700 mb-2">
+                            折抵金額 <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <input
+                              id="coupon-fixed-amount"
+                              type="number"
+                              min="1"
+                              value={couponForm.fixedAmount}
+                              onChange={(e) => setCouponForm({ ...couponForm, fixedAmount: Number(e.target.value) })}
+                              className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 pr-12 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                              placeholder="例如：100"
+                              required
+                            />
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">元</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {couponForm.type === 'freeShipping' && (
+                        <div className="bg-white rounded-xl p-4 border-2 border-green-300">
+                          <p className="text-sm text-gray-600">
+                            <span className="font-bold text-green-600">✓</span> 此優惠券將免除所有運費
+                          </p>
+                        </div>
+                      )}
+
+                      <div>
+                        <label htmlFor="coupon-min-purchase" className="block text-sm font-bold text-gray-700 mb-2">
+                          最低消費金額限制
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="coupon-min-purchase"
+                            type="number"
+                            min="0"
+                            value={couponForm.minPurchaseAmount}
+                            onChange={(e) => setCouponForm({ ...couponForm, minPurchaseAmount: Number(e.target.value) })}
+                            className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 pr-12 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                            placeholder="例如：500"
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">元</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">設為 0 表示無限制，用戶需達到此金額才能使用優惠券</p>
+                      </div>
+                    </div>
+
+                    {/* 有效期與使用限制區塊 */}
+                    <div className="bg-purple-50 rounded-2xl p-4 md:p-5 border-2 border-purple-200 space-y-4">
+                      <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
+                        有效期與使用限制
+                      </h4>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="coupon-valid-from" className="block text-sm font-bold text-gray-700 mb-2">
+                            有效開始日期 <span className="text-red-500">*</span>
                           </label>
                           <input
-                            id="coupon-discount"
-                            type="number"
-                            min="1"
-                            max="100"
-                            value={couponForm.discount}
-                            onChange={(e) => setCouponForm({ ...couponForm, discount: Number(e.target.value) })}
+                            id="coupon-valid-from"
+                            type="date"
+                            value={couponForm.validFrom}
+                            onChange={(e) => setCouponForm({ ...couponForm, validFrom: e.target.value })}
                             className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                            placeholder="輸入折扣百分比（1-100）"
+                            title="選擇優惠券有效開始日期"
                             required
                           />
                         </div>
                         <div>
-                          <label htmlFor="coupon-max-discount" className="block text-sm font-bold text-gray-700 mb-2">最高折扣金額（0 = 無限制）</label>
+                          <label htmlFor="coupon-valid-until" className="block text-sm font-bold text-gray-700 mb-2">
+                            有效結束日期 <span className="text-red-500">*</span>
+                          </label>
                           <input
-                            id="coupon-max-discount"
-                            type="number"
-                            min="0"
-                            value={couponForm.maxDiscountAmount}
-                            onChange={(e) => setCouponForm({ ...couponForm, maxDiscountAmount: Number(e.target.value) })}
+                            id="coupon-valid-until"
+                            type="date"
+                            value={couponForm.validUntil}
+                            onChange={(e) => setCouponForm({ ...couponForm, validUntil: e.target.value })}
                             className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                            placeholder="輸入最高折扣金額"
+                            title="選擇優惠券有效結束日期"
+                            required
                           />
                         </div>
-                      </>
-                    )}
-
-                    {couponForm.type === 'fixedAmount' && (
-                      <div>
-                        <label htmlFor="coupon-fixed-amount" className="block text-sm font-bold text-gray-700 mb-2">
-                          折抵金額 <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          id="coupon-fixed-amount"
-                          type="number"
-                          min="1"
-                          value={couponForm.fixedAmount}
-                          onChange={(e) => setCouponForm({ ...couponForm, fixedAmount: Number(e.target.value) })}
-                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                          placeholder="輸入折抵金額"
-                          required
-                        />
                       </div>
-                    )}
 
-                    <div>
-                      <label htmlFor="coupon-min-purchase" className="block text-sm font-bold text-gray-700 mb-2">最低消費金額（0 = 無限制）</label>
-                      <input
-                        id="coupon-min-purchase"
-                        type="number"
-                        min="0"
-                        value={couponForm.minPurchaseAmount}
-                        onChange={(e) => setCouponForm({ ...couponForm, minPurchaseAmount: Number(e.target.value) })}
-                        className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                        placeholder="輸入最低消費金額"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="coupon-valid-from" className="block text-sm font-bold text-gray-700 mb-2">
-                          有效開始日期 <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          id="coupon-valid-from"
-                          type="date"
-                          value={couponForm.validFrom}
-                          onChange={(e) => setCouponForm({ ...couponForm, validFrom: e.target.value })}
-                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                          title="選擇優惠券有效開始日期"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="coupon-valid-until" className="block text-sm font-bold text-gray-700 mb-2">
-                          有效結束日期 <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          id="coupon-valid-until"
-                          type="date"
-                          value={couponForm.validUntil}
-                          onChange={(e) => setCouponForm({ ...couponForm, validUntil: e.target.value })}
-                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                          title="選擇優惠券有效結束日期"
-                          required
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="coupon-usage-limit" className="block text-sm font-bold text-gray-700 mb-2">
+                            總使用次數限制
+                          </label>
+                          <input
+                            id="coupon-usage-limit"
+                            type="number"
+                            min="0"
+                            value={couponForm.usageLimit}
+                            onChange={(e) => setCouponForm({ ...couponForm, usageLimit: Number(e.target.value) })}
+                            className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                            placeholder="例如：100"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">設為 0 表示無限制</p>
+                        </div>
+                        <div>
+                          <label htmlFor="coupon-user-usage-limit" className="block text-sm font-bold text-gray-700 mb-2">
+                            每用戶使用次數限制
+                          </label>
+                          <input
+                            id="coupon-user-usage-limit"
+                            type="number"
+                            min="1"
+                            value={couponForm.userUsageLimit}
+                            onChange={(e) => setCouponForm({ ...couponForm, userUsageLimit: Number(e.target.value) })}
+                            className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                            placeholder="例如：1"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">每個用戶最多可使用幾次</p>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="coupon-usage-limit" className="block text-sm font-bold text-gray-700 mb-2">總使用次數限制（0 = 無限制）</label>
-                        <input
-                          id="coupon-usage-limit"
-                          type="number"
-                          min="0"
-                          value={couponForm.usageLimit}
-                          onChange={(e) => setCouponForm({ ...couponForm, usageLimit: Number(e.target.value) })}
-                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                          placeholder="輸入總使用次數限制"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="coupon-user-usage-limit" className="block text-sm font-bold text-gray-700 mb-2">每用戶使用次數限制</label>
-                        <input
-                          id="coupon-user-usage-limit"
-                          type="number"
-                          min="1"
-                          value={couponForm.userUsageLimit}
-                          onChange={(e) => setCouponForm({ ...couponForm, userUsageLimit: Number(e.target.value) })}
-                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                          placeholder="輸入每用戶使用次數限制"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-3">發放方式</label>
-                      <div className="flex gap-4">
-                        <label className="flex items-center gap-2 cursor-pointer">
+                    {/* 發放方式區塊 */}
+                    <div className="bg-green-50 rounded-2xl p-4 md:p-5 border-2 border-green-200 space-y-4">
+                      <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-green-500 rounded-full"></span>
+                        發放方式
+                      </h4>
+                      
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <label className="flex-1 flex items-center gap-3 cursor-pointer p-4 bg-white rounded-xl border-2 border-gray-300 hover:border-cute-primary transition-colors">
                           <input
                             type="radio"
                             value="manual"
                             checked={grantMode === 'manual'}
                             onChange={(e) => setGrantMode(e.target.value as 'manual' | 'auto')}
-                            className="w-4 h-4 text-cute-primary"
+                            className="w-5 h-5 text-cute-primary"
                           />
-                          <span>手動發放</span>
+                          <div>
+                            <div className="font-bold text-gray-900">手動發放</div>
+                            <div className="text-xs text-gray-500">由管理員選擇特定用戶發放</div>
+                          </div>
                         </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
+                        <label className="flex-1 flex items-center gap-3 cursor-pointer p-4 bg-white rounded-xl border-2 border-gray-300 hover:border-cute-primary transition-colors">
                           <input
                             type="radio"
                             value="auto"
                             checked={grantMode === 'auto'}
                             onChange={(e) => setGrantMode(e.target.value as 'manual' | 'auto')}
-                            className="w-4 h-4 text-cute-primary"
+                            className="w-5 h-5 text-cute-primary"
                           />
-                          <span>自動發放</span>
+                          <div>
+                            <div className="font-bold text-gray-900">自動發放</div>
+                            <div className="text-xs text-gray-500">達到條件時自動發放給用戶</div>
+                          </div>
                         </label>
                       </div>
                     </div>
 
                     {grantMode === 'manual' && (
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">選擇發放用戶（留空則所有用戶可用）</label>
-                        <div className="max-h-40 overflow-y-auto border-2 border-gray-300 rounded-xl p-3 space-y-2">
+                      <div className="bg-white rounded-2xl p-4 md:p-5 border-2 border-gray-300">
+                        <label className="block text-sm font-bold text-gray-700 mb-3">
+                          選擇發放用戶
+                          <span className="text-xs font-normal text-gray-500 ml-2">（留空則所有用戶可用）</span>
+                        </label>
+                        <div className="max-h-48 overflow-y-auto border-2 border-gray-200 rounded-xl p-3 space-y-2 bg-gray-50">
                           {userList.length === 0 ? (
-                            <p className="text-gray-400 text-sm">載入用戶中...</p>
+                            <p className="text-gray-400 text-sm text-center py-4">載入用戶中...</p>
                           ) : (
                             userList.map((user) => (
-                              <label key={user.userId || user.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+                              <label key={user.userId || user.id} className="flex items-center gap-3 cursor-pointer hover:bg-white p-3 rounded-lg border border-gray-200 transition-colors">
                                 <input
                                   type="checkbox"
                                   checked={selectedUsersForGrant.has(user.userId || user.id)}
@@ -1684,9 +1755,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                     }
                                     setSelectedUsersForGrant(newSet);
                                   }}
-                                  className="w-4 h-4 text-cute-primary"
+                                  className="w-5 h-5 text-cute-primary flex-shrink-0"
                                 />
-                                <span className="text-sm text-gray-700">
+                                <span className="text-sm text-gray-700 flex-1">
                                   {user.name || user.email || '未知用戶'}
                                 </span>
                               </label>
@@ -1697,8 +1768,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                     )}
 
                     {grantMode === 'auto' && (
-                      <div>
-                        <label htmlFor="coupon-auto-grant-type" className="block text-sm font-bold text-gray-700 mb-2">自動發放條件</label>
+                      <div className="bg-white rounded-2xl p-4 md:p-5 border-2 border-gray-300 space-y-4">
+                        <label htmlFor="coupon-auto-grant-type" className="block text-sm font-bold text-gray-700 mb-2">
+                          自動發放條件
+                        </label>
                         <select
                           id="coupon-auto-grant-type"
                           value={couponForm.autoGrant.type}
@@ -1711,55 +1784,99 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                               },
                             })
                           }
-                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary mb-3"
+                          className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
                           title="選擇自動發放條件類型"
                         >
-                          <option value="register">註冊會員</option>
-                          <option value="firstOrder">首次下單</option>
-                          <option value="orderAmount">訂單金額達到</option>
-                          <option value="orderCount">訂單數量達到</option>
-                          <option value="totalSpent">累積消費達到</option>
-                          <option value="birthday">生日當月</option>
+                          <option value="register">🎉 註冊會員時</option>
+                          <option value="firstOrder">🛒 首次下單時</option>
+                          <option value="orderAmount">💰 單筆訂單金額達到</option>
+                          <option value="orderCount">📦 訂單數量達到</option>
+                          <option value="totalSpent">💳 累積消費達到</option>
+                          <option value="birthday">🎂 生日當月</option>
                         </select>
                         {(couponForm.autoGrant.type === 'orderAmount' ||
                           couponForm.autoGrant.type === 'orderCount' ||
                           couponForm.autoGrant.type === 'totalSpent') && (
-                          <input
-                            id="coupon-auto-grant-value"
-                            type="number"
-                            min="1"
-                            value={couponForm.autoGrant.value || 0}
-                            onChange={(e) =>
-                              setCouponForm({
-                                ...couponForm,
-                                autoGrant: {
-                                  ...couponForm.autoGrant,
-                                  value: Number(e.target.value),
-                                },
-                              })
-                            }
-                            placeholder="輸入數值"
-                            className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
-                            title="輸入自動發放條件的數值"
-                          />
+                          <div>
+                            <label htmlFor="coupon-auto-grant-value" className="block text-sm font-bold text-gray-700 mb-2">
+                              {couponForm.autoGrant.type === 'orderAmount'
+                                ? '訂單金額（元）'
+                                : couponForm.autoGrant.type === 'orderCount'
+                                ? '訂單數量（次）'
+                                : '累積消費（元）'}
+                            </label>
+                            <div className="relative">
+                              <input
+                                id="coupon-auto-grant-value"
+                                type="number"
+                                min="1"
+                                value={couponForm.autoGrant.value || 0}
+                                onChange={(e) =>
+                                  setCouponForm({
+                                    ...couponForm,
+                                    autoGrant: {
+                                      ...couponForm.autoGrant,
+                                      value: Number(e.target.value),
+                                    },
+                                  })
+                                }
+                                placeholder={
+                                  couponForm.autoGrant.type === 'orderAmount'
+                                    ? '例如：1000'
+                                    : couponForm.autoGrant.type === 'orderCount'
+                                    ? '例如：3'
+                                    : '例如：5000'
+                                }
+                                className="w-full bg-white border-2 border-gray-400 rounded-xl px-4 py-3 pr-12 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cute-primary"
+                                title="輸入自動發放條件的數值"
+                              />
+                              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
+                                {couponForm.autoGrant.type === 'orderCount' ? '次' : '元'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {couponForm.autoGrant.type === 'orderAmount'
+                                ? '當用戶單筆訂單達到此金額時自動發放'
+                                : couponForm.autoGrant.type === 'orderCount'
+                                ? '當用戶訂單數量達到此次數時自動發放'
+                                : '當用戶累積消費達到此金額時自動發放'}
+                            </p>
+                          </div>
+                        )}
+                        {(couponForm.autoGrant.type === 'register' ||
+                          couponForm.autoGrant.type === 'firstOrder' ||
+                          couponForm.autoGrant.type === 'birthday') && (
+                          <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+                            <p className="text-xs text-gray-600">
+                              {couponForm.autoGrant.type === 'register'
+                                ? '✓ 用戶註冊成功時自動發放此優惠券'
+                                : couponForm.autoGrant.type === 'firstOrder'
+                                ? '✓ 用戶完成首次下單時自動發放此優惠券'
+                                : '✓ 用戶生日當月自動發放此優惠券'}
+                            </p>
+                          </div>
                         )}
                       </div>
                     )}
 
-                    <div className="flex items-center gap-2">
+                    {/* 啟用狀態 */}
+                    <div className="flex items-center gap-3 p-4 bg-white rounded-xl border-2 border-gray-300">
                       <input
                         type="checkbox"
                         checked={couponForm.isActive}
                         onChange={(e) => setCouponForm({ ...couponForm, isActive: e.target.checked })}
-                        className="w-4 h-4 text-cute-primary"
+                        className="w-5 h-5 text-cute-primary"
                         id="coupon-active"
                       />
-                      <label htmlFor="coupon-active" className="text-sm font-bold text-gray-700 cursor-pointer">
+                      <label htmlFor="coupon-active" className="text-sm font-bold text-gray-700 cursor-pointer flex-1">
                         啟用此優惠券
                       </label>
+                      {!couponForm.isActive && (
+                        <span className="text-xs text-red-500 font-bold">（停用後用戶將無法使用）</span>
+                      )}
                     </div>
 
-                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t-2 border-gray-300">
                       <button
                         type="button"
                         onClick={() => {

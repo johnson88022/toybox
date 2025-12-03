@@ -566,8 +566,8 @@ const App: React.FC = () => {
       status: 'pending',
       shippingInfo: shippingInfo,
       paymentInfo: paymentInfo,
-      couponId: selectedCoupon?.id,
-      discountAmount: discount
+      ...(selectedCoupon?.id && { couponId: selectedCoupon.id }),
+      ...(discount > 0 && { discountAmount: discount })
     };
 
     // 如果使用了優惠券，標記為已使用
