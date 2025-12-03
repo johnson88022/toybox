@@ -44,6 +44,7 @@ const App: React.FC = () => {
     '🎁 精選商品最低5折起'
   ]);
   const [marqueeSpeed, setMarqueeSpeed] = useState<number>(30);
+  const [marqueeRepeatCount, setMarqueeRepeatCount] = useState<number>(8);
   
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -114,7 +115,7 @@ const App: React.FC = () => {
       setOrders(orders as Order[]);
     });
     
-    const unsubMarquee = listenMarqueeMessages((messages, speed) => {
+    const unsubMarquee = listenMarqueeMessages((messages, speed, repeatCount) => {
       console.log('Marquee messages updated from Firestore:', messages.length);
       if (messages && messages.length > 0) {
         setMarqueeMessages(messages);
@@ -123,6 +124,9 @@ const App: React.FC = () => {
       }
       if (speed !== undefined) {
         setMarqueeSpeed(speed);
+      }
+      if (repeatCount !== undefined) {
+        setMarqueeRepeatCount(repeatCount);
       }
     });
     
@@ -621,7 +625,7 @@ const App: React.FC = () => {
                   }}
                 >
                   {/* 重複多次以確保無縫循環，覆蓋整個頁面寬度 */}
-                  {[...Array(8)].map((_, repeatIndex) => 
+                  {[...Array(Math.max(2, marqueeRepeatCount || 2))].map((_, repeatIndex) => 
                     marqueeMessages.filter(msg => msg.trim() !== '').map((msg, i) => (
                       <span key={`${repeatIndex}-${i}`} className="inline-block px-3 sm:px-4 md:px-6 flex-shrink-0">{msg}</span>
                     ))

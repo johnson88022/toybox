@@ -27,6 +27,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const [isEditingMarquee, setIsEditingMarquee] = useState(false);
   const [marqueeMessages, setMarqueeMessages] = useState<string[]>([]);
   const [marqueeSpeed, setMarqueeSpeed] = useState<number>(30);
+  const [marqueeRepeatCount, setMarqueeRepeatCount] = useState<number>(8);
   const [isLoadingMarquee, setIsLoadingMarquee] = useState(true);
   const [isSavingMarquee, setIsSavingMarquee] = useState(false);
   const [isPendingOrdersCollapsed, setIsPendingOrdersCollapsed] = useState(false);
@@ -34,6 +35,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const [isCompletedOrdersCollapsed, setIsCompletedOrdersCollapsed] = useState(false);
   const [isCancelledOrdersCollapsed, setIsCancelledOrdersCollapsed] = useState(false);
   const [shippingOrderId, setShippingOrderId] = useState<string | null>(null);
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   
   // 表情符號列表
   const emojis = ['🎉', '✨', '🚀', '💝', '🎁', '🔥', '⭐', '💎', '🎊', '🎈', '🎀', '💖', '❤️', '💕', '💗', '💓', '💞', '💯', '✅', '👍', '👏', '🎯', '🏆', '🎪', '🎭', '🛍️', '💰', '💳', '🎫', '🎟️'];
@@ -47,6 +49,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const [userList, setUserList] = useState<any[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
+  const [expandedUserOrderPanels, setExpandedUserOrderPanels] = useState<Set<string>>(new Set());
   // 新增類別 modal 狀態
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -314,9 +317,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const loadMarqueeMessages = async () => {
     setIsLoadingMarquee(true);
     try {
-      const { messages, speed } = await getMarqueeMessages();
+      const { messages, speed, repeatCount } = await getMarqueeMessages();
       setMarqueeMessages(messages);
       setMarqueeSpeed(speed);
+      setMarqueeRepeatCount(repeatCount);
     } catch (error) {
       console.error('Failed to load marquee messages:', error);
     } finally {
@@ -327,7 +331,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
   const handleSaveMarquee = async () => {
     setIsSavingMarquee(true);
     try {
-      await updateMarqueeMessages(marqueeMessages, marqueeSpeed);
+      await updateMarqueeMessages(marqueeMessages, marqueeSpeed, marqueeRepeatCount);
       setIsEditingMarquee(false);
       alert('跑馬燈內容已更新！');
     } catch (error) {
@@ -481,75 +485,103 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                 <div className="p-6">
                   {orders.filter(o => o.status === 'pending').length > 0 ? (
                     <div className="space-y-4">
-                      {orders.filter(o => o.status === 'pending').map((order: any) => (
+                      {orders.filter(o => o.status === 'pending').map((order: any) => {
+                        const isExpanded = expandedOrders.has(order.id);
+                        const itemCount = order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0;
+                        return (
                         <div key={order.id} className="p-6 bg-gradient-to-br from-blue-50 to-white rounded-2xl border-2 border-blue-200 shadow-lg hover:shadow-xl transition-shadow">
-                          <div className="flex justify-between items-start mb-5 pb-4 border-b-2 border-blue-200">
-                            <div>
-                              <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
-                              <div className="text-sm text-gray-600 font-medium">
-                                📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
+                          <div className="flex flex-col gap-3 mb-5 pb-4 border-b-2 border-blue-200">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
+                                <div className="text-sm text-gray-600 font-medium">
+                                  📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
+                                </div>
                               </div>
+                              <span className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-xl text-sm font-black shadow-sm">待處理</span>
                             </div>
-                            <span className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-xl text-sm font-black shadow-sm">待處理</span>
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs md:text-sm text-gray-600">
+                              <span>商品數量：<span className="font-bold text-gray-900">{itemCount}</span> 件</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = new Set(expandedOrders);
+                                  if (isExpanded) {
+                                    next.delete(order.id);
+                                  } else {
+                                    next.add(order.id);
+                                  }
+                                  setExpandedOrders(next);
+                                }}
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-blue-200 bg-white text-blue-700 font-semibold hover:bg-blue-50 transition-colors"
+                              >
+                                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                <span>{isExpanded ? '收合明細' : '檢視明細'}</span>
+                              </button>
+                            </div>
                           </div>
                           
-                          {/* 商品列表 */}
-                          <div className="mb-5">
-                            <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
-                              <Package size={18} className="text-blue-600" />
-                              商品內容
-                            </div>
-                            <div className="space-y-3">
-                              {order.items?.map((item: any, i: number) => (
-                                <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
-                                  <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-blue-100" />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
-                                    <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
+                          {isExpanded && (
+                            <>
+                              {/* 商品列表 */}
+                              <div className="mb-5">
+                                <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
+                                  <Package size={18} className="text-blue-600" />
+                                  商品內容
+                                </div>
+                                <div className="space-y-3">
+                                  {order.items?.map((item: any, i: number) => (
+                                    <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
+                                      <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-blue-100" />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
+                                        <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
+                                      </div>
+                                      <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* 收貨資訊 */}
+                              {order.shippingInfo && (
+                                <div className="mb-5 p-4 bg-blue-50/80 rounded-xl border-2 border-blue-100">
+                                  <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">收貨人</span>
+                                      <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.name}</span>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">電話</span>
+                                      <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.phone}</span>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200 md:col-span-2">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">地址</span>
+                                      <span className="text-gray-900 font-semibold text-base block">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
+                                      <div className="text-gray-900 font-semibold text-base mt-1">{order.shippingInfo.address}</div>
+                                    </div>
                                   </div>
-                                  <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
+                              )}
 
-                          {/* 收貨資訊 */}
-                          {order.shippingInfo && (
-                            <div className="mb-5 p-4 bg-blue-50/80 rounded-xl border-2 border-blue-100">
-                              <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">收貨人</span>
-                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.name}</span>
+                              {/* 付款資訊 */}
+                              {order.paymentInfo && (
+                                <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
+                                  <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">持卡人</span>
+                                      <span className="text-gray-900 font-semibold text-base">{order.paymentInfo.cardholderName}</span>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">卡號</span>
+                                      <span className="text-gray-900 font-semibold text-base font-mono">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">電話</span>
-                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.phone}</span>
-                                </div>
-                                <div className="bg-white p-4 rounded-lg border border-gray-200 md:col-span-2">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">地址</span>
-                                  <span className="text-gray-900 font-semibold text-base block">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
-                                  <div className="text-gray-900 font-semibold text-base mt-1">{order.shippingInfo.address}</div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* 付款資訊 */}
-                          {order.paymentInfo && (
-                            <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
-                              <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">持卡人</span>
-                                  <span className="text-gray-900 font-semibold text-base">{order.paymentInfo.cardholderName}</span>
-                                </div>
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">卡號</span>
-                                  <span className="text-gray-900 font-semibold text-base font-mono">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
-                                </div>
-                              </div>
-                            </div>
+                              )}
+                            </>
                           )}
 
                           {/* 總金額 */}
@@ -620,7 +652,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             </div>
                           )}
                         </div>
-                      ))}
+                      );
+                    })}
                     </div>
                   ) : (
                     <p className="text-gray-400 text-center py-8">目前沒有待處理的訂單</p>
@@ -654,75 +687,103 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                 <div className="p-6">
                   {orders.filter(o => o.status === 'shipped').length > 0 ? (
                     <div className="space-y-4">
-                      {orders.filter(o => o.status === 'shipped').map((order: any) => (
+                      {orders.filter(o => o.status === 'shipped').map((order: any) => {
+                        const isExpanded = expandedOrders.has(order.id);
+                        const itemCount = order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0;
+                        return (
                         <div key={order.id} className="p-6 bg-gradient-to-br from-purple-50 to-white rounded-2xl border-2 border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
-                          <div className="flex justify-between items-start mb-5 pb-4 border-b-2 border-purple-200">
-                            <div>
-                              <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
-                              <div className="text-sm text-gray-600 font-medium">
-                                📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
+                          <div className="flex flex-col gap-3 mb-5 pb-4 border-b-2 border-purple-200">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
+                                <div className="text-sm text-gray-600 font-medium">
+                                  📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
+                                </div>
                               </div>
+                              <span className="px-4 py-2 bg-purple-100 text-purple-800 rounded-xl text-sm font-black shadow-sm">已出貨</span>
                             </div>
-                            <span className="px-4 py-2 bg-purple-100 text-purple-800 rounded-xl text-sm font-black shadow-sm">已出貨</span>
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs md:text-sm text-gray-600">
+                              <span>商品數量：<span className="font-bold text-gray-900">{itemCount}</span> 件</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = new Set(expandedOrders);
+                                  if (isExpanded) {
+                                    next.delete(order.id);
+                                  } else {
+                                    next.add(order.id);
+                                  }
+                                  setExpandedOrders(next);
+                                }}
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-purple-200 bg-white text-purple-700 font-semibold hover:bg-purple-50 transition-colors"
+                              >
+                                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                <span>{isExpanded ? '收合明細' : '檢視明細'}</span>
+                              </button>
+                            </div>
                           </div>
                           
-                          {/* 商品列表 */}
-                          <div className="mb-5">
-                            <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
-                              <Package size={18} className="text-purple-600" />
-                              商品內容
-                            </div>
-                            <div className="space-y-3">
-                              {order.items?.map((item: any, i: number) => (
-                                <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-purple-100 shadow-sm hover:shadow-md transition-shadow">
-                                  <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-purple-100" />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
-                                    <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
+                          {isExpanded && (
+                            <>
+                              {/* 商品列表 */}
+                              <div className="mb-5">
+                                <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
+                                  <Package size={18} className="text-purple-600" />
+                                  商品內容
+                                </div>
+                                <div className="space-y-3">
+                                  {order.items?.map((item: any, i: number) => (
+                                    <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-purple-100 shadow-sm hover:shadow-md transition-shadow">
+                                      <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-purple-100" />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
+                                        <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
+                                      </div>
+                                      <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* 收貨資訊 */}
+                              {order.shippingInfo && (
+                                <div className="mb-5 p-4 bg-purple-50/80 rounded-xl border-2 border-purple-100">
+                                  <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">收貨人</span>
+                                      <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.name}</span>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">電話</span>
+                                      <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.phone}</span>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200 md:col-span-2">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">地址</span>
+                                      <span className="text-gray-900 font-semibold text-base block">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
+                                      <div className="text-gray-900 font-semibold text-base mt-1">{order.shippingInfo.address}</div>
+                                    </div>
                                   </div>
-                                  <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
+                              )}
 
-                          {/* 收貨資訊 */}
-                          {order.shippingInfo && (
-                            <div className="mb-5 p-4 bg-purple-50/80 rounded-xl border-2 border-purple-100">
-                              <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">收貨人</span>
-                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.name}</span>
+                              {/* 付款資訊 */}
+                              {order.paymentInfo && (
+                                <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
+                                  <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">持卡人</span>
+                                      <span className="text-gray-900 font-semibold text-base">{order.paymentInfo.cardholderName}</span>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">卡號</span>
+                                      <span className="text-gray-900 font-semibold text-base font-mono">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">電話</span>
-                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.phone}</span>
-                                </div>
-                                <div className="bg-white p-4 rounded-lg border border-gray-200 md:col-span-2">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">地址</span>
-                                  <span className="text-gray-900 font-semibold text-base block">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
-                                  <div className="text-gray-900 font-semibold text-base mt-1">{order.shippingInfo.address}</div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* 付款資訊 */}
-                          {order.paymentInfo && (
-                            <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
-                              <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">持卡人</span>
-                                  <span className="text-gray-900 font-semibold text-base">{order.paymentInfo.cardholderName}</span>
-                                </div>
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">卡號</span>
-                                  <span className="text-gray-900 font-semibold text-base font-mono">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
-                                </div>
-                              </div>
-                            </div>
+                              )}
+                            </>
                           )}
 
                           {/* 總金額和操作 */}
@@ -765,7 +826,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             )}
                           </div>
                         </div>
-                      ))}
+                      );
+                    })}
                     </div>
                   ) : (
                     <p className="text-gray-400 text-center py-8">目前沒有已出貨的訂單</p>
@@ -799,75 +861,103 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                 <div className="p-6">
                   {orders.filter(o => o.status === 'completed').length > 0 ? (
                     <div className="space-y-4">
-                      {orders.filter(o => o.status === 'completed').map((order: any) => (
+                      {orders.filter(o => o.status === 'completed').map((order: any) => {
+                        const isExpanded = expandedOrders.has(order.id);
+                        const itemCount = order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0;
+                        return (
                         <div key={order.id} className="p-6 bg-gradient-to-br from-green-50 to-white rounded-2xl border-2 border-green-200 shadow-lg hover:shadow-xl transition-shadow">
-                          <div className="flex justify-between items-start mb-5 pb-4 border-b-2 border-green-200">
-                            <div>
-                              <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
-                              <div className="text-sm text-gray-600 font-medium">
-                                📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
+                          <div className="flex flex-col gap-3 mb-5 pb-4 border-b-2 border-green-200">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
+                                <div className="text-sm text-gray-600 font-medium">
+                                  📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
+                                </div>
                               </div>
+                              <span className="px-4 py-2 bg-green-100 text-green-800 rounded-xl text-sm font-black shadow-sm">已完成</span>
                             </div>
-                            <span className="px-4 py-2 bg-green-100 text-green-800 rounded-xl text-sm font-black shadow-sm">已完成</span>
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs md:text-sm text-gray-600">
+                              <span>商品數量：<span className="font-bold text-gray-900">{itemCount}</span> 件</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = new Set(expandedOrders);
+                                  if (isExpanded) {
+                                    next.delete(order.id);
+                                  } else {
+                                    next.add(order.id);
+                                  }
+                                  setExpandedOrders(next);
+                                }}
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-green-200 bg-white text-green-700 font-semibold hover:bg-green-50 transition-colors"
+                              >
+                                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                <span>{isExpanded ? '收合明細' : '檢視明細'}</span>
+                              </button>
+                            </div>
                           </div>
                           
-                          {/* 商品列表 */}
-                          <div className="mb-5">
-                            <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
-                              <Package size={18} className="text-green-600" />
-                              商品內容
-                            </div>
-                            <div className="space-y-3">
-                              {order.items?.map((item: any, i: number) => (
-                                <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-green-100 shadow-sm hover:shadow-md transition-shadow">
-                                  <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-green-100" />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
-                                    <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
+                          {isExpanded && (
+                            <>
+                              {/* 商品列表 */}
+                              <div className="mb-5">
+                                <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
+                                  <Package size={18} className="text-green-600" />
+                                  商品內容
+                                </div>
+                                <div className="space-y-3">
+                                  {order.items?.map((item: any, i: number) => (
+                                    <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-green-100 shadow-sm hover:shadow-md transition-shadow">
+                                      <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-green-100" />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
+                                        <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
+                                      </div>
+                                      <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* 收貨資訊 */}
+                              {order.shippingInfo && (
+                                <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
+                                  <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">收貨人</span>
+                                      <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.name}</span>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">電話</span>
+                                      <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.phone}</span>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200 md:col-span-2">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">地址</span>
+                                      <span className="text-gray-900 font-semibold text-base block">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
+                                      <div className="text-gray-900 font-semibold text-base mt-1">{order.shippingInfo.address}</div>
+                                    </div>
                                   </div>
-                                  <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
+                              )}
 
-                          {/* 收貨資訊 */}
-                          {order.shippingInfo && (
-                            <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
-                              <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">收貨人</span>
-                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.name}</span>
+                              {/* 付款資訊 */}
+                              {order.paymentInfo && (
+                                <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
+                                  <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">持卡人</span>
+                                      <span className="text-gray-900 font-semibold text-base">{order.paymentInfo.cardholderName}</span>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">卡號</span>
+                                      <span className="text-gray-900 font-semibold text-base font-mono">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">電話</span>
-                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.phone}</span>
-                                </div>
-                                <div className="bg-white p-4 rounded-lg border border-gray-200 md:col-span-2">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">地址</span>
-                                  <span className="text-gray-900 font-semibold text-base block">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
-                                  <div className="text-gray-900 font-semibold text-base mt-1">{order.shippingInfo.address}</div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* 付款資訊 */}
-                          {order.paymentInfo && (
-                            <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
-                              <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">持卡人</span>
-                                  <span className="text-gray-900 font-semibold text-base">{order.paymentInfo.cardholderName}</span>
-                                </div>
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">卡號</span>
-                                  <span className="text-gray-900 font-semibold text-base font-mono">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
-                                </div>
-                              </div>
-                            </div>
+                              )}
+                            </>
                           )}
 
                           {/* 總金額 */}
@@ -876,7 +966,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             <span className="text-3xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
                           </div>
                         </div>
-                      ))}
+                      );
+                    })}
                     </div>
                   ) : (
                     <p className="text-gray-400 text-center py-8">目前沒有已完成的訂單</p>
@@ -910,75 +1001,103 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                 <div className="p-6">
                   {orders.filter(o => o.status === 'cancelled').length > 0 ? (
                     <div className="space-y-4">
-                      {orders.filter(o => o.status === 'cancelled').map((order: any) => (
+                      {orders.filter(o => o.status === 'cancelled').map((order: any) => {
+                        const isExpanded = expandedOrders.has(order.id);
+                        const itemCount = order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0;
+                        return (
                         <div key={order.id} className="p-6 bg-gradient-to-br from-gray-50 to-white rounded-2xl border-2 border-gray-200 shadow-lg hover:shadow-xl transition-shadow">
-                          <div className="flex justify-between items-start mb-5 pb-4 border-b-2 border-gray-200">
-                            <div>
-                              <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
-                              <div className="text-sm text-gray-600 font-medium">
-                                📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
+                          <div className="flex flex-col gap-3 mb-5 pb-4 border-b-2 border-gray-200">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
+                                <div className="text-sm text-gray-600 font-medium">
+                                  📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
+                                </div>
                               </div>
+                              <span className="px-4 py-2 bg-gray-100 text-gray-800 rounded-xl text-sm font-black shadow-sm">已取消</span>
                             </div>
-                            <span className="px-4 py-2 bg-gray-100 text-gray-800 rounded-xl text-sm font-black shadow-sm">已取消</span>
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs md:text-sm text-gray-600">
+                              <span>商品數量：<span className="font-bold text-gray-900">{itemCount}</span> 件</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = new Set(expandedOrders);
+                                  if (isExpanded) {
+                                    next.delete(order.id);
+                                  } else {
+                                    next.add(order.id);
+                                  }
+                                  setExpandedOrders(next);
+                                }}
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-gray-200 bg-white text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                              >
+                                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                <span>{isExpanded ? '收合明細' : '檢視明細'}</span>
+                              </button>
+                            </div>
                           </div>
                           
-                          {/* 商品列表 */}
-                          <div className="mb-5">
-                            <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
-                              <Package size={18} className="text-gray-600" />
-                              商品內容
-                            </div>
-                            <div className="space-y-3">
-                              {order.items?.map((item: any, i: number) => (
-                                <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                                  <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-gray-100" />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
-                                    <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
+                          {isExpanded && (
+                            <>
+                              {/* 商品列表 */}
+                              <div className="mb-5">
+                                <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
+                                  <Package size={18} className="text-gray-600" />
+                                  商品內容
+                                </div>
+                                <div className="space-y-3">
+                                  {order.items?.map((item: any, i: number) => (
+                                    <div key={i} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                                      <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border-2 border-gray-100" />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-black text-gray-900 mb-1 truncate">{item.name}</div>
+                                        <div className="text-sm text-gray-600 font-medium">數量: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</div>
+                                      </div>
+                                      <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* 收貨資訊 */}
+                              {order.shippingInfo && (
+                                <div className="mb-5 p-4 bg-gray-50/80 rounded-xl border-2 border-gray-100">
+                                  <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">收貨人</span>
+                                      <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.name}</span>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">電話</span>
+                                      <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.phone}</span>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200 md:col-span-2">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">地址</span>
+                                      <span className="text-gray-900 font-semibold text-base block">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
+                                      <div className="text-gray-900 font-semibold text-base mt-1">{order.shippingInfo.address}</div>
+                                    </div>
                                   </div>
-                                  <div className="font-black text-cute-primary text-lg">${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</div>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
+                              )}
 
-                          {/* 收貨資訊 */}
-                          {order.shippingInfo && (
-                            <div className="mb-5 p-4 bg-gray-50/80 rounded-xl border-2 border-gray-100">
-                              <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">收貨人</span>
-                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.name}</span>
+                              {/* 付款資訊 */}
+                              {order.paymentInfo && (
+                                <div className="mb-5 p-4 bg-gray-50/80 rounded-xl border-2 border-gray-100">
+                                  <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">持卡人</span>
+                                      <span className="text-gray-900 font-semibold text-base">{order.paymentInfo.cardholderName}</span>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">卡號</span>
+                                      <span className="text-gray-900 font-semibold text-base font-mono">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">電話</span>
-                                  <span className="text-gray-900 font-semibold text-base">{order.shippingInfo.phone}</span>
-                                </div>
-                                <div className="bg-white p-4 rounded-lg border border-gray-200 md:col-span-2">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">地址</span>
-                                  <span className="text-gray-900 font-semibold text-base block">{order.shippingInfo.country} {order.shippingInfo.city} {order.shippingInfo.postalCode}</span>
-                                  <div className="text-gray-900 font-semibold text-base mt-1">{order.shippingInfo.address}</div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* 付款資訊 */}
-                          {order.paymentInfo && (
-                            <div className="mb-5 p-4 bg-gray-50/80 rounded-xl border-2 border-gray-100">
-                              <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">持卡人</span>
-                                  <span className="text-gray-900 font-semibold text-base">{order.paymentInfo.cardholderName}</span>
-                                </div>
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <span className="font-bold text-gray-700 text-xs uppercase tracking-wide block mb-2">卡號</span>
-                                  <span className="text-gray-900 font-semibold text-base font-mono">**** **** **** {order.paymentInfo.cardNumber?.slice(-4) || '****'}</span>
-                                </div>
-                              </div>
-                            </div>
+                              )}
+                            </>
                           )}
 
                           {/* 總金額 */}
@@ -987,7 +1106,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             <span className="text-3xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
                           </div>
                         </div>
-                      ))}
+                      );
+                    })}
                     </div>
                   ) : (
                     <p className="text-gray-400 text-center py-8">目前沒有已取消的訂單</p>
@@ -1461,24 +1581,44 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             </div>
                           ))}
                         </div>
-                        {/* 跑馬燈速度調整 */}
-                        <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                          <label className="block text-sm font-bold text-gray-700 mb-3">
-                            跑馬燈速度: {marqueeSpeed} 秒
-                          </label>
-                          <input
-                            type="range"
-                            min="5"
-                            max="60"
-                            value={marqueeSpeed}
-                            onChange={(e) => setMarqueeSpeed(Number(e.target.value))}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cute-primary"
-                            aria-label="跑馬燈速度調整"
-                            title="調整跑馬燈速度"
-                          />
-                          <div className="flex justify-between text-xs text-gray-500 mt-1">
-                            <span>快 (5秒)</span>
-                            <span>慢 (60秒)</span>
+                        {/* 跑馬燈速度與重複次數調整 */}
+                        <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-3">
+                              跑馬燈速度：{marqueeSpeed} 秒
+                            </label>
+                            <input
+                              type="range"
+                              min="5"
+                              max="60"
+                              value={marqueeSpeed}
+                              onChange={(e) => setMarqueeSpeed(Number(e.target.value))}
+                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cute-primary"
+                              aria-label="跑馬燈速度調整"
+                              title="調整跑馬燈速度"
+                            />
+                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                              <span>快 (5秒)</span>
+                              <span>慢 (60秒)</span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                              跑馬燈重複次數：{marqueeRepeatCount} 次
+                            </label>
+                            <input
+                              type="range"
+                              min="2"
+                              max="12"
+                              value={marqueeRepeatCount}
+                              onChange={(e) => setMarqueeRepeatCount(Number(e.target.value))}
+                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cute-primary"
+                              aria-label="跑馬燈重複次數調整"
+                              title="調整跑馬燈重複次數"
+                            />
+                            <p className="mt-1 text-xs text-gray-500">
+                              建議 4–10 次之間，可依照實際畫面寬度與內容長度微調。
+                            </p>
                           </div>
                         </div>
                         <div className="flex gap-3">
@@ -1544,14 +1684,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                 <div className="text-center text-gray-400 py-12">載入中...</div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-[600px] w-full text-xs md:text-sm border rounded-xl overflow-hidden">
-                    <thead className="bg-pink-50 text-gray-500 text-[10px] md:text-xs uppercase font-bold tracking-wider whitespace-nowrap">
+                  <table className="min-w-[700px] w-full text-xs md:text-sm border rounded-xl overflow-hidden table-fixed">
+                    <thead className="bg-pink-50 text-gray-500 text-[10px] md:text-xs uppercase font-bold tracking-wider">
                       <tr>
-                        <th className="px-2 md:px-4 py-2 md:py-3 w-12"></th>
-                        <th className="px-2 md:px-4 py-2 md:py-3 w-32 break-all">姓名</th>
-                        <th className="px-2 md:px-4 py-2 md:py-3 w-48 break-all">Gmail</th>
-                        <th className="px-2 md:px-4 py-2 md:py-3 w-28 break-all">電話</th>
-                        <th className="px-2 md:px-4 py-2 md:py-3 w-40 break-all">登入時間</th>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-10 text-center align-middle"></th>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-1/5 text-left align-middle">姓名</th>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-2/5 text-left align-middle">Gmail</th>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-1/6 text-left align-middle">電話</th>
+                        <th className="px-2 md:px-4 py-2 md:py-3 w-1/5 text-left align-middle">登入時間</th>
                       </tr>
                     </thead>
                     <tbody className="break-all">
@@ -1571,13 +1711,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                               }
                               setExpandedUsers(newExpanded);
                             }}>
-                              <td className="px-2 md:px-4 py-2 text-center">
+                              <td className="px-2 md:px-4 py-2 text-center align-middle">
                                 {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                               </td>
-                              <td className="px-2 md:px-4 py-2 break-all font-medium">{user.name || '-'}</td>
-                              <td className="px-2 md:px-4 py-2 break-all">{user.email || '-'}</td>
-                              <td className="px-2 md:px-4 py-2 break-all">{user.phone || '-'}</td>
-                              <td className="px-2 md:px-4 py-2 break-all">
+                              <td className="px-2 md:px-4 py-2 font-medium truncate">{user.name || '-'}</td>
+                              <td className="px-2 md:px-4 py-2 truncate">{user.email || '-'}</td>
+                              <td className="px-2 md:px-4 py-2 truncate">{user.phone || '-'}</td>
+                              <td className="px-2 md:px-4 py-2 truncate">
                                 {user.lastLoginTime 
                                   ? new Date(user.lastLoginTime).toLocaleString('zh-TW', { 
                                       year: 'numeric', 
@@ -1670,60 +1810,83 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                       </div>
                                     )}
 
-                                    {/* 訂單列表 */}
-                                    {user.orders && user.orders.length > 0 && (
+                                    {/* 訂單列表（預設收合，避免一次顯示過多內容） */}
+                                    {user.orders && user.orders.length > 0 && (() => {
+                                      const ordersOpen = expandedUserOrderPanels.has(user.userId);
+                                      return (
                                       <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                                        <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-gray-300">
-                                          <span className="text-base font-bold text-gray-800">訂單紀錄</span>
-                                          <span className="text-sm font-bold text-gray-600">
-                                            共 {user.orders.length} 筆，總金額 <span className="text-cute-primary">${user.orders.reduce((sum, o) => sum + (o.total || 0), 0).toFixed(2)}</span>
-                                          </span>
+                                        <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b-2 border-gray-300">
+                                          <div className="flex flex-col gap-1">
+                                            <span className="text-base font-bold text-gray-800">訂單紀錄</span>
+                                            <span className="text-xs text-gray-600">
+                                              共 {user.orders.length} 筆，總金額 <span className="text-cute-primary">${user.orders.reduce((sum, o) => sum + (o.total || 0), 0).toFixed(2)}</span>
+                                            </span>
+                                          </div>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const next = new Set(expandedUserOrderPanels);
+                                              if (ordersOpen) {
+                                                next.delete(user.userId);
+                                              } else {
+                                                next.add(user.userId);
+                                              }
+                                              setExpandedUserOrderPanels(next);
+                                            }}
+                                            className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-pink-200 bg-white text-cute-primary text-xs font-semibold hover:bg-pink-50 transition-colors"
+                                          >
+                                            {ordersOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                            <span>{ordersOpen ? '收合訂單列表' : '展開訂單列表'}</span>
+                                          </button>
                                         </div>
-                                        <div className="space-y-3 max-h-96 overflow-y-auto">
-                                          {user.orders
-                                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                                            .map((order) => (
-                                              <div key={order.id} className="bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-cute-primary transition-colors">
-                                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3 pb-3 border-b border-gray-200">
-                                                  <div className="flex flex-col gap-1">
-                                                    <span className="text-sm font-bold text-gray-900">訂單 #{order.id?.slice(-8) || 'N/A'}</span>
-                                                    <span className="text-xs text-gray-500">
-                                                      {new Date(order.date).toLocaleString('zh-TW', { 
-                                                        year: 'numeric', 
-                                                        month: '2-digit', 
-                                                        day: '2-digit', 
-                                                        hour: '2-digit', 
-                                                        minute: '2-digit' 
-                                                      })}
+                                        {ordersOpen && (
+                                          <div className="space-y-3 max-h-96 overflow-y-auto">
+                                            {user.orders
+                                              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                              .map((order) => (
+                                                <div key={order.id} className="bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-cute-primary transition-colors">
+                                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3 pb-3 border-b border-gray-200">
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-sm font-bold text-gray-900">訂單 #{order.id?.slice(-8) || 'N/A'}</span>
+                                                      <span className="text-xs text-gray-500">
+                                                        {new Date(order.date).toLocaleString('zh-TW', { 
+                                                          year: 'numeric', 
+                                                          month: '2-digit', 
+                                                          day: '2-digit', 
+                                                          hour: '2-digit', 
+                                                          minute: '2-digit' 
+                                                        })}
+                                                      </span>
+                                                    </div>
+                                                    <span className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap ${
+                                                      order.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' :
+                                                      order.status === 'shipped' ? 'bg-purple-100 text-purple-800 border border-purple-300' :
+                                                      order.status === 'completed' ? 'bg-green-100 text-green-800 border border-green-300' :
+                                                      'bg-gray-100 text-gray-800 border border-gray-300'
+                                                    }`}>
+                                                      {order.status === 'pending' ? '待處理' :
+                                                       order.status === 'shipped' ? '已出貨' :
+                                                       order.status === 'completed' ? '已完成' :
+                                                       order.status === 'cancelled' ? '已取消' : order.status}
                                                     </span>
                                                   </div>
-                                                  <span className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap ${
-                                                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' :
-                                                    order.status === 'shipped' ? 'bg-purple-100 text-purple-800 border border-purple-300' :
-                                                    order.status === 'completed' ? 'bg-green-100 text-green-800 border border-green-300' :
-                                                    'bg-gray-100 text-gray-800 border border-gray-300'
-                                                  }`}>
-                                                    {order.status === 'pending' ? '待處理' :
-                                                     order.status === 'shipped' ? '已出貨' :
-                                                     order.status === 'completed' ? '已完成' :
-                                                     order.status === 'cancelled' ? '已取消' : order.status}
-                                                  </span>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-3 text-sm">
-                                                  <div>
-                                                    <span className="text-gray-600 font-medium">商品數量：</span>
-                                                    <span className="text-gray-900 font-bold ml-1">{order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0} 件</span>
-                                                  </div>
-                                                  <div className="text-right">
-                                                    <span className="text-gray-600 font-medium">總金額：</span>
-                                                    <span className="text-cute-primary font-bold text-base ml-1">${order.total?.toFixed(2) || '0.00'}</span>
+                                                  <div className="grid grid-cols-2 gap-3 text-sm">
+                                                    <div>
+                                                      <span className="text-gray-600 font-medium">商品數量：</span>
+                                                      <span className="text-gray-900 font-bold ml-1">{order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0} 件</span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                      <span className="text-gray-600 font-medium">總金額：</span>
+                                                      <span className="text-cute-primary font-bold text-base ml-1">${order.total?.toFixed(2) || '0.00'}</span>
+                                                    </div>
                                                   </div>
                                                 </div>
-                                              </div>
-                                            ))}
-                                        </div>
+                                              ))}
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
+                                      );
+                                    })()}
                                     {(!user.orders || user.orders.length === 0) && (
                                       <div className="bg-gray-50 rounded-lg p-4 text-center">
                                         <span className="text-sm text-gray-500 font-medium">尚無訂單紀錄</span>
