@@ -24,51 +24,102 @@ const DreamFactory: React.FC<DreamFactoryProps> = ({ onAddToCart, onSubmitWish }
     setIsSuccess(true);
     setWish('');
   };
+  const remaining = 120 - wish.trim().length;
+
   return (
-    <div className="min-h-screen pt-28 pb-12 px-4 bg-cute-bg">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center p-4 bg-white rounded-full mb-6 shadow-md">
-            <Sparkles className="w-10 h-10 text-cute-primary" />
+    <div className="min-h-screen pt-28 pb-16 px-4 bg-gradient-to-b from-pink-50 via-cute-bg to-white">
+      <div className="max-w-3xl mx-auto">
+        {/* 頂部說明區 */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center p-4 bg-white rounded-2xl mb-4 shadow-md shadow-pink-100 border border-pink-100/60">
+            <Sparkles className="w-8 h-8 text-cute-primary" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-black text-cute-text mb-4 tracking-tight">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cute-primary to-cute-secondary">買家許願池</span>
+          <h1 className="text-3xl md:text-4xl font-black text-cute-text mb-3 tracking-tight">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cute-primary via-cute-secondary to-sky-400">
+              買家許願池
+            </span>
           </h1>
-          <p className="text-gray-500 text-lg max-w-2xl mx-auto font-medium">
-            想買但市面上還沒看到？歡迎許願您夢想中的商品，讓更多人一起集氣，賣家與站長會定期收集製作！
+          <p className="text-gray-500 text-sm md:text-base max-w-xl mx-auto font-medium">
+            把你心中的「理想公仔」說出來，留下系列、角色、尺寸或風格，
+            我們會整理熱門許願，優先安排上架與客製提案。
           </p>
         </div>
-        <div className="bg-white rounded-3xl border border-pink-100 shadow-xl p-8 mx-auto w-full max-w-lg">
-          {isSuccess ? (
-            <div className="text-center py-12">
-              <div className="w-full flex justify-center mb-4">
-                <Sparkles className="w-12 h-12 text-cute-secondary animate-bounce" />
+
+        <div className="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
+          {/* 許願表單卡片 */}
+          <div className="bg-white rounded-3xl border border-pink-100 shadow-xl p-6 md:p-8">
+            {isSuccess ? (
+              <div className="text-center py-10">
+                <div className="w-full flex justify-center mb-4">
+                  <Sparkles className="w-10 h-10 text-cute-secondary animate-bounce" />
+                </div>
+                <p className="text-2xl font-extrabold text-cute-primary mb-2">許願成功！</p>
+                <p className="text-gray-500 text-sm md:text-base">
+                  感謝你的靈感，我們會把這些願望整理給賣家與站長，
+                  一起評估能不能把它變成真的作品。
+                </p>
+                <button
+                  className="mt-8 px-10 py-3 bg-gradient-to-r from-cute-secondary to-cute-primary text-white font-bold rounded-full hover:shadow-lg hover:-translate-y-[1px] transition-all"
+                  onClick={() => setIsSuccess(false)}
+                >
+                  再許一個願 ✨
+                </button>
               </div>
-              <p className="text-2xl font-extrabold text-cute-primary mb-4">許願成功！</p>
-              <span className="text-gray-500">感謝您的寶貴意見，大家的集氣許願會帶來新商品～</span>
-              <button className="mt-8 btn px-8 py-3 bg-cute-secondary text-white font-bold rounded-full hover:bg-cute-primary transition" onClick={()=>setIsSuccess(false)}>再許一個願</button>
+            ) : (
+              <form onSubmit={handleWish} className="flex flex-col gap-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-bold text-gray-700">
+                      我想在 ToyBox 買到...
+                    </label>
+                    <span className="text-[11px] md:text-xs text-gray-400">
+                      建議 1～2 句，越具體越好
+                    </span>
+                  </div>
+                  <textarea
+                    value={wish}
+                    onChange={(e) => setWish(e.target.value)}
+                    placeholder="範例：想要《咒術迴戰》狗卷學長 1/7 比例公仔，動作帥一點、底座有咒言特效。"
+                    className="w-full min-h-[140px] bg-gray-50 text-gray-800 rounded-2xl p-4 border border-pink-100 focus:border-cute-primary focus:ring-2 focus:ring-pink-100 focus:outline-none resize-none transition-all text-sm md:text-base"
+                  />
+                  <div className="flex items-center justify-between text-[11px] md:text-xs">
+                    <span className={`font-medium ${remaining < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                      還可以輸入 {Math.max(0, remaining)} 字
+                    </span>
+                    {error && <span className="text-red-500 font-bold">{error}</span>}
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="w-full py-3.5 bg-gradient-to-r from-cute-primary to-cute-secondary rounded-full text-white font-bold text-base md:text-lg flex items-center justify-center gap-2 hover:shadow-lg hover:-translate-y-[1px] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!wish.trim() || remaining < -20}
+                >
+                  <Sparkles className="w-5 h-5" />
+                  送出願望
+                </button>
+              </form>
+            )}
+          </div>
+
+          {/* 右側說明 / 小卡區 */}
+          <div className="space-y-4">
+            <div className="bg-white/80 backdrop-blur rounded-3xl border border-pink-100/60 p-5 shadow-md shadow-pink-50">
+              <h2 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-cute-primary" />
+                怎樣的願望比較容易成真？
+              </h2>
+              <ul className="space-y-2 text-xs md:text-sm text-gray-600">
+                <li>・寫清楚作品名稱、角色、尺寸（例如 1/7、1/4）</li>
+                <li>・可以補充「表情、姿勢、場景、特效」等細節</li>
+                <li>・如果是原創概念，可以描述顏色風格、氛圍感</li>
+              </ul>
             </div>
-          ) : (
-          <form onSubmit={handleWish} className="flex flex-col gap-6">
-            <div>
-              <label className="block text-md font-bold text-gray-600 mb-2">我想在 ToyBox 買到...</label>
-              <textarea
-                value={wish}
-                onChange={(e) => setWish(e.target.value)}
-                placeholder="請描述你希望看到什麼產品，例如：動畫xxx的主角模型，或某主題場景..."
-                className="w-full h-32 bg-gray-50 text-gray-800 rounded-2xl p-4 border border-pink-100 focus:border-cute-primary focus:ring-2 focus:ring-pink-100 focus:outline-none resize-none transition-all"
-              />
+            <div className="bg-gradient-to-r from-cute-secondary/10 to-cute-primary/10 rounded-3xl border border-pink-100 p-4 text-xs md:text-sm text-gray-700">
+              <p className="font-bold mb-1">小提醒</p>
+              <p>許願內容僅作為商品開發與進貨參考，不會直接視為訂單。若真的開發出來，我們會在首頁與社群公告！</p>
             </div>
-            {error && <div className="text-red-500 font-bold">{error}</div>}
-            <button 
-              type="submit" 
-              className="w-full py-4 bg-cute-primary rounded-xl text-white font-bold text-lg flex items-center justify-center gap-2 hover:bg-pink-400 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!wish.trim()}
-            >
-              許 願
-            </button>
-          </form>
-          )}
+          </div>
         </div>
       </div>
     </div>

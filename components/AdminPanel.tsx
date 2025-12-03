@@ -461,23 +461,23 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
         {activeTab === 'orders' && (
           <>
             {/* 待處理訂單列表 */}
-            <div className="bg-white rounded-3xl border-2 border-blue-200 shadow-lg overflow-hidden mb-8">
+            <div className="bg-white rounded-3xl border border-amber-100 shadow-[0_10px_30px_rgba(251,191,36,0.15)] overflow-hidden mb-8">
               <button
                 onClick={() => setIsPendingOrdersCollapsed(!isPendingOrdersCollapsed)}
-                className="w-full p-6 border-b-2 border-blue-200 bg-gradient-to-r from-blue-100 to-blue-50 hover:from-blue-200 hover:to-blue-100 transition-colors"
+                className="w-full p-6 border-b bg-gradient-to-r from-amber-50 via-amber-100 to-orange-50 hover:from-amber-100 hover:to-orange-100 transition-colors"
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-blue-700 flex items-center gap-2">
-                    <Package className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-xl font-bold text-amber-800 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-amber-500" />
                     待處理訂單
-                    <span className="px-3 py-1 bg-blue-500 text-white rounded-full text-sm font-bold">
+                    <span className="px-3 py-1 bg-amber-500 text-white rounded-full text-sm font-bold">
                       {orders.filter(o => o.status === 'pending').length}
                     </span>
                   </h3>
                   {isPendingOrdersCollapsed ? (
-                    <ChevronDown className="w-5 h-5 text-blue-600" />
+                    <ChevronDown className="w-5 h-5 text-amber-600" />
                   ) : (
-                    <ChevronUp className="w-5 h-5 text-blue-600" />
+                    <ChevronUp className="w-5 h-5 text-amber-600" />
                   )}
                 </div>
               </button>
@@ -489,16 +489,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                         const isExpanded = expandedOrders.has(order.id);
                         const itemCount = order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0;
                         return (
-                        <div key={order.id} className="p-6 bg-gradient-to-br from-blue-50 to-white rounded-2xl border-2 border-blue-200 shadow-lg hover:shadow-xl transition-shadow">
-                          <div className="flex flex-col gap-3 mb-5 pb-4 border-b-2 border-blue-200">
+                        <div key={order.id} className="p-6 bg-gradient-to-br from-amber-50 to-white rounded-2xl border border-amber-100 shadow-md hover:shadow-xl transition-shadow">
+                          <div className="flex flex-col gap-3 mb-5 pb-4 border-b border-amber-100">
                             <div className="flex justify-between items-start">
                               <div>
                                 <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
-                                <div className="text-sm text-gray-600 font-medium">
+                                <div className="text-sm text-gray-600 font-medium flex items-center gap-1">
                                   📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
                                 </div>
                               </div>
-                              <span className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-xl text-sm font-black shadow-sm">待處理</span>
+                              <span className="px-4 py-2 bg-amber-100 text-amber-800 rounded-xl text-xs font-black shadow-sm border border-amber-200">
+                                待處理
+                              </span>
                             </div>
                             <div className="flex flex-wrap items-center justify-between gap-2 text-xs md:text-sm text-gray-600">
                               <span>商品數量：<span className="font-bold text-gray-900">{itemCount}</span> 件</span>
@@ -513,7 +515,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                   }
                                   setExpandedOrders(next);
                                 }}
-                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-blue-200 bg-white text-blue-700 font-semibold hover:bg-blue-50 transition-colors"
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-amber-200 bg-white text-amber-700 font-semibold hover:bg-amber-50 transition-colors"
                               >
                                 {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                 <span>{isExpanded ? '收合明細' : '檢視明細'}</span>
@@ -526,7 +528,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                               {/* 商品列表 */}
                               <div className="mb-5">
                                 <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
-                                  <Package size={18} className="text-blue-600" />
+                                  <Package size={18} className="text-amber-500" />
                                   商品內容
                                 </div>
                                 <div className="space-y-3">
@@ -545,7 +547,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
                               {/* 收貨資訊 */}
                               {order.shippingInfo && (
-                                <div className="mb-5 p-4 bg-blue-50/80 rounded-xl border-2 border-blue-100">
+                                <div className="mb-5 p-4 bg-amber-50/70 rounded-xl border border-amber-100">
                                   <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                                     <div className="bg-white p-4 rounded-lg border border-gray-200">
@@ -585,7 +587,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                           )}
 
                           {/* 總金額 */}
-                          <div className="flex justify-between items-center pt-4 border-t-2 border-blue-200 mb-4 bg-white/50 p-4 rounded-xl">
+                          <div className="flex justify-between items-center pt-4 border-t border-amber-100 mb-4 bg-white/60 p-4 rounded-xl">
                             <span className="text-gray-700 font-black text-lg">總金額</span>
                             <span className="text-3xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
                           </div>
@@ -663,23 +665,23 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
             </div>
 
             {/* 已出貨訂單列表 */}
-            <div className="bg-white rounded-3xl border-2 border-purple-200 shadow-lg overflow-hidden mb-8">
+            <div className="bg-white rounded-3xl border border-sky-100 shadow-[0_10px_30px_rgba(56,189,248,0.15)] overflow-hidden mb-8">
               <button
                 onClick={() => setIsShippedOrdersCollapsed(!isShippedOrdersCollapsed)}
-                className="w-full p-6 border-b-2 border-purple-200 bg-gradient-to-r from-purple-100 to-purple-50 hover:from-purple-200 hover:to-purple-100 transition-colors"
+                className="w-full p-6 border-b bg-gradient-to-r from-sky-50 via-sky-100 to-teal-50 hover:from-sky-100 hover:to-teal-100 transition-colors"
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-purple-700 flex items-center gap-2">
-                    <Truck className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-xl font-bold text-sky-800 flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-sky-500" />
                     已出貨訂單
-                    <span className="px-3 py-1 bg-purple-500 text-white rounded-full text-sm font-bold">
+                    <span className="px-3 py-1 bg-sky-500 text-white rounded-full text-sm font-bold">
                       {orders.filter(o => o.status === 'shipped').length}
                     </span>
                   </h3>
                   {isShippedOrdersCollapsed ? (
-                    <ChevronDown className="w-5 h-5 text-purple-600" />
+                    <ChevronDown className="w-5 h-5 text-sky-600" />
                   ) : (
-                    <ChevronUp className="w-5 h-5 text-purple-600" />
+                    <ChevronUp className="w-5 h-5 text-sky-600" />
                   )}
                 </div>
               </button>
@@ -691,8 +693,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                         const isExpanded = expandedOrders.has(order.id);
                         const itemCount = order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0;
                         return (
-                        <div key={order.id} className="p-6 bg-gradient-to-br from-purple-50 to-white rounded-2xl border-2 border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
-                          <div className="flex flex-col gap-3 mb-5 pb-4 border-b-2 border-purple-200">
+                        <div key={order.id} className="p-6 bg-gradient-to-br from-sky-50 to-white rounded-2xl border border-sky-100 shadow-md hover:shadow-xl transition-shadow">
+                          <div className="flex flex-col gap-3 mb-5 pb-4 border-b border-sky-100">
                             <div className="flex justify-between items-start">
                               <div>
                                 <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
@@ -715,7 +717,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                   }
                                   setExpandedOrders(next);
                                 }}
-                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-purple-200 bg-white text-purple-700 font-semibold hover:bg-purple-50 transition-colors"
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-sky-200 bg-white text-sky-700 font-semibold hover:bg-sky-50 transition-colors"
                               >
                                 {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                 <span>{isExpanded ? '收合明細' : '檢視明細'}</span>
@@ -728,7 +730,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                               {/* 商品列表 */}
                               <div className="mb-5">
                                 <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
-                                  <Package size={18} className="text-purple-600" />
+                                  <Package size={18} className="text-sky-500" />
                                   商品內容
                                 </div>
                                 <div className="space-y-3">
@@ -747,7 +749,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
                               {/* 收貨資訊 */}
                               {order.shippingInfo && (
-                                <div className="mb-5 p-4 bg-purple-50/80 rounded-xl border-2 border-purple-100">
+                                <div className="mb-5 p-4 bg-sky-50/80 rounded-xl border border-sky-100">
                                   <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                                     <div className="bg-white p-4 rounded-lg border border-gray-200">
@@ -769,7 +771,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
                               {/* 付款資訊 */}
                               {order.paymentInfo && (
-                                <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
+                            <div className="mb-5 p-4 bg-emerald-50/80 rounded-xl border border-emerald-100">
                                   <div className="font-black text-gray-800 mb-3 text-lg">💳 付款資訊</div>
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                                     <div className="bg-white p-4 rounded-lg border border-gray-200">
@@ -787,8 +789,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                           )}
 
                           {/* 總金額和操作 */}
-                          <div className="pt-4 border-t-2 border-purple-200 mb-4">
-                            <div className="flex justify-between items-center bg-white/50 p-4 rounded-xl mb-4">
+                          <div className="pt-4 border-t border-sky-100 mb-4">
+                            <div className="flex justify-between items-center bg-white/60 p-4 rounded-xl mb-4">
                               <span className="text-gray-700 font-black text-lg">總金額</span>
                               <span className="text-3xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
                             </div>
@@ -837,23 +839,23 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
             </div>
 
             {/* 已完成訂單列表 */}
-            <div className="bg-white rounded-3xl border-2 border-green-200 shadow-lg overflow-hidden mb-8">
+            <div className="bg-white rounded-3xl border border-emerald-100 shadow-[0_10px_30px_rgba(16,185,129,0.14)] overflow-hidden mb-8">
               <button
                 onClick={() => setIsCompletedOrdersCollapsed(!isCompletedOrdersCollapsed)}
-                className="w-full p-6 border-b-2 border-green-200 bg-gradient-to-r from-green-100 to-green-50 hover:from-green-200 hover:to-green-100 transition-colors"
+                className="w-full p-6 border-b bg-gradient-to-r from-emerald-50 via-emerald-100 to-lime-50 hover:from-emerald-100 hover:to-lime-100 transition-colors"
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-green-700 flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  <h3 className="text-xl font-bold text-emerald-800 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                     已完成訂單
-                    <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-bold">
+                    <span className="px-3 py-1 bg-emerald-500 text-white rounded-full text-sm font-bold">
                       {orders.filter(o => o.status === 'completed').length}
                     </span>
                   </h3>
                   {isCompletedOrdersCollapsed ? (
-                    <ChevronDown className="w-5 h-5 text-green-600" />
+                    <ChevronDown className="w-5 h-5 text-emerald-600" />
                   ) : (
-                    <ChevronUp className="w-5 h-5 text-green-600" />
+                    <ChevronUp className="w-5 h-5 text-emerald-600" />
                   )}
                 </div>
               </button>
@@ -865,8 +867,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                         const isExpanded = expandedOrders.has(order.id);
                         const itemCount = order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0;
                         return (
-                        <div key={order.id} className="p-6 bg-gradient-to-br from-green-50 to-white rounded-2xl border-2 border-green-200 shadow-lg hover:shadow-xl transition-shadow">
-                          <div className="flex flex-col gap-3 mb-5 pb-4 border-b-2 border-green-200">
+                        <div key={order.id} className="p-6 bg-gradient-to-br from-emerald-50 to-white rounded-2xl border border-emerald-100 shadow-md hover:shadow-xl transition-shadow">
+                          <div className="flex flex-col gap-3 mb-5 pb-4 border-b border-emerald-100">
                             <div className="flex justify-between items-start">
                               <div>
                                 <div className="font-black text-gray-900 text-xl mb-2">訂單 #{order.id?.slice(-8) || 'N/A'}</div>
@@ -874,7 +876,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                   📅 {order.date ? new Date(order.date.seconds ? order.date.seconds * 1000 : order.date).toLocaleString('zh-TW') : '日期未知'}
                                 </div>
                               </div>
-                              <span className="px-4 py-2 bg-green-100 text-green-800 rounded-xl text-sm font-black shadow-sm">已完成</span>
+                              <span className="px-4 py-2 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-black shadow-sm border border-emerald-200">
+                                已完成
+                              </span>
                             </div>
                             <div className="flex flex-wrap items-center justify-between gap-2 text-xs md:text-sm text-gray-600">
                               <span>商品數量：<span className="font-bold text-gray-900">{itemCount}</span> 件</span>
@@ -889,7 +893,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                                   }
                                   setExpandedOrders(next);
                                 }}
-                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-green-200 bg-white text-green-700 font-semibold hover:bg-green-50 transition-colors"
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-emerald-200 bg-white text-emerald-700 font-semibold hover:bg-emerald-50 transition-colors"
                               >
                                 {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                 <span>{isExpanded ? '收合明細' : '檢視明細'}</span>
@@ -901,8 +905,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                             <>
                               {/* 商品列表 */}
                               <div className="mb-5">
-                                <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
-                                  <Package size={18} className="text-green-600" />
+                              <div className="font-black text-gray-800 mb-3 text-lg flex items-center gap-2">
+                              <Package size={18} className="text-emerald-500" />
                                   商品內容
                                 </div>
                                 <div className="space-y-3">
@@ -921,7 +925,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
 
                               {/* 收貨資訊 */}
                               {order.shippingInfo && (
-                                <div className="mb-5 p-4 bg-green-50/80 rounded-xl border-2 border-green-100">
+                            <div className="mb-5 p-4 bg-emerald-50/80 rounded-xl border border-emerald-100">
                                   <div className="font-black text-gray-800 mb-3 text-lg">📦 收貨資訊</div>
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                                     <div className="bg-white p-4 rounded-lg border border-gray-200">
@@ -961,7 +965,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, onUpdateProdu
                           )}
 
                           {/* 總金額 */}
-                          <div className="flex justify-between items-center pt-4 border-t-2 border-green-200 bg-white/50 p-4 rounded-xl">
+                          <div className="flex justify-between items-center pt-4 border-t border-emerald-100 bg-white/60 p-4 rounded-xl">
                             <span className="text-gray-700 font-black text-lg">總金額</span>
                             <span className="text-3xl font-black text-cute-primary">${order.total?.toFixed(2) || '0.00'}</span>
                           </div>

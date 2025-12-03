@@ -53,13 +53,37 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onCartClick, user, onLoginCl
             
             {/* Desktop Menu */}
             <div className="hidden lg:flex ml-8 space-x-2 items-center">
-              <a href="#" onClick={handleNav('/')} className={`${isActive('/')} px-4 py-2 rounded-full text-sm font-bold transition-all duration-300`}>商店</a>
-              <a href="#" onClick={handleNav('/dream-factory')} className={`${isActive('/dream-factory')} flex items-center gap-1 px-4 py-2 rounded-full text-sm font-bold transition-all duration-300`}>
+              <a
+                href="#"
+                onClick={handleNav('/')}
+                className={`${isActive('/')} px-4 py-2 rounded-full text-sm font-bold transition-all duration-300`}
+              >
+                商店
+              </a>
+              {/* 買家許願池：主動感更強的漸層膠囊按鈕 */}
+              <a
+                href="#"
+                onClick={handleNav('/dream-factory')}
+                className={`flex items-center gap-1 px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 shadow-sm ${
+                  currentPage === '/dream-factory'
+                    ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-pink-200/80 shadow-lg'
+                    : 'bg-white text-cute-primary border border-pink-100 hover:bg-pink-50 hover:border-cute-primary/60'
+                }`}
+              >
                 <Sparkles className="w-4 h-4" />
                 買家許願池
               </a>
+              {/* 賣家後台：僅 Admin 顯示，改成更精緻的紫色 badge 風格 */}
               {user?.role === 'admin' && (
-                <a href="#" onClick={handleNav('/admin')} className={`${isActive('/admin')} flex items-center gap-1 px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 text-purple-500`}>
+                <a
+                  href="#"
+                  onClick={handleNav('/admin')}
+                  className={`flex items-center gap-1 px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 ${
+                    currentPage === '/admin'
+                      ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg shadow-purple-200'
+                      : 'bg-purple-50 text-purple-700 border border-purple-100 hover:bg-purple-100'
+                  }`}
+                >
                   <LayoutDashboard className="w-4 h-4" />
                   賣家後台
                 </a>
@@ -154,46 +178,56 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onCartClick, user, onLoginCl
         </div>
 
         {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-pink-100 bg-white py-4 space-y-2">
-            <a 
-              href="#" 
-              onClick={handleNav('/')} 
-              className={`${isActive('/')} block px-4 py-3 rounded-xl text-base font-bold transition-all duration-300`}
-            >
-              商店
-            </a>
-            <a 
-              href="#" 
-              onClick={handleNav('/dream-factory')} 
-              className={`${isActive('/dream-factory')} flex items-center gap-2 px-4 py-3 rounded-xl text-base font-bold transition-all duration-300`}
-            >
-              <Sparkles className="w-5 h-5" />
-              買家許願池
-            </a>
-            {user?.role === 'admin' && (
-              <a 
-                href="#" 
-                onClick={handleNav('/admin')} 
-                className={`${isActive('/admin')} flex items-center gap-2 px-4 py-3 rounded-xl text-base font-bold transition-all duration-300 text-purple-500`}
-              >
-                <LayoutDashboard className="w-5 h-5" />
-                賣家後台
-              </a>
+            {mobileMenuOpen && (
+              <div className="lg:hidden border-t border-pink-100 bg-white py-4 space-y-2">
+                <a 
+                  href="#" 
+                  onClick={handleNav('/')} 
+                  className={`${isActive('/')} block px-4 py-3 rounded-xl text-base font-bold transition-all duration-300`}
+                >
+                  商店
+                </a>
+                {/* Mobile 買家許願池：漸層背景更突出 */}
+                <a 
+                  href="#" 
+                  onClick={handleNav('/dream-factory')} 
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl text-base font-bold transition-all duration-300 ${
+                    currentPage === '/dream-factory'
+                      ? 'bg-gradient-to-r from-cute-primary to-cute-secondary text-white shadow-md'
+                      : 'bg-white text-cute-primary border border-pink-100 hover:bg-pink-50'
+                  }`}
+                >
+                  <Sparkles className="w-5 h-5" />
+                  買家許願池
+                </a>
+                {/* Mobile 賣家後台：柔和紫色按鈕 */}
+                {user?.role === 'admin' && (
+                  <a 
+                    href="#" 
+                    onClick={handleNav('/admin')} 
+                    className={`flex items-center gap-2 px-4 py-3 rounded-xl text-base font-bold transition-all duration-300 ${
+                      currentPage === '/admin'
+                        ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md'
+                        : 'bg-purple-50 text-purple-700 border border-purple-100 hover:bg-purple-100'
+                    }`}
+                  >
+                    <LayoutDashboard className="w-5 h-5" />
+                    賣家後台
+                  </a>
+                )}
+                {!user && (
+                  <button
+                    onClick={() => {
+                      onLoginClick();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 rounded-xl text-base font-bold text-gray-500 hover:text-cute-primary hover:bg-pink-50 transition-all"
+                  >
+                    登入
+                  </button>
+                )}
+              </div>
             )}
-            {!user && (
-              <button
-                onClick={() => {
-                  onLoginClick();
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full text-left px-4 py-3 rounded-xl text-base font-bold text-gray-500 hover:text-cute-primary hover:bg-pink-50 transition-all"
-              >
-                登入
-              </button>
-            )}
-          </div>
-        )}
       </div>
     </nav>
   );
