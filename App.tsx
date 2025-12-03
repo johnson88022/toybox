@@ -609,13 +609,9 @@ const App: React.FC = () => {
     });
 
     // 跑馬燈邏輯：
-    // - marqueeSpeed 表示「基準重複次數（12 次時）整輪跑完需要的秒數」
-    // - 實際動畫秒數會依照目前的 repeatCount 等比例放大或縮小，
-    //   讓「文字在畫面中的移動速度」在不同重複次數下保持一致，不會因為重複次數變多就跑得超快
+    // - 「跑馬燈速度」直接表示整個跑馬燈跑一輪需要幾秒（與重複次數無關）
+    // - 重複次數只決定畫面上同一組訊息重複幾次，增加可讀性，不影響速度定義
     const effectiveRepeatCount = Math.max(2, marqueeRepeatCount || 2);
-    const baseRepeatForSpeed = 12;
-    const repeatFactor = effectiveRepeatCount / baseRepeatForSpeed;
-    const effectiveMarqueeDuration = marqueeSpeed * repeatFactor;
 
     return (
       <main className="pt-28 pb-12">
@@ -627,7 +623,8 @@ const App: React.FC = () => {
                 <div 
                   className="flex items-center gap-4 sm:gap-6 md:gap-8"
                   style={{
-                    animation: `scroll ${effectiveMarqueeDuration}s linear infinite`,
+                    // 速度 = 一輪動畫秒數，完全依照後台設定的「跑馬燈速度」
+                    animation: `scroll ${marqueeSpeed}s linear infinite`,
                     willChange: 'transform',
                     display: 'inline-flex',
                     width: 'max-content'
