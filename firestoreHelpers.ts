@@ -2,6 +2,7 @@ import { db } from './firebaseConfig';
 import {
   collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, runTransaction, serverTimestamp, orderBy, Timestamp, where, getDoc, setDoc
 } from 'firebase/firestore';
+import type { Query, DocumentData } from 'firebase/firestore';
 
 // PRODUCTS
 export const listenProducts = (cb: (products: any[]) => void) => {
@@ -478,7 +479,7 @@ export const listenUserCoupons = (userId: string, cb: (userCoupons: any[]) => vo
   }
   
   // 嘗試使用 orderBy，如果失敗則不使用排序
-  let q;
+  let q: Query<DocumentData>;
   try {
     q = query(
       collection(db, 'userCoupons'),
@@ -587,16 +588,15 @@ export const listenUserCoupons = (userId: string, cb: (userCoupons: any[]) => vo
 };
 
 export const grantCouponToUser = async (userId: string, couponId: string, coupon: any) => {
-  const activeCouponQuery = query(
+  const userCouponQuery = query(
     collection(db, 'userCoupons'),
     where('userId', '==', userId),
-    where('couponId', '==', couponId),
-    where('isUsed', '==', false)
+    where('couponId', '==', couponId)
   );
-  const activeCouponSnap = await getDocs(activeCouponQuery);
+  const userCouponSnap = await getDocs(userCouponQuery);
 
   const perUserLimit = Number(coupon.userUsageLimit) || 0;
-  if (perUserLimit > 0 && activeCouponSnap.size >= perUserLimit) {
+  if (perUserLimit > 0 && userCouponSnap.size >= perUserLimit) {
     console.log(`ℹ️ User ${userId} reached per-user limit (${perUserLimit}) for coupon ${couponId}, skipping grant`);
     return false;
   }
