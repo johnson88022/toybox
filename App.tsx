@@ -88,6 +88,24 @@ const App: React.FC = () => {
     }
   }, [user?.id]);
 
+  const parseDateValue = (value: any): Date | null => {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    if (typeof value === 'string' || typeof value === 'number') {
+      const parsed = new Date(value);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    }
+    if (value.toDate) {
+      try {
+        return value.toDate();
+      } catch (error) {
+        console.warn('⚠️ Failed to convert date value:', value, error);
+        return null;
+      }
+    }
+    return null;
+  };
+
   // 檢查並自動發放優惠券
   const checkAndGrantAutoCoupons = async (userId: string, triggerType: 'register' | 'order', orderData?: Order) => {
     if (!userId) {
@@ -158,34 +176,26 @@ const App: React.FC = () => {
         let validFrom: Date;
         let validUntil: Date;
         
-        if (coupon.validFrom) {
-          if (coupon.validFrom instanceof Date) {
-            validFrom = coupon.validFrom;
-          } else if (coupon.validFrom.toDate) {
-            validFrom = coupon.validFrom.toDate();
-          } else {
-            validFrom = new Date(coupon.validFrom);
-          }
-        } else {
-          validFrom = new Date();
-        }
-        
-        if (coupon.validUntil) {
-          if (coupon.validUntil instanceof Date) {
-            validUntil = coupon.validUntil;
-          } else if (coupon.validUntil.toDate) {
-            validUntil = coupon.validUntil.toDate();
-          } else {
-            validUntil = new Date(coupon.validUntil);
-          }
-        } else {
-          validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 默認30天後
-        }
+        validFrom = parseDateValue(coupon.validFrom) || new Date();
+        validUntil = parseDateValue(coupon.validUntil) || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         
         if (validUntil < now || validFrom > now) {
           console.log(`⏰ Coupon "${coupon.name}" is not valid (${validFrom.toLocaleDateString()} - ${validUntil.toLocaleDateString()})`);
           continue;
         }
+
+        const couponCreatedAt = parseDateValue(coupon.createdAt);
+        const conditionStartDate = couponCreatedAt || validFrom;
+        const isOrderEligibleForCondition = (order: Order | undefined) => {
+          if (!order || !conditionStartDate) return !!order;
+          const orderDate = parseDateValue(order.date);
+          if (!orderDate) return true;
+          return orderDate >= conditionStartDate;
+        };
+        const eligibleOrders = ordersForCheck.filter(order => isOrderEligibleForCondition(order));
+        const eligibleOrderCount = eligibleOrders.length;
+        const eligibleTotalSpent = eligibleOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+        const currentOrderEligible = orderData ? isOrderEligibleForCondition(orderData) : false;
 
         const condition = coupon.autoGrant;
 
@@ -205,15 +215,15 @@ const App: React.FC = () => {
             }
             break;
           case 'firstOrder':
-            if (triggerType === 'order' && ordersForCheck.length === 1) {
+            if (triggerType === 'order' && currentOrderEligible && eligibleOrderCount === 1) {
               shouldGrant = true;
-              console.log(`🎯 First order trigger matched for "${coupon.name}" (orders: ${ordersForCheck.length})`);
+              console.log(`🎯 First order trigger matched for "${coupon.name}" (orders since start: ${eligibleOrderCount})`);
             } else {
-              console.log(`❌ First order condition not met: orders=${ordersForCheck.length}, triggerType=${triggerType}`);
+              console.log(`❌ First order condition not met: eligibleOrders=${eligibleOrderCount}, currentOrderEligible=${currentOrderEligible}, triggerType=${triggerType}`);
             }
             break;
           case 'orderAmount':
-            if (triggerType === 'order' && orderData) {
+            if (triggerType === 'order' && orderData && currentOrderEligible) {
               const orderTotal = Number(orderData.total) || 0;
               const requiredAmount = Number(condition.value) || 0;
               console.log(`🔍 Checking orderAmount condition for "${coupon.name}": orderTotal=${orderTotal}, required=${requiredAmount}, condition=`, condition);
@@ -224,13 +234,13 @@ const App: React.FC = () => {
                 console.log(`❌ Order amount not met for "${coupon.name}" (order total: ${orderTotal}, required: ${requiredAmount})`);
               }
             } else {
-              console.log(`⚠️ Order amount condition skipped: triggerType=${triggerType}, orderData=${!!orderData}, orderData.total=${orderData?.total}`);
+              console.log(`⚠️ Order amount condition skipped: triggerType=${triggerType}, orderData=${!!orderData}, currentOrderEligible=${currentOrderEligible}, orderData.total=${orderData?.total}`);
             }
             break;
           case 'orderCount':
-            const orderCount = ordersForCheck.length;
+            const orderCount = eligibleOrderCount;
             const requiredCount = Number(condition.value) || 0;
-            console.log(`🔍 Checking orderCount condition for "${coupon.name}": orderCount=${orderCount}, required=${requiredCount}`);
+            console.log(`🔍 Checking orderCount condition for "${coupon.name}": orderCount=${orderCount}, required=${requiredCount}, startDate=${conditionStartDate?.toISOString()}`);
             if (triggerType === 'order' && orderCount >= requiredCount && requiredCount > 0) {
               shouldGrant = true;
               console.log(`✅ Order count trigger matched for "${coupon.name}" (orders: ${orderCount}, required: ${requiredCount})`);
@@ -239,9 +249,9 @@ const App: React.FC = () => {
             }
             break;
           case 'totalSpent':
-            const totalSpent = ordersForCheck.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+            const totalSpent = eligibleTotalSpent;
             const requiredSpent = Number(condition.value) || 0;
-            console.log(`🔍 Checking totalSpent condition for "${coupon.name}": totalSpent=${totalSpent}, required=${requiredSpent}`);
+            console.log(`🔍 Checking totalSpent condition for "${coupon.name}": totalSpent=${totalSpent}, required=${requiredSpent}, startDate=${conditionStartDate?.toISOString()}`);
             if (totalSpent >= requiredSpent && requiredSpent > 0) {
               shouldGrant = true;
               console.log(`✅ Total spent trigger matched for "${coupon.name}" (total: ${totalSpent}, required: ${requiredSpent})`);
