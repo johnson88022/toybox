@@ -674,15 +674,40 @@ export const useCoupon = async (userCouponId: string, orderId: string) => {
 
 // 獲取所有用戶的優惠券（用於檢查自動發放條件）
 export const getUserOrders = async (userId: string) => {
-  const q = query(
+  const baseQuery = query(
     collection(db, 'orders'),
     where('userId', '==', userId),
     orderBy('date', 'desc')
   );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-    date: doc.data().date?.toDate?.() || doc.data().date,
-  }));
+
+  try {
+    const snapshot = await getDocs(baseQuery);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      date: doc.data().date?.toDate?.() || doc.data().date,
+    }));
+  } catch (error: any) {
+    if (error.code === 'failed-precondition') {
+      console.warn('Firestore index missing for user order lookup, falling back without orderBy:', error);
+      const fallbackQuery = query(
+        collection(db, 'orders'),
+        where('userId', '==', userId)
+      );
+      const snapshot = await getDocs(fallbackQuery);
+      const orders = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        date: doc.data().date?.toDate?.() || doc.data().date,
+      }));
+      // sort client-side to keep behavior consistent
+      orders.sort((a, b) => {
+        const aTime = a.date ? new Date(a.date).getTime() : 0;
+        const bTime = b.date ? new Date(b.date).getTime() : 0;
+        return bTime - aTime;
+      });
+      return orders;
+    }
+    throw error;
+  }
 };
