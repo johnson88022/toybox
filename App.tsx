@@ -90,12 +90,30 @@ const App: React.FC = () => {
 
   // 檢查並自動發放優惠券
   const checkAndGrantAutoCoupons = async (userId: string, triggerType: 'register' | 'order', orderData?: Order) => {
-    if (!userId || allCoupons.length === 0) {
-      console.log('⚠️ Auto-grant check skipped: no userId or no coupons');
+    if (!userId) {
+      console.log('⚠️ Auto-grant check skipped: no userId');
       return;
     }
 
     try {
+      let couponsToCheck = allCoupons;
+      if (!couponsToCheck || couponsToCheck.length === 0) {
+        console.log('ℹ️ No cached coupons available, fetching from Firestore for auto-grant check...');
+        const couponsSnap = await getDocs(collection(db, 'coupons'));
+        couponsToCheck = couponsSnap.docs.map(docSnap => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+          validFrom: docSnap.data().validFrom?.toDate?.() || docSnap.data().validFrom,
+          validUntil: docSnap.data().validUntil?.toDate?.() || docSnap.data().validUntil,
+          createdAt: docSnap.data().createdAt?.toDate?.() || docSnap.data().createdAt,
+        })) as Coupon[];
+      }
+
+      if (!couponsToCheck || couponsToCheck.length === 0) {
+        console.log('⚠️ Auto-grant check skipped: still no coupons after fetch');
+        return;
+      }
+
       console.log(`🔍 Checking auto-grant coupons for user ${userId}, trigger: ${triggerType}`);
       const userOrders = await getUserOrders(userId);
       const userProfile = await getUserProfile(userId);
@@ -125,7 +143,7 @@ const App: React.FC = () => {
 
       console.log(`📋 User has ${existingCouponIds.size} unused coupons, total orders: ${ordersForCheck.length}`);
 
-      for (const coupon of allCoupons) {
+      for (const coupon of couponsToCheck) {
         if (!coupon.isActive) {
           console.log(`⏸️ Coupon "${coupon.name}" is not active`);
           continue;
