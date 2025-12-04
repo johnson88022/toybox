@@ -587,19 +587,31 @@ export const listenUserCoupons = (userId: string, cb: (userCoupons: any[]) => vo
 };
 
 export const grantCouponToUser = async (userId: string, couponId: string, coupon: any) => {
-  // 檢查用戶是否已經擁有此優惠券且未使用
-  const existingQuery = query(
+  const activeCouponQuery = query(
     collection(db, 'userCoupons'),
     where('userId', '==', userId),
     where('couponId', '==', couponId),
     where('isUsed', '==', false)
   );
-  const existingSnap = await getDocs(existingQuery);
-  
-  if (!existingSnap.empty) {
-    // 改為返回 false 而不是 throw，讓調用方可以繼續處理其他優惠券
-    console.log(`ℹ️ User ${userId} already has unused coupon ${couponId}, skipping grant`);
+  const activeCouponSnap = await getDocs(activeCouponQuery);
+
+  const perUserLimit = Number(coupon.userUsageLimit) || 0;
+  if (perUserLimit > 0 && activeCouponSnap.size >= perUserLimit) {
+    console.log(`ℹ️ User ${userId} reached per-user limit (${perUserLimit}) for coupon ${couponId}, skipping grant`);
     return false;
+  }
+
+  const totalUsageLimit = Number(coupon.usageLimit) || 0;
+  if (totalUsageLimit > 0) {
+    const totalUsageQuery = query(
+      collection(db, 'userCoupons'),
+      where('couponId', '==', couponId)
+    );
+    const totalUsageSnap = await getDocs(totalUsageQuery);
+    if (totalUsageSnap.size >= totalUsageLimit) {
+      console.log(`ℹ️ Coupon ${couponId} reached global usage limit (${totalUsageLimit}), skipping grant`);
+      return false;
+    }
   }
 
   // 確保 validFrom 和 validUntil 正確轉換為 Timestamp
